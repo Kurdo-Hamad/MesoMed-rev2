@@ -1,0 +1,45 @@
+{
+  "name": "@mesomed/mobile",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "main": "expo-router/entry",
+  "scripts": {
+    "dev": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@mesomed/contracts": "workspace:*",
+    "@mesomed/i18n": "workspace:*",
+    "@mesomed/ui-tokens": "workspace:*",
+    "@tanstack/react-query": "^5.101.2",
+    "@trpc/client": "^11.18.0",
+    "@trpc/react-query": "^11.18.0",
+    "@expo/log-box": "~57.0.0",
+    "@expo/metro-runtime": "~57.0.3",
+    "expo": "~57.0.4",
+    "expo-constants": "~57.0.3",
+    "expo-font": "~57.0.0",
+    "expo-linking": "~57.0.2",
+    "expo-router": "~57.0.4",
+    "expo-splash-screen": "~57.0.2",
+    "expo-status-bar": "~57.0.0",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-native": "0.86.0",
+    "react-native-safe-area-context": "~5.7.0",
+    "react-native-screens": "4.25.2",
+    "react-native-web": "~0.21.0"
+  },
+  "devDependencies": {
+    "@mesomed/api": "workspace:*",
+    "@mesomed/eslint-config": "workspace:*",
+    "@mesomed/typescript-config": "workspace:*",
+    "@types/react": "~19.2.2",
+    "typescript": "~6.0.3"
+  }
+}

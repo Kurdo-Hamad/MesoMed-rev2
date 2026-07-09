@@ -1,0 +1,33 @@
+{
+  "name": "@mesomed/web",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@mesomed/contracts": "workspace:*",
+    "@mesomed/i18n": "workspace:*",
+    "@mesomed/ui-tokens": "workspace:*",
+    "@tanstack/react-query": "^5.101.2",
+    "@trpc/client": "^11.18.0",
+    "@trpc/react-query": "^11.18.0",
+    "next": "^16.2.10",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7"
+  },
+  "devDependencies": {
+    "@mesomed/api": "workspace:*",
+    "@mesomed/eslint-config": "workspace:*",
+    "@mesomed/typescript-config": "workspace:*",
+    "@types/node": "^22.20.1",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "typescript": "~6.0.3"
+  }
+}

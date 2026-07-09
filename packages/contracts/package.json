@@ -1,0 +1,26 @@
+{
+  "name": "@mesomed/contracts",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./health": "./src/health.ts",
+    "./errors": "./src/errors.ts",
+    "./events": "./src/events/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "lint": "eslint .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@mesomed/typescript-config": "workspace:*",
+    "@mesomed/eslint-config": "workspace:*",
+    "typescript": "~6.0.3",
+    "vitest": "^4.1.10"
+  }
+}

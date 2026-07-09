@@ -1,0 +1,26 @@
+{
+  "name": "mesomed",
+  "private": true,
+  "version": "0.0.0",
+  "engines": {
+    "node": ">=22.11.0"
+  },
+  "packageManager": "pnpm@11.10.0",
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "format": "prettier --write \"**/*.{ts,tsx,md,json}\" --ignore-path .gitignore",
+    "format:check": "prettier --check \"**/*.{ts,tsx,md,json}\" --ignore-path .gitignore"
+  },
+  "prettier": "@mesomed/prettier-config",
+  "devDependencies": {
+    "turbo": "^2.10.4",
+    "typescript": "~6.0.3",
+    "prettier": "^3.9.4",
+    "eslint": "^10.6.0",
+    "@mesomed/prettier-config": "workspace:*"
+  }
+}

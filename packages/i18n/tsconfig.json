@@ -1,0 +1,12 @@
+{
+  "extends": "@mesomed/typescript-config/base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "resolveJsonModule": true,
+    "composite": false
+  },
+  "include": ["src"]
+}

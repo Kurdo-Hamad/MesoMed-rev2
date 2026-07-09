@@ -1,0 +1,14 @@
+{
+  "files": [],
+  "references": [
+    { "path": "apps/api" },
+    { "path": "apps/web" },
+    { "path": "packages/contracts" },
+    { "path": "packages/db" },
+    { "path": "packages/domain" },
+    { "path": "packages/config" },
+    { "path": "packages/platform" },
+    { "path": "packages/i18n" },
+    { "path": "packages/ui-tokens" }
+  ]
+}
