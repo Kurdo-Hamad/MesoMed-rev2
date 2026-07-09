@@ -9,7 +9,6 @@
     "jsx": "preserve",
     "allowJs": true,
     "noEmit": true,
-    "composite": false,
     "incremental": true,
     "plugins": [{ "name": "next" }]
   }
