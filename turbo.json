@@ -6,9 +6,17 @@
       "dependsOn": ["^build"],
       "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
     },
-    "test": {},
+    "test": {
+      // Turbo 2 strict env mode strips undeclared variables from task
+      // processes. The test-DB harness (@mesomed/db/testing) selects its
+      // Postgres source from these, so they must reach vitest — and test
+      // results legitimately depend on them, so they belong in the cache
+      // key too.
+      "env": ["TEST_DATABASE_URL", "DOCKER_HOST"]
+    },
     "@mesomed/api#test": {
-      "dependsOn": ["build"]
+      "dependsOn": ["build"],
+      "env": ["TEST_DATABASE_URL", "DOCKER_HOST"]
     },
     "lint": {
       "outputs": []
