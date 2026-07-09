@@ -1,6 +1,8 @@
 {
   "hello": {
     "title": "MesoMed",
-    "subtitle": "API is healthy"
+    "subtitle": "API is healthy",
+    "checking": "Checking API…",
+    "unreachable": "API unreachable"
   }
 }

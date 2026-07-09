@@ -1,17 +1,18 @@
 import { StyleSheet, Text, View } from "react-native";
-import { locales } from "@mesomed/i18n";
+import { defaultLocale, locales } from "@mesomed/i18n";
 import { colors } from "@mesomed/ui-tokens";
 import { trpc } from "../lib/trpc";
 
 export default function HomeScreen() {
   const health = trpc.health.check.useQuery();
-  const t = locales.en.hello;
+  // Every user-facing string comes from the catalogs (MM-PLAN-001 §3.10).
+  const t = locales[defaultLocale].hello;
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>{t.title}</Text>
       <Text style={styles.subtitle}>
-        {health.isLoading ? "Checking API…" : health.data ? t.subtitle : "API unreachable"}
+        {health.isLoading ? t.checking : health.data ? t.subtitle : t.unreachable}
       </Text>
     </View>
   );

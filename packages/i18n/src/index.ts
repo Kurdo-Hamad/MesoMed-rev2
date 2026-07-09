@@ -11,4 +11,12 @@ export type Locale = keyof typeof locales;
 
 export const rtlLocales: readonly Locale[] = ["ar", "ckb"];
 
+export function isRtl(locale: Locale): boolean {
+  return rtlLocales.includes(locale);
+}
+
+export function textDirection(locale: Locale): "rtl" | "ltr" {
+  return isRtl(locale) ? "rtl" : "ltr";
+}
+
 export type Messages = typeof en;

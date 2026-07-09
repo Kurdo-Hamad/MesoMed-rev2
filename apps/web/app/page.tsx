@@ -1,12 +1,13 @@
 "use client";
 
-import { locales } from "@mesomed/i18n";
+import { defaultLocale, locales } from "@mesomed/i18n";
 import { colors } from "@mesomed/ui-tokens";
 import { trpc } from "../lib/trpc";
 
 export default function HomePage() {
   const health = trpc.health.check.useQuery();
-  const t = locales.en.hello;
+  // Every user-facing string comes from the catalogs (MM-PLAN-001 §3.10).
+  const t = locales[defaultLocale].hello;
 
   return (
     <main
@@ -21,7 +22,7 @@ export default function HomePage() {
       }}
     >
       <h1 style={{ fontSize: 28 }}>{t.title}</h1>
-      <p>{health.isLoading ? "Checking API…" : health.data ? t.subtitle : "API unreachable"}</p>
+      <p>{health.isLoading ? t.checking : health.data ? t.subtitle : t.unreachable}</p>
     </main>
   );
 }
