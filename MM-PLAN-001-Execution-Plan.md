@@ -9,32 +9,32 @@
 
 ## 1. Locked Stack
 
-| Layer | Decision | Notes |
-|---|---|---|
-| Monorepo | **Turborepo + pnpm workspaces** | Node 22 LTS, TypeScript strict everywhere |
-| API service | **Fastify + tRPC v11** | Single deployable BFF; tRPC routers per module; REST added later only if a public API is needed |
-| Validation / contracts | **Zod v4** in `packages/contracts` | Single source of truth for API, events, config |
-| Database | **PostgreSQL 16 (Supabase-hosted, infrastructure only)** | Zero Supabase SDK in domain code; access via Drizzle only |
-| ORM / migrations | **Drizzle ORM + drizzle-kit** | Carries over existing team knowledge |
-| Auth | **Better Auth** (Drizzle adapter, sessions in Postgres) | Replaces Supabase Auth. Email+password, email verification, persistent sessions, Expo plugin, passkeys plugin later. Implements MM-DEC exactly |
-| Jobs / events dispatch | **pg-boss** (Postgres-backed) | Outbox polling, reminders, retries. No Redis dependency |
-| Web | **Next.js (latest stable, App Router) + Tailwind v4 + shadcn/ui + TanStack Query + tRPC client** | Thin client: no business logic, no direct DB access |
-| Mobile | **Expo (latest SDK) + Expo Router + NativeWind 4 + Reanimated + TanStack Query + tRPC client** | EAS Build + EAS Update; expo-secure-store; expo-local-authentication (biometrics); expo-notifications (push) |
-| i18n | **Shared ICU catalogs in `packages/i18n`** — next-intl (web), use-intl (mobile) | en / ar / ckb; ckb default; RTL via logical properties + `dir` |
-| Design system | **`packages/ui-tokens`** — Tailwind theme tokens consumed by web + NativeWind | One brand definition, two renderers |
-| AI | **Vercel AI SDK (`ai`)** behind `AiGateway` adapter | Anthropic default; provider swap = config. Deterministic keyword fallback preserved |
-| Search | **Postgres FTS + pg_trgm** behind `SearchAdapter` | Meilisearch adapter when listing volume demands it — not before |
-| Storage | **S3-compatible adapter** → Supabase Storage now | Any S3 later with zero domain change |
-| Email | **Resend** behind `EmailChannel` adapter | |
-| Push | **Expo Push Service** behind `PushChannel` adapter | Primary notification channel per MM-DEC |
-| WhatsApp | **Meta WhatsApp Cloud API** adapter (Phase 7) | Provider password-recovery fallback only, per MM-DEC |
-| SMS | **None** | Per MM-DEC — not routine |
-| Payments | **PaymentOrchestrator** module: `manual` (launch), FIB + ZainCash adapters (post-launch) | Routing table in DB config: country × category × gateway |
-| Observability | **pino + OpenTelemetry (OTLP)** + **Sentry** (api/web/mobile) | Any OTLP backend; start Grafana Cloud free tier |
-| Rate limiting | **@fastify/rate-limit, in-memory** (single instance at launch) | Redis store swapped in only when horizontally scaling |
-| Testing | **Vitest** (unit) · **Testcontainers/pg service** (integration) · **Playwright** (web e2e) · **Maestro** (mobile e2e) | |
-| CI/CD | **GitHub Actions**; API as **Docker image** → Railway/Fly (eu-central); web → Vercel | Dockerfile in repo = deployment portability |
-| Docs | `/docs/adr/` — every locked decision gets an ADR | ADR-0001 = this stack |
+| Layer                  | Decision                                                                                                              | Notes                                                                                                                                          |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| Monorepo               | **Turborepo + pnpm workspaces**                                                                                       | Node 22 LTS, TypeScript strict everywhere                                                                                                      |
+| API service            | **Fastify + tRPC v11**                                                                                                | Single deployable BFF; tRPC routers per module; REST added later only if a public API is needed                                                |
+| Validation / contracts | **Zod v4** in `packages/contracts`                                                                                    | Single source of truth for API, events, config                                                                                                 |
+| Database               | **PostgreSQL 16 (Supabase-hosted, infrastructure only)**                                                              | Zero Supabase SDK in domain code; access via Drizzle only                                                                                      |
+| ORM / migrations       | **Drizzle ORM + drizzle-kit**                                                                                         | Carries over existing team knowledge                                                                                                           |
+| Auth                   | **Better Auth** (Drizzle adapter, sessions in Postgres)                                                               | Replaces Supabase Auth. Email+password, email verification, persistent sessions, Expo plugin, passkeys plugin later. Implements MM-DEC exactly |
+| Jobs / events dispatch | **pg-boss** (Postgres-backed)                                                                                         | Outbox polling, reminders, retries. No Redis dependency                                                                                        |
+| Web                    | **Next.js (latest stable, App Router) + Tailwind v4 + shadcn/ui + TanStack Query + tRPC client**                      | Thin client: no business logic, no direct DB access                                                                                            |
+| Mobile                 | **Expo (latest SDK) + Expo Router + NativeWind 4 + Reanimated + TanStack Query + tRPC client**                        | EAS Build + EAS Update; expo-secure-store; expo-local-authentication (biometrics); expo-notifications (push)                                   |
+| i18n                   | **Shared ICU catalogs in `packages/i18n`** — next-intl (web), use-intl (mobile)                                       | en / ar / ckb; ckb default; RTL via logical properties + `dir`                                                                                 |
+| Design system          | **`packages/ui-tokens`** — Tailwind theme tokens consumed by web + NativeWind                                         | One brand definition, two renderers                                                                                                            |
+| AI                     | **Vercel AI SDK (`ai`)** behind `AiGateway` adapter                                                                   | Anthropic default; provider swap = config. Deterministic keyword fallback preserved                                                            |
+| Search                 | **Postgres FTS + pg_trgm** behind `SearchAdapter`                                                                     | Meilisearch adapter when listing volume demands it — not before                                                                                |
+| Storage                | **S3-compatible adapter** → Supabase Storage now                                                                      | Any S3 later with zero domain change                                                                                                           |
+| Email                  | **Resend** behind `EmailChannel` adapter                                                                              |                                                                                                                                                |
+| Push                   | **Expo Push Service** behind `PushChannel` adapter                                                                    | Primary notification channel per MM-DEC                                                                                                        |
+| WhatsApp               | **Meta WhatsApp Cloud API** adapter (Phase 7)                                                                         | Provider password-recovery fallback only, per MM-DEC                                                                                           |
+| SMS                    | **None**                                                                                                              | Per MM-DEC — not routine                                                                                                                       |
+| Payments               | **PaymentOrchestrator** module: `manual` (launch), FIB + ZainCash adapters (post-launch)                              | Routing table in DB config: country × category × gateway                                                                                       |
+| Observability          | **pino + OpenTelemetry (OTLP)** + **Sentry** (api/web/mobile)                                                         | Any OTLP backend; start Grafana Cloud free tier                                                                                                |
+| Rate limiting          | **@fastify/rate-limit, in-memory** (single instance at launch)                                                        | Redis store swapped in only when horizontally scaling                                                                                          |
+| Testing                | **Vitest** (unit) · **Testcontainers/pg service** (integration) · **Playwright** (web e2e) · **Maestro** (mobile e2e) |                                                                                                                                                |
+| CI/CD                  | **GitHub Actions**; API as **Docker image** → Railway/Fly (eu-central); web → Vercel                                  | Dockerfile in repo = deployment portability                                                                                                    |
+| Docs                   | `/docs/adr/` — every locked decision gets an ADR                                                                      | ADR-0001 = this stack                                                                                                                          |
 
 ---
 
@@ -104,20 +104,20 @@ Per-module convention: `commands/` · `queries/` · `events/` (subscribers) · `
 
 ## 4. Salvage Manifest (port from current repo — code, not just concepts)
 
-| Asset | Destination |
-|---|---|
-| `appointments/transitions.ts` + tests | `packages/domain/booking/` |
-| `locations/slots.ts`, `availability-week.ts` + tests | `packages/domain/scheduling/` |
-| `billing/tier-utils.ts` + tests | `packages/domain/billing/` |
-| `provider/facility-cursor.ts` + tests | `packages/domain/directory/` |
-| `provider/symptom-triage-utils.ts` + tests (red-flag list, sanitization, prompt delimiting, keyword fallback) | `packages/domain/ai/` |
-| `notifications/templates.ts` + tests | `communication` module (extended: push + email variants) |
-| `messages/en.json, ar.json, ckb.json` | `packages/i18n` (restructured keys allowed) |
-| Seed pipeline (4 scripts, 1,466 lines) | `apps/api/scripts/seed/` (adapted to new schema) |
-| Clinical audit trigger SQL (migration 0002 concept) | new migration in `packages/db` |
-| Double-booking partial unique index | new booking schema |
-| Trilingual red-flag keyword list | unchanged |
-| DB schema shapes (29 tables) | reference for new per-module schemas — redesign where events/config require |
+| Asset                                                                                                         | Destination                                                                 |
+| ------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| `appointments/transitions.ts` + tests                                                                         | `packages/domain/booking/`                                                  |
+| `locations/slots.ts`, `availability-week.ts` + tests                                                          | `packages/domain/scheduling/`                                               |
+| `billing/tier-utils.ts` + tests                                                                               | `packages/domain/billing/`                                                  |
+| `provider/facility-cursor.ts` + tests                                                                         | `packages/domain/directory/`                                                |
+| `provider/symptom-triage-utils.ts` + tests (red-flag list, sanitization, prompt delimiting, keyword fallback) | `packages/domain/ai/`                                                       |
+| `notifications/templates.ts` + tests                                                                          | `communication` module (extended: push + email variants)                    |
+| `messages/en.json, ar.json, ckb.json`                                                                         | `packages/i18n` (restructured keys allowed)                                 |
+| Seed pipeline (4 scripts, 1,466 lines)                                                                        | `apps/api/scripts/seed/` (adapted to new schema)                            |
+| Clinical audit trigger SQL (migration 0002 concept)                                                           | new migration in `packages/db`                                              |
+| Double-booking partial unique index                                                                           | new booking schema                                                          |
+| Trilingual red-flag keyword list                                                                              | unchanged                                                                   |
+| DB schema shapes (29 tables)                                                                                  | reference for new per-module schemas — redesign where events/config require |
 
 Everything else (auth flow, RLS harness, Supabase SSR clients, server actions, middleware, current UI) is **not ported**.
 
@@ -128,6 +128,7 @@ Everything else (auth flow, RLS harness, Supabase SSR clients, server actions, m
 Solo + Claude Code. Each phase = one or more Claude Code working sessions with the acceptance gate as the stop condition — **the gate, not the calendar, controls sequencing.** Phase N+1 never starts on a red gate, regardless of elapsed time. Week numbers below are sequencing estimates for planning purposes only, not commitments; total sequencing estimate spans roughly 26–32 weeks of equivalent effort, with API+web reaching a launchable state around the two-thirds mark.
 
 ### Phase 0 — Foundation (Week 1)
+
 - Scaffold Turborepo: `apps/api|web|mobile`, all `packages/*`, `tooling/*`.
 - TypeScript strict, ESLint (+boundaries), Prettier, Vitest wiring, turbo pipeline.
 - `apps/api`: Fastify boot, health endpoint, pino, OTel bootstrap, Sentry, env schema (Zod-validated `process.env`).
@@ -136,6 +137,7 @@ Solo + Claude Code. Each phase = one or more Claude Code working sessions with t
 - **Gate:** `pnpm build && pnpm test` green in CI; API container runs locally; web+mobile boot to hello screens.
 
 ### Phase 1 — Kernel (Weeks 2–3)
+
 - `packages/db`: Drizzle client factory, migration runner, test-DB harness (Testcontainers + CI pg service).
 - Outbox: `domain_events` table (id, name, version, aggregate_type, aggregate_id, payload jsonb, occurred_at, published_at, attempts); kernel `emit()` writes in-tx; pg-boss dispatcher with retry + dead-letter status; idempotent handler registry.
 - Kernel: authz middleware (role guard), typed error model, config service (config tables + Zod-validated loader + cache), request-scoped context (session, locale, country).
@@ -143,6 +145,7 @@ Solo + Claude Code. Each phase = one or more Claude Code working sessions with t
 - **Gate:** integration test proves: command tx writes row + outbox atomically → dispatcher delivers to subscriber exactly once under retry; a poisoned event lands in dead-letter.
 
 ### Phase 2 — Identity (Weeks 4–6)
+
 - Better Auth mounted on Fastify: email+password, email verification (Resend), persistent sessions (no OTP on login — MM-DEC §4), session revocation, roles table (patient/doctor/secretary/admin) + permission map.
 - Guest patient profiles: create-on-booking (name, phone required, DoB/gender/email optional) — MM-DEC §1.
 - Account claim flow: registration links existing guest profile by phone + verified email — MM-DEC §2.
@@ -152,6 +155,7 @@ Solo + Claude Code. Each phase = one or more Claude Code working sessions with t
 - **Gate:** full auth integration suite (register, verify, login, revoke, claim, role guards on protected procedures); mobile session persistence verified with Better Auth Expo plugin + secure store.
 
 ### Phase 3 — Directory + Taxonomy + Search (Weeks 6–9)
+
 - Schemas: countries, cities, categories, specialties, symptoms, symptom-specialty map, procedures, providers, doctor_profiles, facilities, facility media/sections, promotions.
 - Config-driven country gating (`coming_soon`) via `packages/config`.
 - Queries: directory browse (keyset pagination — port cursor logic), doctor/facility detail, homepage feed.
@@ -161,6 +165,7 @@ Solo + Claude Code. Each phase = one or more Claude Code working sessions with t
 - **Gate:** seeded directory browsable via tRPC with p95 < 100ms on 200k synthetic facilities; trilingual fields round-trip.
 
 ### Phase 4 — Scheduling + Booking (Weeks 9–12)
+
 - Scheduling: practice locations, doctor_locations, secretary assignments, weekly schedules, breaks, blocked slots; slot generation from ported `packages/domain/scheduling` (Asia/Baghdad canonical, tz-aware for expansion).
 - Booking: appointment aggregate + ported state machine; guest booking command (creates/links patient profile via identity event or query); secretary find-or-create booking; reschedule/cancel/confirm/check-in/start/complete/no-show commands, each role-gated.
 - Invariants: double-booking partial unique index; slot-conflict check in-tx (strong consistency).
@@ -168,17 +173,20 @@ Solo + Claude Code. Each phase = one or more Claude Code working sessions with t
 - **Gate:** concurrency test — parallel bookings for the same slot yield exactly one success; full lifecycle integration tests per role.
 
 ### Phase 5 — Clinical (Weeks 12–14)
+
 - Encounters (1:1 appointment, created by subscriber on `booking.completed.v1` — port current pattern), visit notes (append-only amendments model), audit trigger migration, time-boxed admin support-access grants.
 - Targeted RLS on `encounters`/`visit_notes` (deny-all direct select; access only through SECURITY DEFINER support-access function) — defense-in-depth backstop, not the primary authz layer (see §3.6).
 - **Gate:** audit rows produced by DB trigger for every read/write path; UPDATE/DELETE on audit log denied at DB level; amendment flow tested; support-access expiry enforced; RLS policy independently verified to block a raw connection attempt bypassing the API.
 
 ### Phase 6 — Billing + Payments (Weeks 14–16)
+
 - Subscriptions (flat monthly, active/inactive/grace), listing tiers + prices + idempotent tier payments (port unique-key + period-tuple constraints), public-visibility rule as a directory read predicate driven by billing events.
 - PaymentOrchestrator: `PaymentGateway` interface, routing config table, `manual` gateway complete; webhook endpoint with Zod validation + signature-verification interface + rate limit (fixes current gaps).
 - Events: `billing.subscription_activated/expired.v1`, `billing.tier_payment_recorded.v1`.
 - **Gate:** idempotency proven (duplicate webhook/payment replays are no-ops); visibility flips on subscription events without directory code changes.
 
 ### Phase 7 — Communication + AI (Weeks 16–18)
+
 - Communication module: dispatch on booking/billing events via outbox; channel router (push primary, email secondary — MM-DEC §6); trilingual templates (ported + push/email variants); notification log; user channel preferences; next-day reminder as pg-boss cron.
 - Push: Expo Push adapter + device-token registration procedure (mobile lands Phase 9; token API ready now).
 - Email: Resend adapter (verification emails already live from Phase 2 — this generalizes the channel).
@@ -187,6 +195,7 @@ Solo + Claude Code. Each phase = one or more Claude Code working sessions with t
 - **Gate:** kill the AI provider in a test → fallback serves; kill email adapter → push still delivers and failure is logged + retried; reminder cron idempotent.
 
 ### Phase 8 — Web App (Weeks 18–22) — **launchable milestone**
+
 - Next.js thin client on tRPC: homepage (hero, category cards, recommended feed — implement the currently-stubbed featured-slot resolver properly), directory + detail pages (7 categories + home-nursing), search + symptom search, guest booking flow, auth screens, four role dashboards, admin suite.
 - Premium pass: `packages/ui-tokens` applied, custom font via `next/font` (current app has none), image optimization via Next image pipeline with remote patterns (fixes `unoptimized` regression), skeletons/optimistic updates, Lighthouse ≥ 90 all categories, full RTL audit in ar/ckb.
 - Security: CSP + security headers, CSRF posture documented (tRPC + same-site cookies), no current-app gaps carried forward.
@@ -194,12 +203,14 @@ Solo + Claude Code. Each phase = one or more Claude Code working sessions with t
 - **Gate:** e2e suite green; Lighthouse budget met; RTL visual review signed off; deploy to production infra.
 
 ### Phase 9 — Mobile App (Weeks 22–28)
+
 - Expo Router app: browse/search/detail, guest booking, optional account + biometric unlock (expo-local-authentication after first login — MM-DEC §4), patient dashboard, push registration + notification center, doctor/secretary queue views (phase 9b if needed).
 - EAS Build profiles (dev/preview/prod), EAS Update channel strategy, store metadata (en/ar/ckb).
 - Maestro flows: booking, login+biometric, push receipt.
 - **Gate:** TestFlight + Play internal track builds; push round-trip verified on physical devices; offline-tolerant browsing (cached queries) verified.
 
 ### Phase 10 — Hardening + Launch (Weeks 28–32)
+
 - Load test booking + directory (k6) at 10× expected launch traffic; index audit.
 - Observability: dashboards for outbox lag, dead-letter depth, booking funnel, p95s; alerts on outbox lag + error rate.
 - Security review: dependency audit in CI (npm audit + Dependabot + CodeQL), secrets scan, least-privilege DB role verification, backup/restore drill, data-retention + erasure procedure documented (crypto-shred columns for PII where audit immutability conflicts).
