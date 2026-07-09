@@ -1,13 +1,28 @@
 import { TRPCError } from "@trpc/server";
-import { AppError, ErrorCode } from "@mesomed/contracts/errors";
+import { ErrorCode } from "@mesomed/contracts/errors";
+
+/**
+ * Server-side error carrier for the typed error model (MM-PLAN-001 §3.11).
+ * Lives in the kernel, not in contracts: only the server throws it, while
+ * clients switch on the pure `ErrorCode` constants that stay in
+ * `@mesomed/contracts/errors` (MM-QA-001 F-19, decided in ADR-0003).
+ */
+export class AppError extends Error {
+  readonly code: ErrorCode;
+
+  constructor(code: ErrorCode, message: string, options?: { cause?: unknown }) {
+    super(message, options);
+    this.code = code;
+    this.name = "AppError";
+  }
+}
 
 type TRPCErrorCode = TRPCError["code"];
 
 /**
- * MM-PLAN-001 §3.11: application error codes map onto transport codes so
- * HTTP status semantics survive. Without this mapping every AppError —
- * including UNAUTHORIZED and NOT_FOUND — surfaced as HTTP 500
- * (MM-QA-001 F-07).
+ * Application codes map onto transport codes so HTTP status semantics
+ * survive. Without this mapping every AppError — including UNAUTHORIZED
+ * and NOT_FOUND — surfaced as HTTP 500 (MM-QA-001 F-07).
  */
 const APP_TO_TRPC = {
   [ErrorCode.INTERNAL]: "INTERNAL_SERVER_ERROR",

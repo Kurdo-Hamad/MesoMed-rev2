@@ -4,15 +4,30 @@
   "version": "0.0.0",
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./migrate": "./src/migrate.ts",
+    "./testing": "./src/testing/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test": "vitest run",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.45.2",
+    "pg": "^8.22.0"
   },
   "devDependencies": {
     "@mesomed/typescript-config": "workspace:*",
     "@mesomed/eslint-config": "workspace:*",
-    "typescript": "~6.0.3"
+    "@testcontainers/postgresql": "^12.0.4",
+    "@types/node": "^22.20.1",
+    "@types/pg": "^8.20.0",
+    "drizzle-kit": "^0.31.10",
+    "embedded-postgres": "16.14.0-beta.17",
+    "typescript": "~6.0.3",
+    "vitest": "^4.1.10"
   }
 }

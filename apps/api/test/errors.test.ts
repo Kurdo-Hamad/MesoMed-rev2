@@ -1,16 +1,23 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import Fastify, { type FastifyInstance } from "fastify";
 import { fastifyTRPCPlugin } from "@trpc/server/adapters/fastify";
-import { AppError, ErrorCode } from "@mesomed/contracts/errors";
-import { createContext } from "../src/trpc/context.js";
-import { publicProcedure, router } from "../src/trpc/trpc.js";
+import { createEventRegistry } from "@mesomed/contracts/events";
+import { ErrorCode } from "@mesomed/contracts/errors";
+import { createTestDatabase, type TestDatabase } from "@mesomed/db/testing";
+import { createConfigService } from "../src/kernel/config.js";
+import { anonymousSessionResolver, createContextFactory } from "../src/kernel/context.js";
+import { AppError } from "../src/kernel/errors.js";
+import { createOutboxEmitter } from "../src/kernel/outbox.js";
+import { publicProcedure, router } from "../src/kernel/trpc.js";
 
 /**
  * Contract test for the real tRPC error pipeline (MM-QA-001 F-07): the
  * subject under test is the production `t` instance (middleware +
- * formatter) exported from src/trpc/trpc.ts, mounted with throw-only
- * probe procedures. Before the fix, every AppError answered HTTP 500 and
- * `data.code` was clobbered by the app code.
+ * formatter) and context factory exported from the kernel, mounted with
+ * throw-only probe procedures — the app itself (correctly) has no
+ * endpoint whose contract is "always throws". Before the fix, every
+ * AppError answered HTTP 500 and `data.code` was clobbered by the app
+ * code.
  */
 const probeRouter = router({
   notFound: publicProcedure.query(() => {
@@ -25,19 +32,34 @@ const probeRouter = router({
 });
 
 describe("tRPC error contract", () => {
+  let tdb: TestDatabase;
   let app: FastifyInstance;
 
   beforeAll(async () => {
+    tdb = await createTestDatabase();
+    const registry = createEventRegistry([]);
     app = Fastify();
     await app.register(fastifyTRPCPlugin, {
       prefix: "/trpc",
-      trpcOptions: { router: probeRouter, createContext },
+      trpcOptions: {
+        router: probeRouter,
+        createContext: createContextFactory({
+          services: {
+            db: tdb.db,
+            config: createConfigService(tdb.db),
+            outbox: createOutboxEmitter(registry),
+          },
+          sessionResolver: anonymousSessionResolver,
+          defaultCountry: "IQ",
+        }),
+      },
     });
     await app.ready();
   });
 
   afterAll(async () => {
     await app.close();
+    await tdb.close();
   });
 
   it("AppError(NOT_FOUND) answers HTTP 404 with both code namespaces intact", async () => {
