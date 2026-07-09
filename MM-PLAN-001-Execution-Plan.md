@@ -221,8 +221,14 @@ Solo + Claude Code. Each phase = one or more Claude Code working sessions with t
 
 ## 6. Amendment Log
 
-- **ADR-0002:** Full-schema RLS rejected; clinical-tier RLS (encounters, visit_notes) adopted as defense-in-depth, layered under the two-layer application authz model. See §3.6, §Phase 5.
-- **ADR-0003:** Phase week numbers reclassified as sequencing estimates, not calendar commitments. Gate criteria remain the sole condition for advancing phases.
+Earlier revisions of this log labeled the entries "ADR-0002"/"ADR-0003" as
+logical decision numbers; the ADR files on disk diverged from that numbering
+(`docs/adr/0002` is the pre-Phase-1 remediation batch), so entries now cite
+where each decision actually lives (reconciled in ADR-0003, Phase 1).
+
+- **Full-schema RLS rejected:** clinical-tier RLS (encounters, visit_notes) adopted as defense-in-depth, layered under the two-layer application authz model. Recorded in §3.6 and §5 Phase 5 of this plan (restated verbatim as CLAUDE.md convention #6); no standalone ADR file.
+- **Phase week numbers reclassified** as sequencing estimates, not calendar commitments; gate criteria remain the sole condition for advancing phases. Recorded in the §5 preamble; no standalone ADR file.
+- **ADR filename index** (`docs/adr/` is authoritative): `0001` locked stack & Phase 0 foundation · `0002` pre-Phase-1 remediation of MM-QA-001 findings · `0003` Phase 1 kernel.
 
 ## 7. Claude Code Kickoff Prompt (use verbatim for Phase 0)
 
