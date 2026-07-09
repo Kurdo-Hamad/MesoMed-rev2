@@ -1,7 +1,9 @@
 import { defineConfig } from "tsup";
 
 export default defineConfig({
-  entry: ["src/server.ts"],
+  // main.ts sequences instrumentation before the server via dynamic imports;
+  // esbuild code-splitting preserves those as separate chunks (ADR-0002).
+  entry: ["src/main.ts"],
   format: ["esm"],
   platform: "node",
   target: "node22",

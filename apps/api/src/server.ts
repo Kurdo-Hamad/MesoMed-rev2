@@ -1,42 +1,36 @@
-import Fastify from "fastify";
-import { fastifyTRPCPlugin } from "@trpc/server/adapters/fastify";
-import { healthResponseSchema } from "@mesomed/contracts/health";
+import * as Sentry from "@sentry/node";
+import { buildServer } from "./app.js";
 import { loadEnv } from "./env.js";
-import { initSentry } from "./kernel/sentry.js";
-import { shutdownOtel, startOtel } from "./kernel/otel.js";
-import { createContext } from "./trpc/context.js";
-import { appRouter } from "./trpc/router.js";
+import { shutdownOtel } from "./kernel/otel.js";
 
 const env = loadEnv();
+const app = await buildServer(env);
 
-startOtel(env);
-initSentry(env);
-
-const app = Fastify({
-  logger: {
-    level: env.LOG_LEVEL,
-    transport: env.NODE_ENV === "development" ? { target: "pino-pretty" } : undefined,
-  },
-});
-
-app.get("/health", async () =>
-  healthResponseSchema.parse({
-    status: "ok",
-    service: "api",
-    timestamp: new Date().toISOString(),
-  }),
-);
-
-await app.register(fastifyTRPCPlugin, {
-  prefix: "/trpc",
-  trpcOptions: { router: appRouter, createContext },
-});
+const SHUTDOWN_TIMEOUT_MS = 10_000;
+let shuttingDown = false;
 
 async function shutdown(signal: string): Promise<void> {
+  if (shuttingDown) return;
+  shuttingDown = true;
   app.log.info(`Received ${signal}, shutting down`);
-  await app.close();
-  await shutdownOtel();
-  process.exit(0);
+
+  // If graceful teardown hangs (stuck connection, wedged exporter), fail
+  // loudly instead of stalling the orchestrator (MM-QA-001 F-12).
+  const forceExit = setTimeout(() => {
+    app.log.error("Graceful shutdown timed out; forcing exit");
+    process.exit(1);
+  }, SHUTDOWN_TIMEOUT_MS);
+  forceExit.unref();
+
+  try {
+    await app.close();
+    await Sentry.close(2_000);
+    await shutdownOtel();
+    process.exit(0);
+  } catch (error) {
+    app.log.error(error, "Shutdown failed");
+    process.exit(1);
+  }
 }
 
 process.on("SIGTERM", () => void shutdown("SIGTERM"));

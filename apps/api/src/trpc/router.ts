@@ -1,12 +1,9 @@
 import { healthResponseSchema } from "@mesomed/contracts/health";
+import { healthPayload } from "../kernel/health.js";
 import { publicProcedure, router } from "./trpc.js";
 
 const healthRouter = router({
-  check: publicProcedure.output(healthResponseSchema).query(() => ({
-    status: "ok" as const,
-    service: "api",
-    timestamp: new Date().toISOString(),
-  })),
+  check: publicProcedure.output(healthResponseSchema).query(() => healthPayload()),
 });
 
 /**

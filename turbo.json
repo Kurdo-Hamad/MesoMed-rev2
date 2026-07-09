@@ -6,15 +6,14 @@
       "dependsOn": ["^build"],
       "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
     },
-    "test": {
-      "dependsOn": ["^build"]
+    "test": {},
+    "@mesomed/api#test": {
+      "dependsOn": ["build"]
     },
     "lint": {
-      "dependsOn": ["^build"],
       "outputs": []
     },
     "typecheck": {
-      "dependsOn": ["^build"],
       "outputs": []
     },
     "dev": {

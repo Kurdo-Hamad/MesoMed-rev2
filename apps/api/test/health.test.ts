@@ -1,26 +1,15 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import Fastify, { type FastifyInstance } from "fastify";
-import { fastifyTRPCPlugin } from "@trpc/server/adapters/fastify";
-import { healthResponseSchema } from "@mesomed/contracts/health";
-import { createContext } from "../src/trpc/context.js";
-import { appRouter } from "../src/trpc/router.js";
+import type { FastifyInstance } from "fastify";
+import { buildServer } from "../src/app.js";
+import { loadEnv } from "../src/env.js";
 
+/** Exercises the real composition root — not a hand-wired copy of the app
+ * (MM-QA-001 F-05). */
 describe("health", () => {
   let app: FastifyInstance;
 
   beforeAll(async () => {
-    app = Fastify();
-    app.get("/health", async () =>
-      healthResponseSchema.parse({
-        status: "ok",
-        service: "api",
-        timestamp: new Date().toISOString(),
-      }),
-    );
-    await app.register(fastifyTRPCPlugin, {
-      prefix: "/trpc",
-      trpcOptions: { router: appRouter, createContext },
-    });
+    app = await buildServer(loadEnv({ NODE_ENV: "test", LOG_LEVEL: "silent" }));
     await app.ready();
   });
 
