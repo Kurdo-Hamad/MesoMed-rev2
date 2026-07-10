@@ -5,11 +5,7 @@ import { fastifyTRPCPlugin } from "@trpc/server/adapters/fastify";
 import { createEventRegistry, type EventRegistry } from "@mesomed/contracts/events";
 import { IDENTITY_EVENTS } from "@mesomed/contracts/events/identity";
 import { createDb, type Db } from "@mesomed/db";
-import {
-  createMockEmailChannel,
-  createMockOtpChannel,
-  type EmailChannel,
-} from "@mesomed/platform";
+import { createMockEmailChannel, createMockOtpChannel, type EmailChannel } from "@mesomed/platform";
 import type pg from "pg";
 import type { Env } from "./env.js";
 import { createContextFactory, type SessionResolver } from "./kernel/context.js";

@@ -19,7 +19,11 @@ describe("evaluateOtpSendLimit", () => {
   });
 
   it("blocks the send that would exceed the limit and reports retry-after", () => {
-    const result = evaluateOtpSendLimit([minutesAgo(50), minutesAgo(30), minutesAgo(10)], now, policy);
+    const result = evaluateOtpSendLimit(
+      [minutesAgo(50), minutesAgo(30), minutesAgo(10)],
+      now,
+      policy,
+    );
     // The oldest send (50 min ago) leaves the 60-min window in 10 minutes.
     expect(result).toEqual({ allowed: false, retryAfterSeconds: 600 });
   });

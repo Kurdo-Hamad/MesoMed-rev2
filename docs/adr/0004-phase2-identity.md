@@ -65,7 +65,7 @@ removed; CLAUDE.md/README references reconciled).
 
 5. **OTP split: transport vs policy.** `OtpChannel` (packages/platform)
    is one transport per channel with capturing mocks through Phase 2
-   (MM-DEC §8); the *policy* — per-phone send rate limit
+   (MM-DEC §8); the _policy_ — per-phone send rate limit
    (ConfigService-driven, `identity.otpSendPolicy`, default 5/hour) and
    WhatsApp-first/SMS-fallback order — is identity-module code, fully
    tested against the mocks. Code generation/storage/expiry/verify
@@ -111,9 +111,9 @@ removed; CLAUDE.md/README references reconciled).
    gate transcript.
 
 10. **Sessions.** 30-day rolling window refreshed daily (persistent until
-   logout/password change/recovery — MM-DEC §4); `revokeOtherSessions`
-   covers the lost-phone case; recovery and password change revoke
-   sessions via Better Auth.
+    logout/password change/recovery — MM-DEC §4); `revokeOtherSessions`
+    covers the lost-phone case; recovery and password change revoke
+    sessions via Better Auth.
 
 11. **drizzle-orm single-instance rule.** better-auth introduced a second
     peer-variant of drizzle-orm in the dependency graph, splitting column

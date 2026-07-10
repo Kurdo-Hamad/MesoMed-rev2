@@ -9,7 +9,13 @@ export const PROVIDER_STATUSES = ["pending", "approved", "rejected"] as const;
 export type ProviderStatus = (typeof PROVIDER_STATUSES)[number];
 
 /** Provider categories per MM-DEC rev02 §3 (secretaries/admins are roles, not provider types). */
-export const PROVIDER_TYPES = ["doctor", "hospital", "laboratory", "pharmacy", "home_nursing"] as const;
+export const PROVIDER_TYPES = [
+  "doctor",
+  "hospital",
+  "laboratory",
+  "pharmacy",
+  "home_nursing",
+] as const;
 export type ProviderType = (typeof PROVIDER_TYPES)[number];
 
 export const CLAIM_PROOFS = ["otp-verified-phone", "verified-email"] as const;

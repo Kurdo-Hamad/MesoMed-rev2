@@ -40,7 +40,12 @@ describe("identity event contracts", () => {
     });
     expect(parsed.payload.userType).toBe("patient");
     expect(() =>
-      userRegisteredV1.payload.parse({ userId: "u1", userType: "visitor", phone: null, email: null }),
+      userRegisteredV1.payload.parse({
+        userId: "u1",
+        userType: "visitor",
+        phone: null,
+        email: null,
+      }),
     ).toThrow();
   });
 
@@ -108,7 +113,11 @@ describe("identity event contracts", () => {
     });
     expect(payload.recoveredBy).toBe("admin1");
     expect(() =>
-      providerRecoveredV1.payload.parse({ providerProfileId: "pp1", userId: "u1", recoveredBy: "admin1" }),
+      providerRecoveredV1.payload.parse({
+        providerProfileId: "pp1",
+        userId: "u1",
+        recoveredBy: "admin1",
+      }),
     ).toThrow();
   });
 });

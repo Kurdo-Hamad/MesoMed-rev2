@@ -4,9 +4,7 @@ import { isPlaceholderEmail, placeholderEmailForPhone } from "./placeholder-emai
 
 describe("placeholder emails for phone-keyed accounts", () => {
   it("derives a deterministic placeholder from a normalized phone", () => {
-    expect(placeholderEmailForPhone("+9647701234567")).toBe(
-      "p9647701234567@phone.mesomed.invalid",
-    );
+    expect(placeholderEmailForPhone("+9647701234567")).toBe("p9647701234567@phone.mesomed.invalid");
   });
 
   it("uses the reserved .invalid TLD so mail can never route", () => {

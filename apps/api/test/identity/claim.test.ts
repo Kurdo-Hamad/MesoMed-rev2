@@ -22,7 +22,12 @@ async function registerAndVerify(
   await app.inject({
     method: "POST",
     url: "/api/auth/sign-up/email",
-    payload: { name, email: placeholderEmailForPhone(phone), password: PASSWORD, phoneNumber: phone },
+    payload: {
+      name,
+      email: placeholderEmailForPhone(phone),
+      password: PASSWORD,
+      phoneNumber: phone,
+    },
   });
   await app.inject({
     method: "POST",
@@ -190,9 +195,10 @@ describe("guest → account claim (MM-DEC rev02 §2, convention #7)", () => {
       payload: { email: address, password: PASSWORD },
     });
     expect(login.statusCode).toBe(200);
-    const cookieHeader = (Array.isArray(login.headers["set-cookie"])
-      ? login.headers["set-cookie"]
-      : [login.headers["set-cookie"]]
+    const cookieHeader = (
+      Array.isArray(login.headers["set-cookie"])
+        ? login.headers["set-cookie"]
+        : [login.headers["set-cookie"]]
     )
       .filter((v): v is string => typeof v === "string")
       .map((v) => v.split(";")[0])
@@ -249,9 +255,10 @@ describe("guest → account claim (MM-DEC rev02 §2, convention #7)", () => {
       url: "/api/auth/sign-in/email",
       payload: { email: address, password: PASSWORD },
     });
-    const cookieHeader = (Array.isArray(login.headers["set-cookie"])
-      ? login.headers["set-cookie"]
-      : [login.headers["set-cookie"]]
+    const cookieHeader = (
+      Array.isArray(login.headers["set-cookie"])
+        ? login.headers["set-cookie"]
+        : [login.headers["set-cookie"]]
     )
       .filter((v): v is string => typeof v === "string")
       .map((v) => v.split(";")[0])

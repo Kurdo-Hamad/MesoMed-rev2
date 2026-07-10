@@ -22,7 +22,11 @@ export async function setProviderStatus(
   input: SetProviderStatusInput,
 ): Promise<{ providerProfileId: string; status: "pending" | "approved" | "rejected" }> {
   const [profile] = await tx
-    .select({ id: providerProfiles.id, userId: providerProfiles.userId, status: providerProfiles.status })
+    .select({
+      id: providerProfiles.id,
+      userId: providerProfiles.userId,
+      status: providerProfiles.status,
+    })
     .from(providerProfiles)
     .where(eq(providerProfiles.id, input.providerProfileId))
     .for("update");
@@ -30,10 +34,7 @@ export async function setProviderStatus(
     throw new AppError(ErrorCode.NOT_FOUND, "Provider profile not found");
   }
   if (profile.status === input.status) {
-    throw new AppError(
-      ErrorCode.INVALID_STATUS_TRANSITION,
-      `Provider is already ${input.status}`,
-    );
+    throw new AppError(ErrorCode.INVALID_STATUS_TRANSITION, `Provider is already ${input.status}`);
   }
 
   const [updated] = await tx

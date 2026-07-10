@@ -204,9 +204,9 @@ describe("provider accounts (email+password, verified email, pending gate)", () 
       headers: { cookie: adminCookie },
     });
     expect(pending.statusCode).toBe(200);
-    expect(pending.json().result.data.map((p: { providerProfileId: string }) => p.providerProfileId)).toContain(
-      providerProfileId,
-    );
+    expect(
+      pending.json().result.data.map((p: { providerProfileId: string }) => p.providerProfileId),
+    ).toContain(providerProfileId);
 
     const res = await app.inject({
       method: "POST",

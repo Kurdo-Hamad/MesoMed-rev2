@@ -30,7 +30,9 @@ describe("createMockOtpChannel", () => {
     const channel = createMockOtpChannel("sms");
     channel.failing = true;
 
-    await expect(channel.send({ to: "+9647701234567", code: "1", locale: "ar" })).rejects.toMatchObject({
+    await expect(
+      channel.send({ to: "+9647701234567", code: "1", locale: "ar" }),
+    ).rejects.toMatchObject({
       channel: "sms",
     });
   });

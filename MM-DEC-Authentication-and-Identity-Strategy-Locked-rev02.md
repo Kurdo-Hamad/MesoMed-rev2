@@ -86,7 +86,7 @@ Maintain a premium, persistent-login mobile experience (users stay signed in unt
 
 ## 8. OTP Delivery Implementation **[rev02]**
 
-OTP is delivered WhatsApp-first, SMS-fallback, behind a single `OtpChannel` adapter interface (per MM-PLAN-001 §3.8). A **mock/log OTP provider** is used through Phase 2 — the verification flow, code storage, expiry, rate limiting, and success/failure handling are all real and tested against the mock. The real Meta WhatsApp Cloud API and SMS providers are wired in Phase 7. The Phase 2 gate proves OTP *logic* end-to-end; real message delivery is proven in Phase 7.
+OTP is delivered WhatsApp-first, SMS-fallback, behind a single `OtpChannel` adapter interface (per MM-PLAN-001 §3.8). A **mock/log OTP provider** is used through Phase 2 — the verification flow, code storage, expiry, rate limiting, and success/failure handling are all real and tested against the mock. The real Meta WhatsApp Cloud API and SMS providers are wired in Phase 7. The Phase 2 gate proves OTP _logic_ end-to-end; real message delivery is proven in Phase 7.
 
 ## 9. Identity Model Summary **[rev02]**
 

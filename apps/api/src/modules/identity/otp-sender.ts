@@ -79,7 +79,10 @@ export function createOtpSender(deps: {
       try {
         await deps.channels.whatsapp.send(message);
       } catch (whatsappError) {
-        deps.log.warn({ err: whatsappError, phoneNumber }, "whatsapp OTP failed, falling back to sms");
+        deps.log.warn(
+          { err: whatsappError, phoneNumber },
+          "whatsapp OTP failed, falling back to sms",
+        );
         try {
           await deps.channels.sms.send(message);
         } catch (smsError) {

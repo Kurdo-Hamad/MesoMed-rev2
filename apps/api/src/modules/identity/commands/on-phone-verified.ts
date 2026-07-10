@@ -18,10 +18,7 @@ export type OnPhoneVerified = (input: { userId: string; phoneNumber: string }) =
 export function createOnPhoneVerified(deps: { db: Db; outbox: OutboxEmitter }): OnPhoneVerified {
   return async ({ userId, phoneNumber }) => {
     await deps.db.transaction(async (tx) => {
-      const [account] = await tx
-        .select({ name: user.name })
-        .from(user)
-        .where(eq(user.id, userId));
+      const [account] = await tx.select({ name: user.name }).from(user).where(eq(user.id, userId));
 
       await ensurePatientRegistration(tx, deps.outbox, {
         userId,

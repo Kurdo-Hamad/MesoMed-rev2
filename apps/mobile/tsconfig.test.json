@@ -2,13 +2,7 @@
   "extends": "@mesomed/typescript-config/base.json",
   "compilerOptions": {
     "noEmit": true,
-    "types": [
-      "node"
-    ]
+    "types": ["node"]
   },
-  "include": [
-    "test",
-    "lib/create-auth-client.ts",
-    "vitest.config.ts"
-  ]
+  "include": ["test", "lib/create-auth-client.ts", "vitest.config.ts"]
 }

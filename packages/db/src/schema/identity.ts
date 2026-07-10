@@ -116,7 +116,10 @@ export const userRoles = pgTable(
   },
   (table) => [
     uniqueIndex("user_roles_user_id_role_unique").on(table.userId, table.role),
-    check("user_roles_role_check", sql`${table.role} in ('patient', 'doctor', 'secretary', 'admin')`),
+    check(
+      "user_roles_role_check",
+      sql`${table.role} in ('patient', 'doctor', 'secretary', 'admin')`,
+    ),
   ],
 );
 
