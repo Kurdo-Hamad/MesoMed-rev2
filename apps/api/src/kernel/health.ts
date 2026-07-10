@@ -1,4 +1,3 @@
-import { sql } from "drizzle-orm";
 import {
   healthResponseSchema,
   readinessResponseSchema,
@@ -6,7 +5,7 @@ import {
   type ReadinessCheck,
   type ReadinessResponse,
 } from "@mesomed/contracts/health";
-import { expectedMigrationCount, MIGRATIONS_SCHEMA, MIGRATIONS_TABLE, type Db } from "@mesomed/db";
+import { type Db, MIGRATIONS_SCHEMA, MIGRATIONS_TABLE, expectedMigrationCount, sql } from "@mesomed/db";
 
 /**
  * Liveness/readiness split (MM-QA-001 F-13): `/health` says the process is

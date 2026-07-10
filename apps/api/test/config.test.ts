@@ -1,9 +1,8 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { eq } from "drizzle-orm";
 import { z } from "zod";
 import type { FastifyInstance } from "fastify";
 import { ErrorCode } from "@mesomed/contracts/errors";
-import { configEntries } from "@mesomed/db";
+import { configEntries, eq } from "@mesomed/db";
 import { createTestDatabase, type TestDatabase } from "@mesomed/db/testing";
 import { buildServer } from "../src/app.js";
 import { AppError } from "../src/kernel/errors.js";

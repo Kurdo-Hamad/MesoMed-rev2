@@ -1,6 +1,6 @@
-import en from "./messages/en.json";
-import ar from "./messages/ar.json";
-import ckb from "./messages/ckb.json";
+import en from "./messages/en.json" with { type: "json" };
+import ar from "./messages/ar.json" with { type: "json" };
+import ckb from "./messages/ckb.json" with { type: "json" };
 import { DEFAULT_LOCALE, type Locale } from "@mesomed/contracts/i18n";
 
 /** ckb (Central Kurdish/Sorani) is the platform default per MM-PLAN-001 §1. */

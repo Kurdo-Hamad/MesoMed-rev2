@@ -1,6 +1,5 @@
-import { sql } from "drizzle-orm";
 import { outboxStatsResponseSchema, whoamiResponseSchema } from "@mesomed/contracts/system";
-import { domainEvents } from "@mesomed/db";
+import { domainEvents, sql } from "@mesomed/db";
 import { roleProcedure } from "../kernel/authz.js";
 import { publicProcedure, router } from "../kernel/trpc.js";
 

@@ -41,6 +41,9 @@ importers:
       '@mesomed/domain':
         specifier: workspace:*
         version: link:../../packages/domain
+      '@mesomed/i18n':
+        specifier: workspace:*
+        version: link:../../packages/i18n
       '@mesomed/platform':
         specifier: workspace:*
         version: link:../../packages/platform

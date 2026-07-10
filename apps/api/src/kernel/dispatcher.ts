@@ -1,8 +1,7 @@
 import { PgBoss } from "pg-boss";
-import { eq, sql } from "drizzle-orm";
 import type { FastifyBaseLogger } from "fastify";
 import type { EventRegistry } from "@mesomed/contracts/events";
-import { domainEvents, processedEvents, type Db } from "@mesomed/db";
+import { type Db, domainEvents, eq, processedEvents, sql } from "@mesomed/db";
 import type { HandlerRegistry } from "./events.js";
 
 /**
