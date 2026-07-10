@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { FastifyInstance } from "fastify";
 import { createEventRegistry } from "@mesomed/contracts/events";
 import { ErrorCode } from "@mesomed/contracts/errors";
-import { createMockOtpChannel } from "@mesomed/platform";
+import { createMockEmailChannel, createMockOtpChannel } from "@mesomed/platform";
 import { placeholderEmailForPhone } from "@mesomed/domain/identity";
 import { createTestDatabase, type TestDatabase } from "@mesomed/db/testing";
 import { domainEvents, eq, patientProfiles, user, userRoles } from "@mesomed/db";
@@ -42,11 +42,13 @@ describe("guest → account claim (MM-DEC rev02 §2, convention #7)", () => {
   let app: FastifyInstance;
   const whatsapp = createMockOtpChannel("whatsapp");
   const sms = createMockOtpChannel("sms");
+  const email = createMockEmailChannel();
 
   beforeAll(async () => {
     tdb = await createTestDatabase();
     app = await buildServer(testEnv(tdb.connectionString), {
       otpChannels: { whatsapp, sms },
+      emailChannel: email,
     });
     await app.ready();
   });
@@ -159,6 +161,116 @@ describe("guest → account claim (MM-DEC rev02 §2, convention #7)", () => {
       .from(patientProfiles)
       .where(eq(patientProfiles.normalizedPhone, "+9647704000003"));
     expect(none).toHaveLength(0);
+  });
+
+  it("claims via the verified-email path: guest email matches the account's verified email", async () => {
+    const phone = "+9647704000010";
+    const address = "email-path@example.com";
+    const { db, outbox } = app.kernel;
+    const guest = await db.transaction((tx) =>
+      createGuestPatientProfile(tx, outbox, {
+        fullName: "Email Path Guest",
+        phone,
+        email: address,
+      }),
+    );
+
+    // Register an email+password account with that address and verify it.
+    await app.inject({
+      method: "POST",
+      url: "/api/auth/sign-up/email",
+      payload: { name: "Email Patient", email: address, password: PASSWORD },
+    });
+    const mailText = email.sent.at(-1)?.text ?? "";
+    const link = new URL(mailText.match(/https?:\/\/\S+/)![0]);
+    await app.inject({ method: "GET", url: link.pathname + link.search });
+    const login = await app.inject({
+      method: "POST",
+      url: "/api/auth/sign-in/email",
+      payload: { email: address, password: PASSWORD },
+    });
+    expect(login.statusCode).toBe(200);
+    const cookieHeader = (Array.isArray(login.headers["set-cookie"])
+      ? login.headers["set-cookie"]
+      : [login.headers["set-cookie"]]
+    )
+      .filter((v): v is string => typeof v === "string")
+      .map((v) => v.split(";")[0])
+      .join("; ");
+
+    const claim = await app.inject({
+      method: "POST",
+      url: "/trpc/identity.claimProfile",
+      headers: { cookie: cookieHeader, "content-type": "application/json" },
+      payload: { phone: "0770 400 0010" },
+    });
+    expect(claim.statusCode).toBe(200);
+    expect(claim.json().result.data).toMatchObject({
+      profileId: guest.profileId,
+      proof: "verified-email",
+    });
+
+    const [profile] = await db
+      .select()
+      .from(patientProfiles)
+      .where(eq(patientProfiles.id, guest.profileId));
+    expect(profile?.userId).toBeTruthy();
+
+    // Patient role + registration events for the email-path patient.
+    const roleRows = await db
+      .select()
+      .from(userRoles)
+      .where(eq(userRoles.userId, profile!.userId!));
+    expect(roleRows.map((r) => r.role)).toContain("patient");
+  });
+
+  it("rejects the email path when the guest profile has a different email", async () => {
+    const phone = "+9647704000011";
+    const { db, outbox } = app.kernel;
+    await db.transaction((tx) =>
+      createGuestPatientProfile(tx, outbox, {
+        fullName: "Mismatch Guest",
+        phone,
+        email: "someone-else@example.com",
+      }),
+    );
+
+    const address = "mismatch@example.com";
+    await app.inject({
+      method: "POST",
+      url: "/api/auth/sign-up/email",
+      payload: { name: "Mismatch Patient", email: address, password: PASSWORD },
+    });
+    const mailText = email.sent.at(-1)?.text ?? "";
+    const link = new URL(mailText.match(/https?:\/\/\S+/)![0]);
+    await app.inject({ method: "GET", url: link.pathname + link.search });
+    const login = await app.inject({
+      method: "POST",
+      url: "/api/auth/sign-in/email",
+      payload: { email: address, password: PASSWORD },
+    });
+    const cookieHeader = (Array.isArray(login.headers["set-cookie"])
+      ? login.headers["set-cookie"]
+      : [login.headers["set-cookie"]]
+    )
+      .filter((v): v is string => typeof v === "string")
+      .map((v) => v.split(";")[0])
+      .join("; ");
+
+    const claim = await app.inject({
+      method: "POST",
+      url: "/trpc/identity.claimProfile",
+      headers: { cookie: cookieHeader, "content-type": "application/json" },
+      payload: { phone },
+    });
+    expect(claim.statusCode).toBe(412);
+    expect(claim.json().error.data.appCode).toBe("PHONE_NOT_VERIFIED");
+
+    const [profile] = await db
+      .select()
+      .from(patientProfiles)
+      .where(eq(patientProfiles.normalizedPhone, phone));
+    expect(profile?.userId).toBeNull();
   });
 });
 

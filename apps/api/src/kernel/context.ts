@@ -33,6 +33,8 @@ export interface Context extends KernelRequestServices {
   session: Session | null;
   locale: Locale;
   country: string;
+  /** Raw request — for modules that need protocol data (e.g. auth headers). */
+  req: FastifyRequest;
 }
 
 export const LOCALE_HEADER = "x-mesomed-locale";
@@ -58,6 +60,7 @@ export function createContextFactory(deps: {
   return async ({ req }: CreateFastifyContextOptions): Promise<Context> => ({
     ...deps.services,
     requestId: req.id,
+    req,
     session: await deps.sessionResolver(req),
     locale: requestLocale(req),
     country: requestCountry(req, deps.defaultCountry),

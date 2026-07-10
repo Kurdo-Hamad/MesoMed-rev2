@@ -1,6 +1,8 @@
 import { healthResponseSchema } from "@mesomed/contracts/health";
 import { healthPayload } from "../kernel/health.js";
 import { publicProcedure, router } from "../kernel/trpc.js";
+import { createIdentityRouter } from "../modules/identity/router.js";
+import type { IdentityModule } from "../modules/identity/index.js";
 import { systemRouter } from "./system.js";
 
 const healthRouter = router({
@@ -13,9 +15,12 @@ const healthRouter = router({
  * kernel because it will depend on module routers, which the kernel must
  * never do.
  */
-export const appRouter = router({
-  health: healthRouter,
-  system: systemRouter,
-});
+export function createAppRouter(identity: IdentityModule) {
+  return router({
+    health: healthRouter,
+    system: systemRouter,
+    identity: createIdentityRouter(identity.auth),
+  });
+}
 
-export type AppRouter = typeof appRouter;
+export type AppRouter = ReturnType<typeof createAppRouter>;

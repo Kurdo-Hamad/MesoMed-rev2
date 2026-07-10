@@ -26,3 +26,16 @@ export function requireRole(...allowed: readonly Role[]) {
 export function roleProcedure(...allowed: readonly Role[]) {
   return publicProcedure.use(requireRole(...allowed));
 }
+
+/**
+ * A procedure any authenticated user may call, role or not — e.g. a
+ * freshly registered account claiming its profile before any role exists.
+ */
+export const authenticatedProcedure = publicProcedure.use(
+  middleware(async ({ ctx, next }) => {
+    if (!ctx.session) {
+      throw new AppError(ErrorCode.UNAUTHORIZED, "Authentication required");
+    }
+    return next({ ctx: { ...ctx, session: ctx.session } });
+  }),
+);

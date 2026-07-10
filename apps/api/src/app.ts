@@ -22,7 +22,7 @@ import { createIdentityModule, type IdentityModule } from "./modules/identity/in
 import { registerAuthRoutes } from "./modules/identity/routes.js";
 import type { IdentityOtpOptions } from "./modules/identity/auth.js";
 import type { OtpChannels } from "./modules/identity/otp-sender.js";
-import { appRouter } from "./trpc/router.js";
+import { createAppRouter } from "./trpc/router.js";
 
 /** The kernel services the composition root wires, exposed for tests/ops. */
 export interface KernelServices {
@@ -132,7 +132,7 @@ export async function buildServer(
   await app.register(fastifyTRPCPlugin, {
     prefix: "/trpc",
     trpcOptions: {
-      router: appRouter,
+      router: createAppRouter(identity),
       createContext: createContextFactory({
         services: { db, config, outbox },
         sessionResolver: overrides.sessionResolver ?? identity.sessionResolver,
