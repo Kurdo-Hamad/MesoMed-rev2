@@ -10,7 +10,7 @@ outbox on Postgres. Web and mobile are thin clients. The governing documents,
 in order of authority:
 
 1. [MM-PLAN-001](MM-PLAN-001-Execution-Plan.md) — locked stack, layout, conventions, phases and gates
-2. [MM-DEC — Auth & Identity Strategy](MM-DEC-Authentication-and-Identity-Strategy-Locked-rev01.md)
+2. [MM-DEC — Auth & Identity Strategy](MM-DEC-Authentication-and-Identity-Strategy-Locked-rev02.md)
 3. [CLAUDE.md](CLAUDE.md) — session rules for AI-assisted work (conventions verbatim)
 4. [docs/adr/](docs/adr/) — one ADR per locked decision
 5. [MM-QA-001](MM-QA-001-Phase0-Architecture-Audit.md) — Phase 0 architecture audit
