@@ -35,6 +35,11 @@ export const base = tseslint.config(
             "**/*.test.ts",
             "**/*.config.{js,ts,mjs,cjs}",
             "**/eslint.config.js",
+            // Test harnesses shipped as package entrypoints (e.g.
+            // @mesomed/db/testing) may import test-only providers
+            // (testcontainers, embedded-postgres); production entrypoints
+            // never import from src/testing, so these stay devDependencies.
+            "**/src/testing/**",
           ],
         },
       ],

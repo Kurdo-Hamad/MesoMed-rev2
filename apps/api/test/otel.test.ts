@@ -4,6 +4,7 @@ import type { Readable } from "node:stream";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { createTestDatabase, type TestDatabase } from "@mesomed/db/testing";
 
 /**
  * Meta-test for MM-QA-001 F-03: telemetry must demonstrably export trace
@@ -18,6 +19,7 @@ const COLLECTOR_PORT = 43118;
 const apiDir = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 const traceBodies: Buffer[] = [];
+let tdb: TestDatabase;
 let collector: http.Server;
 let api: ChildProcessByStdio<null, Readable, Readable>;
 let apiOutput = "";
@@ -37,6 +39,10 @@ async function waitForHealth(): Promise<void> {
 }
 
 beforeAll(async () => {
+  // The artifact under test is the real server: it refuses to boot without
+  // its database, so the meta-test provisions one like any deployment.
+  tdb = await createTestDatabase();
+
   collector = http.createServer((req, res) => {
     const chunks: Buffer[] = [];
     req.on("data", (chunk: Buffer) => chunks.push(chunk));
@@ -55,6 +61,7 @@ beforeAll(async () => {
       NODE_ENV: "production",
       LOG_LEVEL: "silent",
       PORT: String(API_PORT),
+      DATABASE_URL: tdb.connectionString,
       OTEL_EXPORTER_OTLP_ENDPOINT: `http://127.0.0.1:${COLLECTOR_PORT}`,
     },
     stdio: ["ignore", "pipe", "pipe"],
@@ -69,6 +76,7 @@ beforeAll(async () => {
 afterAll(async () => {
   if (api.exitCode === null) api.kill("SIGKILL");
   await new Promise<void>((resolve) => collector.close(() => resolve()));
+  await tdb.close();
 });
 
 describe("opentelemetry export", () => {

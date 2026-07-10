@@ -3,7 +3,14 @@ packages:
   - "packages/*"
   - "tooling/*"
 allowBuilds:
+  # Postgres 16 binaries for the no-Docker local test-DB fallback
+  # (packages/db test harness); postinstall marks them executable.
+  "@embedded-postgres/linux-x64": true
+  # Optional native accelerators of testcontainers' ssh2 dependency; the
+  # pure-JS fallback is fine for a test harness.
+  cpu-features: false
   esbuild: true
   protobufjs: true
   sharp: true
+  ssh2: false
   unrs-resolver: true

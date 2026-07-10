@@ -1,7 +1,8 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { FastifyInstance } from "fastify";
+import { createTestDatabase, type TestDatabase } from "@mesomed/db/testing";
 import { buildServer } from "../src/app.js";
-import { loadEnv } from "../src/env.js";
+import { testEnv } from "./helpers.js";
 
 const ALLOWED = "https://app.example.test";
 const DISALLOWED = "https://evil.example.test";
@@ -9,17 +10,18 @@ const DISALLOWED = "https://evil.example.test";
 /** Meta-test for MM-QA-001 F-04: the CORS allowlist must demonstrably fire
  * — an inert CORS layer blocked every browser client in Phase 0. */
 describe("cors", () => {
+  let tdb: TestDatabase;
   let app: FastifyInstance;
 
   beforeAll(async () => {
-    app = await buildServer(
-      loadEnv({ NODE_ENV: "test", LOG_LEVEL: "silent", CORS_ORIGINS: ` ${ALLOWED} ` }),
-    );
+    tdb = await createTestDatabase();
+    app = await buildServer(testEnv(tdb.connectionString, { CORS_ORIGINS: ` ${ALLOWED} ` }));
     await app.ready();
   });
 
   afterAll(async () => {
     await app.close();
+    await tdb.close();
   });
 
   it("returns Access-Control-Allow-Origin plus credentials for an allowlisted origin", async () => {

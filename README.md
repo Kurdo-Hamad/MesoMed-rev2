@@ -15,12 +15,20 @@ in order of authority:
 4. [docs/adr/](docs/adr/) — one ADR per locked decision
 5. [MM-QA-001](MM-QA-001-Phase0-Architecture-Audit.md) — Phase 0 architecture audit
 
-**Status:** Phase 0 (Foundation) complete, including the MM-QA-001 pre-Phase-1
-remediation. Phase 1 (Kernel) is next. No business modules exist yet.
+**Status:** Phase 1 (Kernel) complete — transactional outbox + pg-boss
+dispatcher, event contracts, authz middleware, config service, request
+context, and the liveness/readiness split (see `docs/adr/0003`). Phase 2
+(Identity) is next. No business modules exist yet.
 
 ## Prerequisites
 
 - Node 22 (`.nvmrc`), pnpm 11 (`corepack enable` or `npm i -g pnpm@11`)
+- Postgres 16 for running the API locally (`DATABASE_URL`, see
+  `apps/api/.env.example`; apply migrations with
+  `pnpm --filter @mesomed/db db:migrate`). **Tests need no setup**: the test
+  harness provisions its own database — `TEST_DATABASE_URL` if set (CI), a
+  Docker container if a daemon is available, embedded Postgres binaries
+  otherwise.
 
 ## Quickstart
 
@@ -62,6 +70,13 @@ has a meta-test proving it actually fires (a lesson recorded in MM-QA-001):
   built artifact against a mock OTLP collector
 - **CORS allowlist + error-code contract** — `apps/api/test/cors.test.ts`,
   `apps/api/test/errors.test.ts`
+- **Outbox atomicity, exactly-once delivery under retry, dead-lettering** —
+  `apps/api/test/outbox.test.ts`, `apps/api/test/dispatcher.test.ts`
+- **Role guard actually denies** — `apps/api/test/authz.test.ts`
+- **Readiness actually flips when Postgres is unreachable** —
+  `apps/api/test/ready.test.ts`
+- **Event names are branded (`module.event.vN`) and contracts registered** —
+  `packages/contracts/test/events.test.ts`
 
 CI (GitHub Actions) runs lint → typecheck → test → build → format check and a
 Docker image build on every PR and push to `main`. Phase gates are defined in

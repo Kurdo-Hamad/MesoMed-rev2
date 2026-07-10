@@ -1,20 +1,24 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { FastifyInstance } from "fastify";
+import { createTestDatabase, type TestDatabase } from "@mesomed/db/testing";
 import { buildServer } from "../src/app.js";
-import { loadEnv } from "../src/env.js";
+import { testEnv } from "./helpers.js";
 
 /** Exercises the real composition root — not a hand-wired copy of the app
  * (MM-QA-001 F-05). */
 describe("health", () => {
+  let tdb: TestDatabase;
   let app: FastifyInstance;
 
   beforeAll(async () => {
-    app = await buildServer(loadEnv({ NODE_ENV: "test", LOG_LEVEL: "silent" }));
+    tdb = await createTestDatabase();
+    app = await buildServer(testEnv(tdb.connectionString));
     await app.ready();
   });
 
   afterAll(async () => {
     await app.close();
+    await tdb.close();
   });
 
   it("GET /health returns ok", async () => {
@@ -28,5 +32,29 @@ describe("health", () => {
     expect(res.statusCode).toBe(200);
     const body = res.json();
     expect(body.result.data.status).toBe("ok");
+  });
+
+  it("tRPC system.whoami reflects locale/country resolution for anonymous callers", async () => {
+    const res = await app.inject({
+      method: "GET",
+      url: "/trpc/system.whoami",
+      headers: { "x-mesomed-locale": "ar", "x-mesomed-country": "jo" },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json().result.data).toEqual({
+      userId: null,
+      roles: [],
+      locale: "ar",
+      country: "JO",
+    });
+  });
+
+  it("falls back to ckb / IQ when the client sends no or invalid hints", async () => {
+    const res = await app.inject({
+      method: "GET",
+      url: "/trpc/system.whoami",
+      headers: { "x-mesomed-locale": "xx", "x-mesomed-country": "nope" },
+    });
+    expect(res.json().result.data).toMatchObject({ locale: "ckb", country: "IQ" });
   });
 });

@@ -17,6 +17,21 @@ const envSchema = z.object({
         .map((origin) => origin.trim())
         .filter(Boolean),
     ),
+  // Postgres connection for Drizzle and pg-boss. Required: the API refuses
+  // to boot without its database rather than serving half-alive.
+  DATABASE_URL: z.string().min(1),
+  // Country a request is attributed to when the client sends none.
+  // Country/category enablement itself is config-table data (§3.9).
+  DEFAULT_COUNTRY: z
+    .string()
+    .regex(/^[A-Z]{2}$/, "ISO 3166-1 alpha-2, uppercase")
+    .default("IQ"),
+  // Outbox dispatcher tuning. Defaults suit production; tests turn them
+  // down to keep forced-retry scenarios fast.
+  OUTBOX_POLL_INTERVAL_MS: z.coerce.number().int().min(50).default(1_000),
+  OUTBOX_WORKER_POLL_INTERVAL_S: z.coerce.number().min(0.5).default(2),
+  OUTBOX_RETRY_LIMIT: z.coerce.number().int().min(0).default(5),
+  OUTBOX_RETRY_DELAY_S: z.coerce.number().int().min(0).default(2),
   SENTRY_DSN: z.url().optional(),
   OTEL_EXPORTER_OTLP_ENDPOINT: z.url().optional(),
 });

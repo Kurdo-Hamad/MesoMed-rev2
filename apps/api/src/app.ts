@@ -2,18 +2,63 @@ import Fastify, { type FastifyInstance } from "fastify";
 import cors from "@fastify/cors";
 import * as Sentry from "@sentry/node";
 import { fastifyTRPCPlugin } from "@trpc/server/adapters/fastify";
+import { createEventRegistry, type EventRegistry } from "@mesomed/contracts/events";
+import { createDb, type Db } from "@mesomed/db";
+import type pg from "pg";
 import type { Env } from "./env.js";
-import { healthPayload } from "./kernel/health.js";
-import { createContext } from "./trpc/context.js";
+import {
+  anonymousSessionResolver,
+  createContextFactory,
+  type SessionResolver,
+} from "./kernel/context.js";
+import { createConfigService, type ConfigService } from "./kernel/config.js";
+import { createOutboxDispatcher, type OutboxDispatcher } from "./kernel/dispatcher.js";
+import { createHandlerRegistry, type HandlerRegistry } from "./kernel/events.js";
+import { healthPayload, readinessPayload } from "./kernel/health.js";
+import { createOutboxEmitter, type OutboxEmitter } from "./kernel/outbox.js";
 import { appRouter } from "./trpc/router.js";
+
+/** The kernel services the composition root wires, exposed for tests/ops. */
+export interface KernelServices {
+  db: Db;
+  pool: pg.Pool;
+  config: ConfigService;
+  outbox: OutboxEmitter;
+  events: HandlerRegistry;
+  dispatcher: OutboxDispatcher;
+  registry: EventRegistry;
+}
+
+declare module "fastify" {
+  interface FastifyInstance {
+    kernel: KernelServices;
+  }
+}
+
+/**
+ * Explicit composition seams. Phase 2 replaces the session resolver with
+ * Better Auth; modules contribute their event contracts and subscribers
+ * here as they land. Tests inject fixtures through the same seams instead
+ * of hand-wiring a copy of the app (MM-QA-001 F-05).
+ */
+export interface BuildServerOverrides {
+  sessionResolver?: SessionResolver;
+  eventRegistry?: EventRegistry;
+  eventHandlers?: HandlerRegistry;
+}
 
 /**
  * Composition root (MM-PLAN-001 §3.8): constructs the real application —
  * no listening, no telemetry init, no process wiring — so tests exercise
  * the deployable app rather than a hand-wired copy (MM-QA-001 F-05).
- * Phase 1 kernel services and platform adapters are injected here.
+ * Fails fast if Postgres is unreachable: a single-instance API that cannot
+ * reach its database has nothing to serve (readiness covers degradation
+ * after boot).
  */
-export async function buildServer(env: Env): Promise<FastifyInstance> {
+export async function buildServer(
+  env: Env,
+  overrides: BuildServerOverrides = {},
+): Promise<FastifyInstance> {
   const app = Fastify({
     logger: {
       level: env.LOG_LEVEL,
@@ -32,12 +77,50 @@ export async function buildServer(env: Env): Promise<FastifyInstance> {
     credentials: true,
   });
 
+  const { db, pool, close } = createDb(env.DATABASE_URL);
+  // Module event contracts and subscribers accumulate here from Phase 2 on.
+  const registry = overrides.eventRegistry ?? createEventRegistry([]);
+  const events = overrides.eventHandlers ?? createHandlerRegistry();
+  const outbox = createOutboxEmitter(registry);
+  const config = createConfigService(db);
+  const dispatcher = createOutboxDispatcher({
+    connectionString: env.DATABASE_URL,
+    db,
+    registry,
+    handlers: events,
+    log: app.log,
+    pollIntervalMs: env.OUTBOX_POLL_INTERVAL_MS,
+    workerPollIntervalS: env.OUTBOX_WORKER_POLL_INTERVAL_S,
+    retryLimit: env.OUTBOX_RETRY_LIMIT,
+    retryDelayS: env.OUTBOX_RETRY_DELAY_S,
+  });
+
   app.get("/health", async () => healthPayload());
+  app.get("/ready", async (_req, reply) => {
+    const payload = await readinessPayload({ db, dispatcherStarted: dispatcher.isStarted });
+    return reply.code(payload.status === "ready" ? 200 : 503).send(payload);
+  });
 
   await app.register(fastifyTRPCPlugin, {
     prefix: "/trpc",
-    trpcOptions: { router: appRouter, createContext },
+    trpcOptions: {
+      router: appRouter,
+      createContext: createContextFactory({
+        services: { db, config, outbox },
+        sessionResolver: overrides.sessionResolver ?? anonymousSessionResolver,
+        defaultCountry: env.DEFAULT_COUNTRY,
+      }),
+    },
   });
+
+  app.decorate("kernel", { db, pool, config, outbox, events, dispatcher, registry });
+
+  app.addHook("onClose", async () => {
+    await dispatcher.stop();
+    await close();
+  });
+
+  await dispatcher.start();
 
   return app;
 }

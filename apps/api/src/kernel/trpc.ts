@@ -1,7 +1,6 @@
 import { initTRPC } from "@trpc/server";
-import { AppError } from "@mesomed/contracts/errors";
 import type { Context } from "./context.js";
-import { appErrorToTRPCError, toAppCode } from "./errors.js";
+import { AppError, appErrorToTRPCError, toAppCode } from "./errors.js";
 
 /**
  * Typed error codes per MM-PLAN-001 §3.11. The canonical tRPC code in
@@ -23,10 +22,11 @@ const t = initTRPC.context<Context>().create({
 });
 
 /**
- * Handlers throw plain AppErrors; this middleware re-wraps them as
- * properly-mapped TRPCErrors so HTTP statuses survive. (tRPC wraps unknown
- * thrown values as INTERNAL_SERVER_ERROR with `cause` set — without this,
- * an AppError("NOT_FOUND") would answer 500.)
+ * Handlers (and downstream middleware such as the authz guard) throw plain
+ * AppErrors; this middleware re-wraps them as properly-mapped TRPCErrors so
+ * HTTP statuses survive. (tRPC wraps unknown thrown values as
+ * INTERNAL_SERVER_ERROR with `cause` set — without this, an
+ * AppError("NOT_FOUND") would answer 500.)
  */
 const appErrorMiddleware = t.middleware(async ({ next }) => {
   const result = await next();
@@ -36,5 +36,6 @@ const appErrorMiddleware = t.middleware(async ({ next }) => {
   return result;
 });
 
+export const middleware = t.middleware;
 export const router = t.router;
 export const publicProcedure = t.procedure.use(appErrorMiddleware);
