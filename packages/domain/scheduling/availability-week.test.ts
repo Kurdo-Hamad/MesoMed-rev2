@@ -3,23 +3,13 @@
  * Module Owner: Appointments Team
  */
 
-import { describe, it, expect } from 'vitest';
-import type { Slot } from '@/modules/locations/slots';
-import {
-  buildWeekDays,
-  getWeekRangeInZone,
-  WEEK_STARTS_ON,
-} from './availability-week';
+import { describe, it, expect } from "vitest";
+import type { Slot } from "@/modules/locations/slots";
+import { buildWeekDays, getWeekRangeInZone, WEEK_STARTS_ON } from "./availability-week";
 
 // Baghdad is UTC+3 year-round (no DST since 2008).
 // 2026-07-04 is a Saturday; 2026-07-06 is a Monday.
-function baghdadInstant(
-  day: number,
-  hour: number,
-  minute = 0,
-  month = 7,
-  year = 2026
-): Date {
+function baghdadInstant(day: number, hour: number, minute = 0, month = 7, year = 2026): Date {
   return new Date(Date.UTC(year, month - 1, day, hour - 3, minute));
 }
 
@@ -28,35 +18,35 @@ function slotAt(day: number, hour: number, minute = 0, month = 7): Slot {
   return { startsAt, endsAt: new Date(startsAt.getTime() + 30 * 60 * 1000) };
 }
 
-describe('getWeekRangeInZone', () => {
-  it('snaps any instant to the Saturday-start clinic week', () => {
+describe("getWeekRangeInZone", () => {
+  it("snaps any instant to the Saturday-start clinic week", () => {
     expect(WEEK_STARTS_ON).toBe(6); // Saturday — Iraq calendar convention
 
     // Monday 15:00 Baghdad → week is Sat 2026-07-04 .. Fri 2026-07-10.
     const range = getWeekRangeInZone(baghdadInstant(6, 15));
-    expect(range.from.toISOString()).toBe('2026-07-03T21:00:00.000Z');
-    expect(range.to.toISOString()).toBe('2026-07-10T21:00:00.000Z');
+    expect(range.from.toISOString()).toBe("2026-07-03T21:00:00.000Z");
+    expect(range.to.toISOString()).toBe("2026-07-10T21:00:00.000Z");
   });
 
-  it('keeps an instant exactly at week start in the same week', () => {
+  it("keeps an instant exactly at week start in the same week", () => {
     const range = getWeekRangeInZone(baghdadInstant(4, 0));
-    expect(range.from.toISOString()).toBe('2026-07-03T21:00:00.000Z');
-    expect(range.to.toISOString()).toBe('2026-07-10T21:00:00.000Z');
+    expect(range.from.toISOString()).toBe("2026-07-03T21:00:00.000Z");
+    expect(range.to.toISOString()).toBe("2026-07-10T21:00:00.000Z");
   });
 
-  it('spans month boundaries', () => {
+  it("spans month boundaries", () => {
     // Wednesday 2026-07-01 → week starts Saturday 2026-06-27.
     const range = getWeekRangeInZone(baghdadInstant(1, 10));
-    expect(range.from.toISOString()).toBe('2026-06-26T21:00:00.000Z');
-    expect(range.to.toISOString()).toBe('2026-07-03T21:00:00.000Z');
+    expect(range.from.toISOString()).toBe("2026-06-26T21:00:00.000Z");
+    expect(range.to.toISOString()).toBe("2026-07-03T21:00:00.000Z");
   });
 });
 
-describe('buildWeekDays', () => {
+describe("buildWeekDays", () => {
   // "Now" is Monday 2026-07-06 10:00 Baghdad for most tests.
   const NOW = baghdadInstant(6, 10);
 
-  it('returns 7 days from Saturday with clinic-timezone dates and weekdays', () => {
+  it("returns 7 days from Saturday with clinic-timezone dates and weekdays", () => {
     const days = buildWeekDays({
       anchor: NOW,
       scheduledWeekdays: new Set(),
@@ -66,18 +56,18 @@ describe('buildWeekDays', () => {
 
     expect(days).toHaveLength(7);
     expect(days.map((d) => d.date)).toEqual([
-      '2026-07-04',
-      '2026-07-05',
-      '2026-07-06',
-      '2026-07-07',
-      '2026-07-08',
-      '2026-07-09',
-      '2026-07-10',
+      "2026-07-04",
+      "2026-07-05",
+      "2026-07-06",
+      "2026-07-07",
+      "2026-07-08",
+      "2026-07-09",
+      "2026-07-10",
     ]);
     expect(days.map((d) => d.dayOfWeek)).toEqual([6, 0, 1, 2, 3, 4, 5]);
   });
 
-  it('marks days open only when the weekday has a schedule', () => {
+  it("marks days open only when the weekday has a schedule", () => {
     const days = buildWeekDays({
       anchor: NOW,
       scheduledWeekdays: new Set([1, 3]), // Monday, Wednesday
@@ -96,7 +86,7 @@ describe('buildWeekDays', () => {
     ]);
   });
 
-  it('groups slots into their clinic-timezone calendar day', () => {
+  it("groups slots into their clinic-timezone calendar day", () => {
     const monday = slotAt(6, 11);
     const wednesday = slotAt(8, 9);
     const days = buildWeekDays({
@@ -111,7 +101,7 @@ describe('buildWeekDays', () => {
     expect(days.flatMap((d) => d.slots)).toHaveLength(2);
   });
 
-  it('drops past slots for today and everything on past days', () => {
+  it("drops past slots for today and everything on past days", () => {
     const days = buildWeekDays({
       anchor: NOW,
       scheduledWeekdays: new Set([0, 1]),
@@ -126,7 +116,7 @@ describe('buildWeekDays', () => {
     ]);
   });
 
-  it('flags today and past days relative to now in the clinic timezone', () => {
+  it("flags today and past days relative to now in the clinic timezone", () => {
     const days = buildWeekDays({
       anchor: NOW,
       scheduledWeekdays: new Set(),
@@ -154,7 +144,7 @@ describe('buildWeekDays', () => {
     ]);
   });
 
-  it('handles a future week (nothing past, nothing today)', () => {
+  it("handles a future week (nothing past, nothing today)", () => {
     const nextWeekAnchor = baghdadInstant(13, 12); // Monday next week
     const days = buildWeekDays({
       anchor: nextWeekAnchor,
@@ -163,7 +153,7 @@ describe('buildWeekDays', () => {
       now: NOW,
     });
 
-    expect(days[0].date).toBe('2026-07-11');
+    expect(days[0].date).toBe("2026-07-11");
     expect(days.every((d) => !d.isToday && !d.isPast)).toBe(true);
     expect(days[2].slots).toHaveLength(1);
   });

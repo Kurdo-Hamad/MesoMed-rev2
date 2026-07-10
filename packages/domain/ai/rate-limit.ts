@@ -18,11 +18,7 @@ interface Bucket {
 
 const buckets = new Map<string, Bucket>();
 
-export function checkRateLimit(
-  key: string,
-  opts: RateLimitOptions,
-  nowMs: number
-): boolean {
+export function checkRateLimit(key: string, opts: RateLimitOptions, nowMs: number): boolean {
   let bucket = buckets.get(key);
   if (!bucket) {
     bucket = { tokens: opts.capacity, lastRefill: nowMs };

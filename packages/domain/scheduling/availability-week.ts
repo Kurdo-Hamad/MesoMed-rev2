@@ -8,12 +8,7 @@
  * instant. Powers the weekly booking calendar.
  */
 
-import {
-  CLINIC_TIME_ZONE,
-  getZoneCalendarDate,
-  zonedTimeToUtc,
-  type Slot,
-} from './slots.js';
+import { CLINIC_TIME_ZONE, getZoneCalendarDate, zonedTimeToUtc, type Slot } from "./slots.js";
 
 /** First day of the clinic week: Saturday (Iraq calendar convention). */
 export const WEEK_STARTS_ON = 6;
@@ -66,17 +61,14 @@ export interface SerializedDaySummary {
 }
 
 /** Full date + time label for one slot instant (shared with /book). */
-export function formatSlotDateTimeLabel(
-  startsAt: Date,
-  locale: string
-): string {
+export function formatSlotDateTimeLabel(startsAt: Date, locale: string): string {
   return new Intl.DateTimeFormat(locale, {
     timeZone: CLINIC_TIME_ZONE,
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    hour: '2-digit',
-    minute: '2-digit',
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    hour: "2-digit",
+    minute: "2-digit",
   }).format(startsAt);
 }
 
@@ -84,18 +76,18 @@ export function serializeWeekDays(
   days: DaySummary[],
   locale: string,
   /** Translated count message, e.g. next-intl `t('availableCount', {count})`. */
-  formatAvailableCount: (count: number) => string
+  formatAvailableCount: (count: number) => string,
 ): SerializedDaySummary[] {
   const part = (options: Intl.DateTimeFormatOptions) =>
     new Intl.DateTimeFormat(locale, {
       timeZone: CLINIC_TIME_ZONE,
       ...options,
     });
-  const weekday = part({ weekday: 'short' });
-  const dayNumber = part({ day: 'numeric' });
-  const monthDay = part({ day: 'numeric', month: 'short' });
-  const full = part({ weekday: 'long', day: 'numeric', month: 'long' });
-  const time = part({ hour: '2-digit', minute: '2-digit' });
+  const weekday = part({ weekday: "short" });
+  const dayNumber = part({ day: "numeric" });
+  const monthDay = part({ day: "numeric", month: "short" });
+  const full = part({ weekday: "long", day: "numeric", month: "long" });
+  const time = part({ hour: "2-digit", minute: "2-digit" });
 
   return days.map((d) => {
     // Noon UTC of a clinic-tz date is unambiguously within that day.
@@ -109,8 +101,7 @@ export function serializeWeekDays(
       dayLabel: dayNumber.format(date),
       monthDayLabel: monthDay.format(date),
       fullLabel: full.format(date),
-      availableCountLabel:
-        d.slots.length > 0 ? formatAvailableCount(d.slots.length) : '',
+      availableCountLabel: d.slots.length > 0 ? formatAvailableCount(d.slots.length) : "",
       slots: d.slots.map((s) => ({
         startsAt: s.startsAt.toISOString(),
         endsAt: s.endsAt.toISOString(),
@@ -142,16 +133,12 @@ function addDays(date: CalendarDate, days: number): CalendarDate {
 }
 
 function toISODate(date: CalendarDate): string {
-  const pad = (n: number) => String(n).padStart(2, '0');
+  const pad = (n: number) => String(n).padStart(2, "0");
   return `${date.year}-${pad(date.month)}-${pad(date.day)}`;
 }
 
 /** Clinic-timezone calendar date of the first day of the week containing `instant`. */
-function weekStartDate(
-  instant: Date,
-  timeZone: string,
-  weekStartsOn: number
-): CalendarDate {
+function weekStartDate(instant: Date, timeZone: string, weekStartsOn: number): CalendarDate {
   const date = getZoneCalendarDate(instant, timeZone);
   const back = (weekdayOf(date) - weekStartsOn + 7) % 7;
   return addDays(date, -back);
@@ -164,7 +151,7 @@ function weekStartDate(
 export function getWeekRangeInZone(
   instant: Date,
   timeZone: string = CLINIC_TIME_ZONE,
-  weekStartsOn: number = WEEK_STARTS_ON
+  weekStartsOn: number = WEEK_STARTS_ON,
 ): { from: Date; to: Date } {
   const start = weekStartDate(instant, timeZone, weekStartsOn);
   const end = addDays(start, 7);
@@ -211,9 +198,7 @@ export function buildWeekDays(options: {
       isOpen: scheduledWeekdays.has(weekdayOf(date)),
       isToday: toISODate(date) === todayISO,
       isPast: dayTo.getTime() <= now.getTime(),
-      slots: slots.filter(
-        (s) => s.startsAt >= dayFrom && s.startsAt < dayTo && s.startsAt > now
-      ),
+      slots: slots.filter((s) => s.startsAt >= dayFrom && s.startsAt < dayTo && s.startsAt > now),
     });
   }
   return days;

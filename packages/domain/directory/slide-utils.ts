@@ -11,7 +11,7 @@
  * implementation without modification.
  */
 
-import type { HeroSlide } from './types';
+import type { HeroSlide } from "./types";
 
 /**
  * Filter and order hero slides for display.
@@ -34,7 +34,7 @@ import type { HeroSlide } from './types';
 export function getEligibleHeroSlides(
   slides: HeroSlide[],
   now: Date,
-  cityKey?: string
+  cityKey?: string,
 ): HeroSlide[] {
   return slides
     .filter((slide) => {

@@ -9,31 +9,31 @@ export const MAX_SYMPTOM_TEXT_CHARS = 1000;
 /** Strip control characters (replaced with a space) and cap length. */
 export function sanitizeSymptomText(raw: string): string {
   // eslint-disable-next-line no-control-regex
-  const stripped = raw.replace(/[\u0000-\u001F\u007F]/g, ' ').trim();
-  const collapsed = stripped.replace(/\s+/g, ' ');
+  const stripped = raw.replace(/[\u0000-\u001F\u007F]/g, " ").trim();
+  const collapsed = stripped.replace(/\s+/g, " ");
   return collapsed.slice(0, MAX_SYMPTOM_TEXT_CHARS);
 }
 
 const ENGLISH_RED_FLAGS = [
-  'chest pain',
-  'suicid',
-  'overdose',
-  'stroke',
-  'heart attack',
-  'severe bleeding',
+  "chest pain",
+  "suicid",
+  "overdose",
+  "stroke",
+  "heart attack",
+  "severe bleeding",
   "can't breathe",
 ];
 
 const ARABIC_RED_FLAGS = [
-  'ألم في الصدر',
-  'انتحار',
-  'جرعة زائدة',
-  'سكتة دماغية',
-  'نزيف حاد',
-  'نوبة قلبية',
+  "ألم في الصدر",
+  "انتحار",
+  "جرعة زائدة",
+  "سكتة دماغية",
+  "نزيف حاد",
+  "نوبة قلبية",
 ];
 
-const KURDISH_RED_FLAGS = ['ئازاری سنگ', 'خۆکوشتن', 'هەناسەم تەنگ'];
+const KURDISH_RED_FLAGS = ["ئازاری سنگ", "خۆکوشتن", "هەناسەم تەنگ"];
 
 /** Deterministic trilingual emergency-keyword screen. Runs before any LLM call. */
 export function containsRedFlag(text: string): boolean {
@@ -44,12 +44,12 @@ export function containsRedFlag(text: string): boolean {
   return false;
 }
 
-const DELIMITER_OPEN = '<<<SYMPTOM_DESCRIPTION';
-const DELIMITER_CLOSE = 'SYMPTOM_DESCRIPTION>>>';
+const DELIMITER_OPEN = "<<<SYMPTOM_DESCRIPTION";
+const DELIMITER_CLOSE = "SYMPTOM_DESCRIPTION>>>";
 
 /** Wrap user text so it cannot forge/close the delimiter block (prompt-injection defense). */
 export function delimitUserText(text: string): string {
-  const neutralized = text.replaceAll('<<<', '‹‹‹').replaceAll('>>>', '›››');
+  const neutralized = text.replaceAll("<<<", "‹‹‹").replaceAll(">>>", "›››");
   return `${DELIMITER_OPEN}\n${neutralized}\n${DELIMITER_CLOSE}`;
 }
 
@@ -74,11 +74,11 @@ export function parseTriageResponse(raw: string): TriageResponseShape | null {
     return null;
   }
 
-  if (typeof parsed !== 'object' || parsed === null) return null;
+  if (typeof parsed !== "object" || parsed === null) return null;
   const obj = parsed as Record<string, unknown>;
   if (!Array.isArray(obj.specialties)) return null;
-  if (!obj.specialties.every((s) => typeof s === 'string')) return null;
-  if (typeof obj.red_flag !== 'boolean') return null;
+  if (!obj.specialties.every((s) => typeof s === "string")) return null;
+  if (typeof obj.red_flag !== "boolean") return null;
 
   return { specialties: obj.specialties as string[], red_flag: obj.red_flag };
 }
@@ -86,7 +86,7 @@ export function parseTriageResponse(raw: string): TriageResponseShape | null {
 /** Intersect model/keyword output against the live DB whitelist; cap 3, dedupe. */
 export function intersectWithWhitelist(
   specialties: string[],
-  whitelist: ReadonlySet<string>
+  whitelist: ReadonlySet<string>,
 ): string[] {
   const result: string[] = [];
   const seen = new Set<string>();
@@ -111,10 +111,7 @@ export interface KeywordSymptomEntry {
 }
 
 /** Deterministic trilingual substring match fallback (no API key / model failure). */
-export function matchSymptomKeywords(
-  text: string,
-  entries: KeywordSymptomEntry[]
-): string[] {
+export function matchSymptomKeywords(text: string, entries: KeywordSymptomEntry[]): string[] {
   const lower = text.toLowerCase();
   const result: string[] = [];
   const seen = new Set<string>();

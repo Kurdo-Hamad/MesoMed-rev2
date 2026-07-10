@@ -9,7 +9,7 @@
  * instants for a given date range.
  */
 
-export const CLINIC_TIME_ZONE = 'Asia/Baghdad';
+export const CLINIC_TIME_ZONE = "Asia/Baghdad";
 
 export interface ScheduleBreakInput {
   /** "HH:MM" or "HH:MM:SS" wall-clock time */
@@ -41,7 +41,7 @@ export interface Slot {
 
 /** Minutes since midnight for a "HH:MM[:SS]" string. Seconds are ignored. */
 function parseTimeToMinutes(time: string): number {
-  const [h, m] = time.split(':');
+  const [h, m] = time.split(":");
   return Number(h) * 60 + Number(m);
 }
 
@@ -50,15 +50,15 @@ function parseTimeToMinutes(time: string): number {
  * Uses Intl so DST/history rules are correct without a tz library.
  */
 function getTimeZoneOffsetMs(date: Date, timeZone: string): number {
-  const dtf = new Intl.DateTimeFormat('en-US', {
+  const dtf = new Intl.DateTimeFormat("en-US", {
     timeZone,
     hour12: false,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
   });
   const parts: Record<string, string> = {};
   for (const p of dtf.formatToParts(date)) {
@@ -70,7 +70,7 @@ function getTimeZoneOffsetMs(date: Date, timeZone: string): number {
     Number(parts.day),
     Number(parts.hour) % 24, // Intl can emit "24" for midnight
     Number(parts.minute),
-    Number(parts.second)
+    Number(parts.second),
   );
   return asUtc - date.getTime();
 }
@@ -85,7 +85,7 @@ export function zonedTimeToUtc(
   month: number, // 1-12
   day: number,
   minutesSinceMidnight: number,
-  timeZone: string
+  timeZone: string,
 ): Date {
   const wallTicks = Date.UTC(year, month - 1, day, 0, minutesSinceMidnight);
   const offset1 = getTimeZoneOffsetMs(new Date(wallTicks), timeZone);
@@ -100,24 +100,19 @@ export function zonedTimeToUtc(
 /** Calendar date (in `timeZone`) that the instant falls on. */
 export function getZoneCalendarDate(
   date: Date,
-  timeZone: string
+  timeZone: string,
 ): { year: number; month: number; day: number } {
-  const dtf = new Intl.DateTimeFormat('en-CA', {
+  const dtf = new Intl.DateTimeFormat("en-CA", {
     timeZone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
   });
-  const [year, month, day] = dtf.format(date).split('-').map(Number);
+  const [year, month, day] = dtf.format(date).split("-").map(Number);
   return { year, month, day };
 }
 
-function rangesOverlap(
-  aStart: number,
-  aEnd: number,
-  bStart: number,
-  bEnd: number
-): boolean {
+function rangesOverlap(aStart: number, aEnd: number, bStart: number, bEnd: number): boolean {
   return aStart < bEnd && aEnd > bStart;
 }
 
@@ -127,7 +122,7 @@ function rangesOverlap(
  */
 export function getDayRangeInZone(
   instant: Date,
-  timeZone: string = CLINIC_TIME_ZONE
+  timeZone: string = CLINIC_TIME_ZONE,
 ): { from: Date; to: Date } {
   const { year, month, day } = getZoneCalendarDate(instant, timeZone);
   const from = zonedTimeToUtc(year, month, day, 0, timeZone);
@@ -137,7 +132,7 @@ export function getDayRangeInZone(
     next.getUTCMonth() + 1,
     next.getUTCDate(),
     0,
-    timeZone
+    timeZone,
   );
   return { from, to };
 }
@@ -178,9 +173,7 @@ export function generateSlotsForRange(options: {
   while (dayNumber(cursor) <= dayNumber(lastDay)) {
     // Weekday of a calendar date is timezone-independent once we have the
     // local calendar date; Date.UTC gives it without further conversion.
-    const dayOfWeek = new Date(
-      Date.UTC(cursor.year, cursor.month - 1, cursor.day)
-    ).getUTCDay();
+    const dayOfWeek = new Date(Date.UTC(cursor.year, cursor.month - 1, cursor.day)).getUTCDay();
 
     for (const schedule of schedules) {
       if (schedule.dayOfWeek !== dayOfWeek) continue;
@@ -204,20 +197,8 @@ export function generateSlotsForRange(options: {
           continue;
         }
 
-        const startsAt = zonedTimeToUtc(
-          cursor.year,
-          cursor.month,
-          cursor.day,
-          start,
-          timeZone
-        );
-        const endsAt = zonedTimeToUtc(
-          cursor.year,
-          cursor.month,
-          cursor.day,
-          end,
-          timeZone
-        );
+        const startsAt = zonedTimeToUtc(cursor.year, cursor.month, cursor.day, start, timeZone);
+        const endsAt = zonedTimeToUtc(cursor.year, cursor.month, cursor.day, end, timeZone);
 
         if (startsAt < from || endsAt > to) continue;
 
@@ -227,8 +208,8 @@ export function generateSlotsForRange(options: {
               startsAt.getTime(),
               endsAt.getTime(),
               b.startsAt.getTime(),
-              b.endsAt.getTime()
-            )
+              b.endsAt.getTime(),
+            ),
           )
         ) {
           continue;
@@ -239,9 +220,7 @@ export function generateSlotsForRange(options: {
     }
 
     // Advance one calendar day (exact in UTC calendar arithmetic).
-    const next = new Date(
-      Date.UTC(cursor.year, cursor.month - 1, cursor.day + 1)
-    );
+    const next = new Date(Date.UTC(cursor.year, cursor.month - 1, cursor.day + 1));
     cursor = {
       year: next.getUTCFullYear(),
       month: next.getUTCMonth() + 1,

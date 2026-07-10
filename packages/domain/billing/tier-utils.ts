@@ -9,7 +9,7 @@
 /** Lowest tier: the default rank for unassigned or expired listings. */
 export const DEFAULT_TIER_RANK = 3;
 
-export const TIER_KEYS = ['tier_1', 'tier_2', 'tier_3'] as const;
+export const TIER_KEYS = ["tier_1", "tier_2", "tier_3"] as const;
 export type TierKey = (typeof TIER_KEYS)[number];
 
 /**
@@ -21,7 +21,7 @@ export type TierKey = (typeof TIER_KEYS)[number];
 export function effectiveTierRank(
   tierRank: number | null | undefined,
   tierExpiresAt: Date | null | undefined,
-  now: Date = new Date()
+  now: Date = new Date(),
 ): number {
   if (tierRank == null) return DEFAULT_TIER_RANK;
   if (tierExpiresAt != null && tierExpiresAt.getTime() <= now.getTime()) {
@@ -40,12 +40,10 @@ export function effectiveTierRank(
 export function computeNewExpiry(
   currentExpiry: Date | null | undefined,
   periods: number,
-  now: Date = new Date()
+  now: Date = new Date(),
 ): Date {
   const base =
-    currentExpiry != null && currentExpiry.getTime() > now.getTime()
-      ? currentExpiry
-      : now;
+    currentExpiry != null && currentExpiry.getTime() > now.getTime() ? currentExpiry : now;
   return addUtcMonths(base, periods);
 }
 
@@ -64,8 +62,8 @@ function addUtcMonths(date: Date, months: number): Date {
       date.getUTCHours(),
       date.getUTCMinutes(),
       date.getUTCSeconds(),
-      date.getUTCMilliseconds()
-    )
+      date.getUTCMilliseconds(),
+    ),
   );
 }
 
