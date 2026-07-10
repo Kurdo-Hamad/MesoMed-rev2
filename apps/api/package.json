@@ -4,7 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "exports": {
-    "./router": "./src/trpc/router.ts"
+    "./router": "./src/trpc/router.ts",
+    "./app": "./src/app.ts",
+    "./env": "./src/env.ts"
   },
   "scripts": {
     "dev": "tsx watch src/main.ts",
