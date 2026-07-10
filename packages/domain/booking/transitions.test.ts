@@ -13,7 +13,7 @@ import {
   findSlotByStart,
   ACTIVE_APPOINTMENT_STATUSES,
   type AppointmentStatus,
-} from "./transitions";
+} from "./transitions.js";
 
 describe("status transitions", () => {
   it("allows the happy path chain", () => {
@@ -25,7 +25,7 @@ describe("status transitions", () => {
       "completed",
     ];
     for (let i = 0; i < chain.length - 1; i++) {
-      expect(canTransition(chain[i], chain[i + 1])).toBe(true);
+      expect(canTransition(chain[i]!, chain[i + 1]!)).toBe(true);
     }
   });
 
@@ -101,8 +101,8 @@ describe("slot-conflict logic", () => {
     const busy = [interval(9, 30, 10, 0)];
     const free = subtractBusyIntervals(slots, busy);
     expect(free).toHaveLength(2);
-    expect(free[0].startsAt).toEqual(at(9, 0));
-    expect(free[1].startsAt).toEqual(at(10, 0));
+    expect(free[0]!.startsAt).toEqual(at(9, 0));
+    expect(free[1]!.startsAt).toEqual(at(10, 0));
   });
 
   it("returns all slots when nothing is busy", () => {

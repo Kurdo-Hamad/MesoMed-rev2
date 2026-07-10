@@ -7,7 +7,7 @@ import {
   intersectWithWhitelist,
   matchSymptomKeywords,
   MAX_SYMPTOM_TEXT_CHARS,
-} from "./symptom-triage-utils";
+} from "./symptom-triage-utils.js";
 import { checkRateLimit } from "./rate-limit.js";
 
 describe("sanitizeSymptomText", () => {

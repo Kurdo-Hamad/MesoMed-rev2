@@ -11,7 +11,7 @@
  * implementation without modification.
  */
 
-import type { HeroSlide } from "./types";
+import type { HeroSlide } from "./types.js";
 
 /**
  * Filter and order hero slides for display.

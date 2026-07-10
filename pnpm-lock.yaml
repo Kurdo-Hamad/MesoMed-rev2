@@ -315,6 +315,9 @@ importers:
       '@mesomed/typescript-config':
         specifier: workspace:*
         version: link:../../tooling/typescript-config
+      '@types/node':
+        specifier: ^22.20.1
+        version: 22.20.1
       typescript:
         specifier: ~6.0.3
         version: 6.0.3

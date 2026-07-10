@@ -108,8 +108,8 @@ export function getZoneCalendarDate(
     month: "2-digit",
     day: "2-digit",
   });
-  const [year, month, day] = dtf.format(date).split("-").map(Number);
-  return { year, month, day };
+  const parts = dtf.format(date).split("-");
+  return { year: Number(parts[0]), month: Number(parts[1]), day: Number(parts[2]) };
 }
 
 function rangesOverlap(aStart: number, aEnd: number, bStart: number, bEnd: number): boolean {

@@ -4,7 +4,7 @@ import {
   computeNewExpiry,
   galleryCapForRank,
   DEFAULT_TIER_RANK,
-} from "./tier-utils";
+} from "./tier-utils.js";
 
 const NOW = new Date("2026-07-07T12:00:00Z");
 

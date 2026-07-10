@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { getEligibleHeroSlides } from "./slide-utils";
-import type { HeroSlide, LocalizedAlt } from "./types";
+import { getEligibleHeroSlides } from "./slide-utils.js";
+import type { HeroSlide, LocalizedAlt } from "./types.js";
 
 // Helper to create a minimal test slide
 function makeSlide(overrides: Partial<HeroSlide> = {}): HeroSlide {
@@ -54,7 +54,7 @@ describe("getEligibleHeroSlides", () => {
     const result = getEligibleHeroSlides(slides, now);
 
     expect(result).toHaveLength(1);
-    expect(result[0].id).toBe("2");
+    expect(result[0]!.id).toBe("2");
   });
 
   it("should exclude slides after the end window", () => {
@@ -72,7 +72,7 @@ describe("getEligibleHeroSlides", () => {
     const result = getEligibleHeroSlides(slides, now);
 
     expect(result).toHaveLength(1);
-    expect(result[0].id).toBe("2");
+    expect(result[0]!.id).toBe("2");
   });
 
   it("should include slides with NULL start/end dates", () => {
@@ -132,7 +132,7 @@ describe("getEligibleHeroSlides", () => {
     const result = getEligibleHeroSlides(slides, now, cityKey);
 
     expect(result).toHaveLength(1);
-    expect(result[0].id).toBe("1");
+    expect(result[0]!.id).toBe("1");
   });
 
   it("should sort by priority DESC then displayOrder ASC", () => {
@@ -166,7 +166,7 @@ describe("getEligibleHeroSlides", () => {
 
     // Only slide 2 should match (slide 1 has a city key but no cityKey was provided)
     expect(result).toHaveLength(1);
-    expect(result[0].id).toBe("2");
+    expect(result[0]!.id).toBe("2");
   });
 
   it("should handle combined filtering and sorting", () => {

@@ -4,8 +4,8 @@
  */
 
 import { describe, it, expect } from "vitest";
-import type { Slot } from "@/modules/locations/slots";
-import { buildWeekDays, getWeekRangeInZone, WEEK_STARTS_ON } from "./availability-week";
+import type { Slot } from "./slots.js";
+import { buildWeekDays, getWeekRangeInZone, WEEK_STARTS_ON } from "./availability-week.js";
 
 // Baghdad is UTC+3 year-round (no DST since 2008).
 // 2026-07-04 is a Saturday; 2026-07-06 is a Monday.
@@ -96,8 +96,8 @@ describe("buildWeekDays", () => {
       now: NOW,
     });
 
-    expect(days[2].slots).toEqual([monday]);
-    expect(days[4].slots).toEqual([wednesday]);
+    expect(days[2]!.slots).toEqual([monday]);
+    expect(days[4]!.slots).toEqual([wednesday]);
     expect(days.flatMap((d) => d.slots)).toHaveLength(2);
   });
 
@@ -110,8 +110,8 @@ describe("buildWeekDays", () => {
       now: NOW, // Monday 10:00
     });
 
-    expect(days[1].slots).toEqual([]); // Sunday emptied
-    expect(days[2].slots.map((s) => s.startsAt.toISOString())).toEqual([
+    expect(days[1]!.slots).toEqual([]); // Sunday emptied
+    expect(days[2]!.slots.map((s) => s.startsAt.toISOString())).toEqual([
       baghdadInstant(6, 11).toISOString(),
     ]);
   });
@@ -153,8 +153,8 @@ describe("buildWeekDays", () => {
       now: NOW,
     });
 
-    expect(days[0].date).toBe("2026-07-11");
+    expect(days[0]!.date).toBe("2026-07-11");
     expect(days.every((d) => !d.isToday && !d.isPast)).toBe(true);
-    expect(days[2].slots).toHaveLength(1);
+    expect(days[2]!.slots).toHaveLength(1);
   });
 });

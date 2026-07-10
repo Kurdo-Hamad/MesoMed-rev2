@@ -14,6 +14,7 @@
   "devDependencies": {
     "@mesomed/typescript-config": "workspace:*",
     "@mesomed/eslint-config": "workspace:*",
+    "@types/node": "^22.20.1",
     "typescript": "~6.0.3",
     "vitest": "^4.1.10"
   },

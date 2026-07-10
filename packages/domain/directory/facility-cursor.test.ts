@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { encodeFacilityCursor, decodeFacilityCursor } from "./facility-cursor";
+import { encodeFacilityCursor, decodeFacilityCursor } from "./facility-cursor.js";
 
 const VALID = {
   r: 1,

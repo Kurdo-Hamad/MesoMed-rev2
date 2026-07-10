@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { generateSlotsForRange, type WeeklyScheduleInput } from "./slots";
+import { generateSlotsForRange, type WeeklyScheduleInput } from "./slots.js";
 
 // Monday 2026-07-06 in Asia/Baghdad (UTC+3, no DST since 2008).
 // 00:00 Baghdad == 21:00 UTC the previous day.
@@ -47,10 +47,10 @@ describe("generateSlotsForRange", () => {
 
     expect(slots).toHaveLength(6); // 09:00-12:00 / 30min
     // 09:00 Asia/Baghdad == 06:00 UTC
-    expect(slots[0].startsAt.toISOString()).toBe("2026-07-06T06:00:00.000Z");
-    expect(slots[0].endsAt.toISOString()).toBe("2026-07-06T06:30:00.000Z");
-    expect(slots[5].startsAt.toISOString()).toBe("2026-07-06T08:30:00.000Z");
-    expect(slots[5].endsAt.toISOString()).toBe("2026-07-06T09:00:00.000Z");
+    expect(slots[0]!.startsAt.toISOString()).toBe("2026-07-06T06:00:00.000Z");
+    expect(slots[0]!.endsAt.toISOString()).toBe("2026-07-06T06:30:00.000Z");
+    expect(slots[5]!.startsAt.toISOString()).toBe("2026-07-06T08:30:00.000Z");
+    expect(slots[5]!.endsAt.toISOString()).toBe("2026-07-06T09:00:00.000Z");
   });
 
   it("accepts HH:MM:SS time strings (Postgres time column format)", () => {
@@ -127,7 +127,7 @@ describe("generateSlotsForRange", () => {
     });
     // 09:00, 09:30, 10:00 fit; 10:30-11:00 exceeds 10:50.
     expect(slots).toHaveLength(3);
-    expect(slots[2].endsAt.toISOString()).toBe("2026-07-06T07:30:00.000Z");
+    expect(slots[2]!.endsAt.toISOString()).toBe("2026-07-06T07:30:00.000Z");
   });
 
   it("clips slots to the requested [from, to] range", () => {
@@ -210,7 +210,7 @@ describe("generateSlotsForRange", () => {
       to: TO,
     });
     expect(slots).toHaveLength(2);
-    expect(slots[0].startsAt.toISOString()).toBe("2026-07-06T20:00:00.000Z");
+    expect(slots[0]!.startsAt.toISOString()).toBe("2026-07-06T20:00:00.000Z");
   });
 
   it("dedupes slots when identical schedule rows exist (no unique constraint on weekly_schedules)", () => {
