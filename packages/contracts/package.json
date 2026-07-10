@@ -10,7 +10,9 @@
     "./events": "./src/events/index.ts",
     "./i18n": "./src/i18n.ts",
     "./roles": "./src/roles.ts",
-    "./system": "./src/system.ts"
+    "./system": "./src/system.ts",
+    "./identity": "./src/identity.ts",
+    "./events/identity": "./src/events/identity.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json",

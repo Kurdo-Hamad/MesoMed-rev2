@@ -29,6 +29,15 @@ const probeRouter = router({
   boom: publicProcedure.query(() => {
     throw new Error("unexpected");
   }),
+  alreadyClaimed: publicProcedure.query(() => {
+    throw new AppError(ErrorCode.PROFILE_ALREADY_CLAIMED, "claimed by someone else");
+  }),
+  rateLimited: publicProcedure.query(() => {
+    throw new AppError(ErrorCode.RATE_LIMITED, "slow down");
+  }),
+  phoneNotVerified: publicProcedure.query(() => {
+    throw new AppError(ErrorCode.PHONE_NOT_VERIFIED, "verify first");
+  }),
 });
 
 describe("tRPC error contract", () => {
@@ -76,6 +85,30 @@ describe("tRPC error contract", () => {
     const { error } = res.json();
     expect(error.data.code).toBe("FORBIDDEN");
     expect(error.data.appCode).toBe(ErrorCode.FORBIDDEN);
+  });
+
+  it("AppError(PROFILE_ALREADY_CLAIMED) answers HTTP 409 keeping the domain appCode", async () => {
+    const res = await app.inject({ method: "GET", url: "/trpc/alreadyClaimed" });
+    expect(res.statusCode).toBe(409);
+    const { error } = res.json();
+    expect(error.data.code).toBe("CONFLICT");
+    expect(error.data.appCode).toBe(ErrorCode.PROFILE_ALREADY_CLAIMED);
+  });
+
+  it("AppError(RATE_LIMITED) answers HTTP 429", async () => {
+    const res = await app.inject({ method: "GET", url: "/trpc/rateLimited" });
+    expect(res.statusCode).toBe(429);
+    const { error } = res.json();
+    expect(error.data.code).toBe("TOO_MANY_REQUESTS");
+    expect(error.data.appCode).toBe(ErrorCode.RATE_LIMITED);
+  });
+
+  it("AppError(PHONE_NOT_VERIFIED) answers HTTP 412 (precondition failed)", async () => {
+    const res = await app.inject({ method: "GET", url: "/trpc/phoneNotVerified" });
+    expect(res.statusCode).toBe(412);
+    const { error } = res.json();
+    expect(error.data.code).toBe("PRECONDITION_FAILED");
+    expect(error.data.appCode).toBe(ErrorCode.PHONE_NOT_VERIFIED);
   });
 
   it("an unexpected Error answers HTTP 500 with appCode INTERNAL", async () => {

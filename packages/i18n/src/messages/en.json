@@ -4,5 +4,23 @@
     "subtitle": "API is healthy",
     "checking": "Checking API…",
     "unreachable": "API unreachable"
+  },
+  "identity": {
+    "otp": {
+      "message": "Your MesoMed verification code is {code}. It expires in {minutes} minutes."
+    },
+    "email": {
+      "verifySubject": "Verify your MesoMed email",
+      "verifyBody": "Open this link to verify your email address: {url}"
+    }
+  },
+  "errors": {
+    "CONFLICT": "The request conflicts with the current state.",
+    "RATE_LIMITED": "Too many attempts. Please try again later.",
+    "PROFILE_ALREADY_CLAIMED": "This phone number is already linked to another account.",
+    "OTP_DELIVERY_FAILED": "We couldn't deliver your verification code. Please try again.",
+    "INVALID_STATUS_TRANSITION": "This status change is not allowed.",
+    "PHONE_NOT_VERIFIED": "Please verify your phone number first.",
+    "EMAIL_NOT_VERIFIED": "Please verify your email first."
   }
 }
