@@ -103,28 +103,35 @@ removed; CLAUDE.md/README references reconciled).
    password and revokes all sessions via Better Auth's server context and
    emits the `identity.provider_recovered.v1` audit event.
 
-9. **Sessions.** 30-day rolling window refreshed daily (persistent until
+9. **Origin requirement in production.** Better Auth's CSRF protection
+   rejects requests without an `Origin` header (`MISSING_OR_NULL_ORIGIN`)
+   when `NODE_ENV=production`. Browsers and the Expo client always send
+   one; non-browser callers (curl, server-to-server, smoke tests) must
+   send an Origin from the trusted list. Discovered during the live-server
+   gate transcript.
+
+10. **Sessions.** 30-day rolling window refreshed daily (persistent until
    logout/password change/recovery — MM-DEC §4); `revokeOtherSessions`
    covers the lost-phone case; recovery and password change revoke
    sessions via Better Auth.
 
-10. **drizzle-orm single-instance rule.** better-auth introduced a second
+11. **drizzle-orm single-instance rule.** better-auth introduced a second
     peer-variant of drizzle-orm in the dependency graph, splitting column
     types at compile time. Query operators (`eq`, `and`, `sql`, …) are
     now re-exported from `@mesomed/db` and imported only from there.
 
-11. **Router factory.** `appRouter` became `createAppRouter(identity)` so
+12. **Router factory.** `appRouter` became `createAppRouter(identity)` so
     the identity router receives the Better Auth instance through the
     composition root instead of a module singleton; kernel context now
     carries the raw request (for auth-header APIs) and an
     `authenticatedProcedure` (session, no role yet) joins `roleProcedure`.
 
-12. **Locale of auth messages.** OTP/verification messages use the
+13. **Locale of auth messages.** OTP/verification messages use the
     platform default locale (ckb) this phase; per-user locale routing is
     a Phase 7 (communication) concern. Trilingual catalog keys exist and
     are parity-tested; ar/ckb translations flagged for native review.
 
-13. **Mobile verification scope.** The gate item is proven by running the
+14. **Mobile verification scope.** The gate item is proven by running the
     real Better Auth Expo client plugin (with expo-secure-store's exact
     storage surface, in-memory) against a live API instance: sign-in
     persists the session token, a recreated client restores the session
