@@ -62,6 +62,7 @@ beforeAll(async () => {
       LOG_LEVEL: "silent",
       PORT: String(API_PORT),
       DATABASE_URL: tdb.connectionString,
+      BETTER_AUTH_SECRET: "test-secret-test-secret-test-secret-0000",
       OTEL_EXPORTER_OTLP_ENDPOINT: `http://127.0.0.1:${COLLECTOR_PORT}`,
     },
     stdio: ["ignore", "pipe", "pipe"],
