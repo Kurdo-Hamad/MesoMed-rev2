@@ -29,10 +29,12 @@ export interface IdentityAuthOptions {
   sendVerificationEmail: (input: { email: string; url: string }) => Promise<void>;
   /** Runs after phone ownership is proven — assigns role + claims profile in one tx. */
   onPhoneVerified: (input: { userId: string; phoneNumber: string }) => Promise<void>;
-  otp?: {
-    expiresInSeconds?: number;
-    allowedVerifyAttempts?: number;
-  };
+  otp?: IdentityOtpOptions;
+}
+
+export interface IdentityOtpOptions {
+  expiresInSeconds?: number;
+  allowedVerifyAttempts?: number;
 }
 
 export type IdentityAuth = ReturnType<typeof createIdentityAuth>;

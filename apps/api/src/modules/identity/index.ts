@@ -11,7 +11,7 @@ import type { Env } from "../../env.js";
 import type { ConfigService } from "../../kernel/config.js";
 import type { OutboxEmitter } from "../../kernel/outbox.js";
 import type { SessionResolver } from "../../kernel/context.js";
-import { createIdentityAuth, type IdentityAuth } from "./auth.js";
+import { createIdentityAuth, type IdentityAuth, type IdentityOtpOptions } from "./auth.js";
 import { createOnPhoneVerified } from "./commands/on-phone-verified.js";
 import { createOtpSender, type OtpChannels } from "./otp-sender.js";
 import { createIdentitySessionResolver } from "./session-resolver.js";
@@ -32,6 +32,7 @@ export function createIdentityModule(deps: {
   env: Env;
   otpChannels: OtpChannels;
   emailChannel: EmailChannel;
+  otpOptions?: IdentityOtpOptions;
 }): IdentityModule {
   const otpSender = createOtpSender({
     db: deps.db,
@@ -56,6 +57,7 @@ export function createIdentityModule(deps: {
       });
     },
     onPhoneVerified,
+    otp: deps.otpOptions,
   });
 
   return {

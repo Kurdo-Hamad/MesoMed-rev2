@@ -20,6 +20,7 @@ import { healthPayload, readinessPayload } from "./kernel/health.js";
 import { createOutboxEmitter, type OutboxEmitter } from "./kernel/outbox.js";
 import { createIdentityModule, type IdentityModule } from "./modules/identity/index.js";
 import { registerAuthRoutes } from "./modules/identity/routes.js";
+import type { IdentityOtpOptions } from "./modules/identity/auth.js";
 import type { OtpChannels } from "./modules/identity/otp-sender.js";
 import { appRouter } from "./trpc/router.js";
 
@@ -55,6 +56,8 @@ export interface BuildServerOverrides {
   otpChannels?: OtpChannels;
   /** Email transport (mock by default through Phase 2; Resend in Phase 7). */
   emailChannel?: EmailChannel;
+  /** OTP expiry/attempt tuning — tests shrink these to exercise the limits. */
+  otpOptions?: IdentityOtpOptions;
 }
 
 /**
@@ -116,6 +119,7 @@ export async function buildServer(
       sms: createMockOtpChannel("sms"),
     },
     emailChannel: overrides.emailChannel ?? createMockEmailChannel(),
+    otpOptions: overrides.otpOptions,
   });
   registerAuthRoutes(app, identity.auth);
 
