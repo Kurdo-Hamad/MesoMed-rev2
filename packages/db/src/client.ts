@@ -1,6 +1,6 @@
 import pg from "pg";
 import { drizzle, type NodePgDatabase } from "drizzle-orm/node-postgres";
-import * as schema from "./schema/kernel.js";
+import * as schema from "./schema/index.js";
 
 export type Db = NodePgDatabase<typeof schema>;
 /** The transaction handle drizzle passes to `db.transaction(async (tx) => …)`. */

@@ -1,6 +1,7 @@
 import journal from "../migrations/meta/_journal.json" with { type: "json" };
 
 export * from "./schema/kernel.js";
+export * from "./schema/identity.js";
 export * from "./client.js";
 
 /** Where the drizzle migrator records applied migrations (pinned, not defaulted). */
