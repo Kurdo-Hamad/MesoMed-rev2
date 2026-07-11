@@ -73,9 +73,7 @@ export async function issuePrescription(
   session: Session,
   input: PrescriptionContentInput & { encounterId: string },
 ): Promise<PrescriptionResult> {
-  const encounter = await requireEncounterActor(tx, session, input.encounterId, [
-    "owning_doctor",
-  ]);
+  const encounter = await requireEncounterActor(tx, session, input.encounterId, ["owning_doctor"]);
 
   const prescriptionId = await issuePrescriptionRow(tx, {
     ...toContent(input),

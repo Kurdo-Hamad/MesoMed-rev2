@@ -81,6 +81,7 @@ has a meta-test proving it actually fires (a lesson recorded in MM-QA-001):
 CI (GitHub Actions) runs lint → typecheck → test → build → format check and a
 Docker image build on every PR and push to `main`. Phase gates are defined in
 MM-PLAN-001 §5 — never start phase N+1 on a red gate.
+
 ## Windows dev-harness notes
 
 Embedded-Postgres integration tests require these fixes on Windows (already applied, documented for fresh clones):
