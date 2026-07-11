@@ -135,7 +135,16 @@ async function startEmbedded(): Promise<ProvisionedServer> {
     user: "postgres",
     password: "postgres",
     port,
-    persistent: false,
+    // persistent:false makes embedded-postgres delete the data dir inside
+    // stop() with no retry — on Windows the lingering file locks turn that
+    // into EBUSY. Keep the cluster persistent and let teardown below remove
+    // the directory with backoff instead.
+    persistent: true,
+    // initdb inherits the OS locale; on Windows that yields WIN1252, which
+    // cannot store the trilingual (ar/ckb) fixture data. Force UTF8 with the
+    // locale-independent C locale so all three provisioning paths (CI pg
+    // service, Testcontainers, embedded) present the same encoding.
+    initdbFlags: ["--encoding=UTF8", "--no-locale"],
   });
   await server.initialise();
   await server.start();
@@ -143,7 +152,10 @@ async function startEmbedded(): Promise<ProvisionedServer> {
     connectionString: `postgresql://postgres:postgres@127.0.0.1:${port}/postgres`,
     teardown: async () => {
       await server.stop();
-      await rm(databaseDir, { recursive: true, force: true });
+      // On Windows the postgres process releases its file locks a beat after
+      // stop() resolves; plain rm throws EBUSY. fs.rm retries these
+      // transient codes with linear backoff.
+      await rm(databaseDir, { recursive: true, force: true, maxRetries: 20, retryDelay: 150 });
     },
   };
 }
