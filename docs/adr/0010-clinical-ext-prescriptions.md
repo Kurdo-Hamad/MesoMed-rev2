@@ -158,3 +158,51 @@ spec-level "FK" is honored intra-module only (`encounter_id`,
    code (`prescriptions.test.ts`).
 7. Full repo gate green: lint (boundaries clean) → typecheck → test
    (`--concurrency=1`) → build, no regression of the 615-test baseline.
+
+## Post-merge verification (2026-07-11)
+
+Architecture risk register R8 (score 10) flagged that migration 0007's
+`CREATE OR REPLACE FUNCTION clinical_audit_row()` — required to add
+prescriptions logging — could silently degrade the Phase-5
+encounters/visit_notes audit trail even while prescriptions auditing
+itself worked, since `CREATE OR REPLACE` preserves the function's OID and
+every trigger already attached to it (`encounters_audit`,
+`visit_notes_audit`), so a body regression would not surface as a missing
+trigger or a signature mismatch — only as wrong behavior at runtime. This
+had not been checked at merge time; it was checked now, verification-only,
+with no other changes:
+
+- **Static diff.** The only two migrations that define
+  `clinical_audit_row()` are `0004_clinical.sql` (original) and
+  `0007_clinical_prescriptions.sql` (the replace). Isolating the
+  `encounters` / `visit_notes` / `support_access_grants` conditional
+  branches from both bodies and diffing them is byte-for-byte identical —
+  same conditions, same columns, same values written to
+  `clinical_access_log`. The only differences anywhere in the function are
+  `CREATE FUNCTION` → `CREATE OR REPLACE FUNCTION` (the intentional
+  widening) and the original branches' trailing `END IF;` being pushed
+  down to make room for the new `prescriptions` `ELSIF` branches — the
+  signature, the `DECLARE v_actor` line, and the `RETURN NEW; END; $$;`
+  tail are also unchanged. 0007 does not re-create the `encounters_audit`
+  or `visit_notes_audit` triggers; they still point at the same function
+  by name and now execute the widened-but-compatible body. **No
+  discrepancy found — `clinical_audit_row()` was not modified as part of
+  this verification.**
+- **Regression test.** `apps/api/test/clinical/audit-trigger-regression.test.ts`
+  exercises all three clinical-tier tables in one fixture flow (an
+  encounter created via the booking-completion path, a visit note added by
+  the owning doctor, a prescription issued by the owning doctor) and
+  asserts the resulting `clinical_access_log` rows against the exact shape
+  the original Phase-5 gate asserted (`encounter.test.ts`'s
+  `encounter_created`/`system:outbox` assertion, `notes.test.ts`'s
+  `note_added`/doctor-actor assertion), plus the new
+  `prescription_issued`/doctor-actor row, plus a combined check that all
+  three rows exist with no id column cross-contamination. 4/4 tests
+  passed.
+- **Environment note.** Docker/Testcontainers is not installed in this
+  WSL environment (no daemon socket, no `docker` binary), so
+  `createTestDatabase()` resolved to its documented embedded-PG16
+  fallback rather than a Testcontainers container — the same real
+  PostgreSQL 16 major version the harness contract guarantees either way,
+  and the same path every other test in this repo already runs on this
+  machine. Testcontainers was not exercised in this verification pass.
