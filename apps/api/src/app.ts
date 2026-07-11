@@ -11,9 +11,11 @@ import { BILLING_EVENTS } from "@mesomed/contracts/events/billing";
 import { createDb, type Db } from "@mesomed/db";
 import {
   createManualPaymentGateway,
+  createMockAiGateway,
   createMockEmailChannel,
   createMockOtpChannel,
   MANUAL_GATEWAY_ID,
+  type AiGateway,
   type EmailChannel,
 } from "@mesomed/platform";
 import type pg from "pg";
@@ -79,6 +81,8 @@ export interface BuildServerOverrides {
    * webhook signature/idempotency paths.
    */
   paymentGateways?: PaymentGatewayRegistry;
+  /** Triage model gateway (mock by default; Anthropic when configured — Task 8). */
+  aiGateway?: AiGateway;
 }
 
 /**
@@ -182,6 +186,10 @@ export async function buildServer(
   // subscribers here have no runtime cost until an event actually fires.
   registerCommunicationSubscribers({ events });
 
+  // Triage model gateway (§3.8): mock by default; the Anthropic adapter is
+  // wired here only when a real key is configured (Task 8).
+  const aiGateway: AiGateway = overrides.aiGateway ?? createMockAiGateway();
+
   app.get("/health", async () => healthPayload());
   app.get("/ready", async (_req, reply) => {
     const payload = await readinessPayload({ db, dispatcherStarted: dispatcher.isStarted });
@@ -191,7 +199,7 @@ export async function buildServer(
   await app.register(fastifyTRPCPlugin, {
     prefix: "/trpc",
     trpcOptions: {
-      router: createAppRouter(identity, { paymentGateways }),
+      router: createAppRouter(identity, { paymentGateways, ai: aiGateway }),
       createContext: createContextFactory({
         services: { db, config, outbox },
         sessionResolver: overrides.sessionResolver ?? identity.sessionResolver,
