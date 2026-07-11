@@ -15,8 +15,10 @@ import { APIError, createAuthMiddleware } from "better-auth/api";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { phoneNumber } from "better-auth/plugins/phone-number";
 import { expo } from "@better-auth/expo";
+import { getIp } from "@better-auth/core/utils/ip";
 import { isPlaceholderEmail, normalizePhone } from "@mesomed/domain/identity";
 import type { Db } from "@mesomed/db";
+import type { OtpSendContext } from "./otp-sender.js";
 
 export interface IdentityAuthOptions {
   db: Db;
@@ -24,7 +26,7 @@ export interface IdentityAuthOptions {
   secret: string;
   trustedOrigins: readonly string[];
   /** Deliver an OTP (identity OTP dispatch service). Throwing fails the endpoint. */
-  sendOtp: (input: { phoneNumber: string; code: string }) => Promise<void>;
+  sendOtp: (input: { phoneNumber: string; code: string }, context?: OtpSendContext) => Promise<void>;
   /** Deliver a provider verification email. Never called for placeholder emails. */
   sendVerificationEmail: (input: { email: string; url: string }) => Promise<void>;
   /** Runs after phone ownership is proven — assigns role + claims profile in one tx. */
@@ -97,8 +99,11 @@ export function createIdentityAuth(options: IdentityAuthOptions) {
           // Stored phones must already be normalized E.164 — the shared
           // domain rule keeps profile keys and auth identifiers identical.
           normalizePhone(phone) === phone,
-        async sendOTP({ phoneNumber: phone, code }) {
-          await options.sendOtp({ phoneNumber: phone, code });
+        async sendOTP({ phoneNumber: phone, code }, ctx) {
+          const request = ctx?.request;
+          const ip = request ? (getIp(request, ctx.context.options) ?? undefined) : undefined;
+          const deviceId = ctx?.headers?.get("x-device-id") ?? undefined;
+          await options.sendOtp({ phoneNumber: phone, code }, { ip, deviceId });
         },
         async callbackOnVerification({ phoneNumber: phone, user }) {
           await options.onPhoneVerified({ userId: user.id, phoneNumber: phone });

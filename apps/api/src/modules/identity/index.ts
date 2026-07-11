@@ -47,7 +47,7 @@ export function createIdentityModule(deps: {
     baseURL: deps.env.BETTER_AUTH_URL,
     secret: deps.env.BETTER_AUTH_SECRET,
     trustedOrigins: [...deps.env.CORS_ORIGINS, `${MOBILE_APP_SCHEME}://`],
-    sendOtp: (input) => otpSender.send(input),
+    sendOtp: (input, context) => otpSender.send(input, context),
     sendVerificationEmail: async ({ email, url }) => {
       const messages = locales[defaultLocale].identity.email;
       await deps.emailChannel.send({

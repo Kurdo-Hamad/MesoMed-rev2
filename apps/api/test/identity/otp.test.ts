@@ -3,6 +3,12 @@ import type { FastifyInstance } from "fastify";
 import { createMockOtpChannel } from "@mesomed/platform";
 import { placeholderEmailForPhone } from "@mesomed/domain/identity";
 import { createTestDatabase, type TestDatabase } from "@mesomed/db/testing";
+import {
+  CHANNEL_KILL_SWITCH_CONFIG_KEY,
+  channelKillSwitchSchema,
+  SEND_RATE_POLICY_CONFIG_KEY,
+  sendRatePolicySchema,
+} from "@mesomed/config";
 import { buildServer } from "../../src/app.js";
 import {
   OTP_SEND_POLICY_CONFIG_KEY,
@@ -191,5 +197,144 @@ describe("OTP logic against the mock channels (MM-DEC rev02 §8)", () => {
       whatsapp.failing = false;
       sms.failing = false;
     }
+  });
+
+  describe("kernel abuse guardrails wired into OTP send (MM-ARC-002 §6.6)", () => {
+    it("falls back to SMS when the whatsapp channel is killed", async () => {
+      const phone = "+9647702000007";
+      await signUp(app, phone);
+      await app.kernel.config.set(channelKillSwitchSchema, CHANNEL_KILL_SWITCH_CONFIG_KEY, {
+        whatsapp: true,
+      });
+      try {
+        const res = await app.inject({
+          method: "POST",
+          url: "/api/auth/phone-number/send-otp",
+          payload: { phoneNumber: phone },
+        });
+        expect(res.statusCode).toBe(200);
+        expect(sms.sent.at(-1)?.to).toBe(phone);
+        // The killed channel is never attempted, so no failure is recorded on it.
+        expect(whatsapp.sent.some((m) => m.to === phone)).toBe(false);
+      } finally {
+        await app.kernel.config.set(channelKillSwitchSchema, CHANNEL_KILL_SWITCH_CONFIG_KEY, {});
+      }
+    });
+
+    it("answers a typed refusal when both channels are killed", async () => {
+      const phone = "+9647702000008";
+      await signUp(app, phone);
+      await app.kernel.config.set(channelKillSwitchSchema, CHANNEL_KILL_SWITCH_CONFIG_KEY, {
+        whatsapp: true,
+        sms: true,
+      });
+      try {
+        const res = await app.inject({
+          method: "POST",
+          url: "/api/auth/phone-number/send-otp",
+          payload: { phoneNumber: phone },
+        });
+        expect(res.statusCode).toBe(502);
+        expect(res.json().code).toBe("OTP_DELIVERY_FAILED");
+        expect(whatsapp.sent.some((m) => m.to === phone)).toBe(false);
+        expect(sms.sent.some((m) => m.to === phone)).toBe(false);
+      } finally {
+        await app.kernel.config.set(channelKillSwitchSchema, CHANNEL_KILL_SWITCH_CONFIG_KEY, {});
+      }
+    });
+
+    it("denies a destination outside the allowlisted country (Iraq-only launch seed)", async () => {
+      const phone = "+14155550009";
+      await signUp(app, phone);
+      const res = await app.inject({
+        method: "POST",
+        url: "/api/auth/phone-number/send-otp",
+        payload: { phoneNumber: phone },
+      });
+      expect(res.statusCode).toBe(502);
+      expect(res.json().code).toBe("OTP_DELIVERY_FAILED");
+      expect(whatsapp.sent.some((m) => m.to === phone)).toBe(false);
+      expect(sms.sent.some((m) => m.to === phone)).toBe(false);
+    });
+
+    it("fires the per-IP send-rate limit across distinct phone numbers", async () => {
+      const ip = "203.0.113.9";
+      await app.kernel.config.set(sendRatePolicySchema, SEND_RATE_POLICY_CONFIG_KEY, {
+        ip: { maxSends: 2, windowSeconds: 3600 },
+      });
+      try {
+        const phones = ["+9647702000010", "+9647702000011", "+9647702000012"];
+        for (const phone of phones) await signUp(app, phone);
+
+        const first = await app.inject({
+          method: "POST",
+          url: "/api/auth/phone-number/send-otp",
+          payload: { phoneNumber: phones[0] },
+          headers: { "x-forwarded-for": ip },
+        });
+        expect(first.statusCode).toBe(200);
+
+        const second = await app.inject({
+          method: "POST",
+          url: "/api/auth/phone-number/send-otp",
+          payload: { phoneNumber: phones[1] },
+          headers: { "x-forwarded-for": ip },
+        });
+        expect(second.statusCode).toBe(200);
+
+        const deliveredBefore = whatsapp.sent.length + sms.sent.length;
+        const third = await app.inject({
+          method: "POST",
+          url: "/api/auth/phone-number/send-otp",
+          payload: { phoneNumber: phones[2] },
+          headers: { "x-forwarded-for": ip },
+        });
+        expect(third.statusCode).toBe(429);
+        expect(third.json().code).toBe("RATE_LIMITED");
+        expect(whatsapp.sent.length + sms.sent.length).toBe(deliveredBefore);
+      } finally {
+        await app.kernel.config.set(sendRatePolicySchema, SEND_RATE_POLICY_CONFIG_KEY, {});
+      }
+    });
+
+    it("fires the per-device send-rate limit across distinct phone numbers", async () => {
+      const deviceId = "test-device-1";
+      await app.kernel.config.set(sendRatePolicySchema, SEND_RATE_POLICY_CONFIG_KEY, {
+        device: { maxSends: 2, windowSeconds: 3600 },
+      });
+      try {
+        const phones = ["+9647702000013", "+9647702000014", "+9647702000015"];
+        for (const phone of phones) await signUp(app, phone);
+
+        const first = await app.inject({
+          method: "POST",
+          url: "/api/auth/phone-number/send-otp",
+          payload: { phoneNumber: phones[0] },
+          headers: { "x-device-id": deviceId },
+        });
+        expect(first.statusCode).toBe(200);
+
+        const second = await app.inject({
+          method: "POST",
+          url: "/api/auth/phone-number/send-otp",
+          payload: { phoneNumber: phones[1] },
+          headers: { "x-device-id": deviceId },
+        });
+        expect(second.statusCode).toBe(200);
+
+        const deliveredBefore = whatsapp.sent.length + sms.sent.length;
+        const third = await app.inject({
+          method: "POST",
+          url: "/api/auth/phone-number/send-otp",
+          payload: { phoneNumber: phones[2] },
+          headers: { "x-device-id": deviceId },
+        });
+        expect(third.statusCode).toBe(429);
+        expect(third.json().code).toBe("RATE_LIMITED");
+        expect(whatsapp.sent.length + sms.sent.length).toBe(deliveredBefore);
+      } finally {
+        await app.kernel.config.set(sendRatePolicySchema, SEND_RATE_POLICY_CONFIG_KEY, {});
+      }
+    });
   });
 });
