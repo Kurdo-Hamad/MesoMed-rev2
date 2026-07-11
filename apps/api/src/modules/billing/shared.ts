@@ -13,12 +13,13 @@ import type { ConfigService } from "../../kernel/config.js";
 import { AppError } from "../../kernel/errors.js";
 
 /**
- * Gateway ids the platform recognizes at launch: `manual` ships complete;
- * `fib` and `zaincash` are registered as routable ids so config can be
- * staged ahead of their adapters (interface-ready, §8 deferral) — resolving
- * one of them fails typed until its adapter is wired.
+ * Routable gateway ids are CONFIG DATA (Phase 6b, §3.9): the launch
+ * defaults (`manual` complete; `fib`/`zaincash`/`stripe` interface-ready)
+ * live in `packages/config` (`DEFAULT_KNOWN_GATEWAY_IDS`), and further ids
+ * are added via the `billing.known_gateways` config row — adding a gateway
+ * is an adapter in packages/platform plus config rows, never a code change
+ * here. Resolving an id with no wired adapter fails typed (fail-closed).
  */
-export const KNOWN_GATEWAY_IDS = ["manual", "fib", "zaincash"] as const;
 
 /** Adapter registry wired in the composition root, keyed by gateway id. */
 export type PaymentGatewayRegistry = Readonly<Record<string, PaymentGateway>>;

@@ -29,6 +29,9 @@ export const ErrorCode = {
   // Phase 6 (billing) — additive only.
   PAYMENT_GATEWAY_NOT_CONFIGURED: "PAYMENT_GATEWAY_NOT_CONFIGURED",
   PAYMENT_NOT_SETTLED: "PAYMENT_NOT_SETTLED",
+  // Phase 6b (billing revenue model) — additive only.
+  RATE_NOT_CONFIGURED: "RATE_NOT_CONFIGURED",
+  BILLING_MODEL_NOT_CONFIGURED: "BILLING_MODEL_NOT_CONFIGURED",
 } as const;
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];

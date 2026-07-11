@@ -12,11 +12,15 @@ import type {
   upsertListingTierInputSchema,
 } from "@mesomed/contracts/billing";
 import { ErrorCode } from "@mesomed/contracts/errors";
-import { paymentRoutingSchema, PAYMENT_ROUTING_CONFIG_KEY } from "@mesomed/config";
+import {
+  paymentRoutingSchema,
+  resolveKnownGatewayIds,
+  PAYMENT_ROUTING_CONFIG_KEY,
+} from "@mesomed/config";
 import { eq, listingTiers, tierPrices, type DbTransaction } from "@mesomed/db";
 import type { ConfigService } from "../../../kernel/config.js";
 import { AppError } from "../../../kernel/errors.js";
-import { KNOWN_GATEWAY_IDS, type PaymentGatewayRegistry } from "../shared.js";
+import type { PaymentGatewayRegistry } from "../shared.js";
 
 export type UpsertListingTierInput = z.output<typeof upsertListingTierInputSchema>;
 
@@ -88,17 +92,18 @@ export type SetPaymentRoutingInput = z.output<typeof setPaymentRoutingInputSchem
 
 /**
  * Point (country, kind) at a gateway id. Accepts adapters registered in
- * the composition root plus the KNOWN launch ids (fib/zaincash may be
- * staged in config before their adapters land — resolution stays fail-
- * closed until then).
+ * the composition root plus the config-driven known ids (Phase 6b:
+ * fib/zaincash/stripe are staged ahead of their adapters, and further ids
+ * join via `billing.known_gateways` config rows — resolution stays fail-
+ * closed until a real adapter is wired).
  */
 export async function setPaymentRouting(
   config: ConfigService,
   gateways: PaymentGatewayRegistry,
   input: SetPaymentRoutingInput,
 ): Promise<void> {
-  const known =
-    input.gateway in gateways || (KNOWN_GATEWAY_IDS as readonly string[]).includes(input.gateway);
+  const knownIds = await resolveKnownGatewayIds(config);
+  const known = input.gateway in gateways || knownIds.includes(input.gateway);
   if (!known) {
     throw new AppError(ErrorCode.VALIDATION, `Unknown payment gateway "${input.gateway}"`);
   }

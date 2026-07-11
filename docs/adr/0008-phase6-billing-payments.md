@@ -52,6 +52,15 @@ aggregate row is locked on every settlement).
 
 ### 3. Subscription visibility gates account-backed doctors only
 
+> **Amended by ADR-0009 (Phase 6b, doc-only):** the non-account exemption
+> below is TRANSITIONAL, not permanent policy. Permanent policy is that
+> ALL providers must hold a subscription (flat_monthly or commission) to
+> be publicly visible. The exemption remains operative until curated
+> listings are migrated onto billing configs, via the reversal path this
+> decision already names (backfill subscriptions, drop the
+> `identity_profile_id IS NULL` escape from the one predicate function).
+> No visibility code changed in Phase 6b.
+
 The public-visibility predicate (still centralized in the directory's
 `recomputeProviderVisibility`, exactly where the Phase 3 code planned the
 extension) is now: facilities — provider approved AND listing active

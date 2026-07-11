@@ -25,6 +25,7 @@ import { createHandlerRegistry, type HandlerRegistry } from "./kernel/events.js"
 import { healthPayload, readinessPayload } from "./kernel/health.js";
 import { createOutboxEmitter, type OutboxEmitter } from "./kernel/outbox.js";
 import { registerPaymentWebhookRoutes } from "./modules/billing/webhook.js";
+import { registerBillingSubscribers } from "./modules/billing/index.js";
 import type { PaymentGatewayRegistry } from "./modules/billing/shared.js";
 import { registerClinicalSubscribers } from "./modules/clinical/index.js";
 import { registerDirectorySubscribers } from "./modules/directory/index.js";
@@ -166,10 +167,13 @@ export async function buildServer(
   // Module subscribers (§3.1): directory mirrors identity approval and
   // billing subscription/tier state; search maintains its read models from
   // directory events; clinical creates encounters from completed bookings —
-  // its only creation path.
+  // its only creation path; billing accrues per-booking charges from
+  // completed bookings and policy-evaluates cancellations/no-shows (Phase
+  // 6b — patient collection dormant behind config).
   registerDirectorySubscribers({ events, outbox });
   registerSearchSubscribers(events);
   registerClinicalSubscribers({ events, outbox });
+  registerBillingSubscribers({ events, outbox, config, gateways: paymentGateways });
 
   app.get("/health", async () => healthPayload());
   app.get("/ready", async (_req, reply) => {

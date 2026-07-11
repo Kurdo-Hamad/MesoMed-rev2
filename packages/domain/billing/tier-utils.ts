@@ -47,7 +47,12 @@ export function computeNewExpiry(
   return addUtcMonths(base, periods);
 }
 
-function addUtcMonths(date: Date, months: number): Date {
+/**
+ * +N UTC calendar months with end-of-month clamping (Jan 31 + 1 month =
+ * Feb 28/29) — the single calendar-month primitive for ALL billing windows
+ * (tier expiry, subscription periods, trial windows). Never reimplement.
+ */
+export function addUtcMonths(date: Date, months: number): Date {
   const y = date.getUTCFullYear();
   const m = date.getUTCMonth();
   const d = date.getUTCDate();

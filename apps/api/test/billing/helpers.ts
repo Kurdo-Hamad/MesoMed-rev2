@@ -2,7 +2,16 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import type { FastifyInstance } from "fastify";
 import type { Role } from "@mesomed/contracts/roles";
 import { paymentWebhookBodySchema } from "@mesomed/contracts/billing";
-import { providerProfiles, user } from "@mesomed/db";
+import {
+  billingCharges,
+  billingPolicyEvaluations,
+  cities,
+  countries,
+  doctorProfiles,
+  eq,
+  providerProfiles,
+  user,
+} from "@mesomed/db";
 import {
   createManualPaymentGateway,
   MANUAL_GATEWAY_ID,
@@ -10,10 +19,17 @@ import {
   type PaymentGateway,
 } from "@mesomed/platform";
 import { buildServer } from "../../src/app.js";
-import { testEnv } from "../helpers.js";
+import { testEnv, waitFor } from "../helpers.js";
+import {
+  nextGuestPhone,
+  openSlotsNextWeek,
+  seedClinic,
+  type ClinicFixture,
+} from "../booking/helpers.js";
 
 export { waitFor } from "../helpers.js";
 export { appCode } from "../clinical/helpers.js";
+export { seedClinic, openSlotsNextWeek, type ClinicFixture } from "../booking/helpers.js";
 
 export interface CallOptions {
   roles?: string;
@@ -131,10 +147,14 @@ export function createUnconfiguredGateway(id: string): PaymentGateway {
  * Phase 6 test app: real composition root, header-injected sessions (as in
  * the Phase 4/5 suites), and the payment-gateway seam exercised with the
  * production `manual` adapter plus the signature-verifying test gateway.
+ * Phase 6b suites inject further fakes through `extraGateways` (a spy for
+ * the dormant patient-collection proof; adapters for config-registered
+ * gateway ids).
  */
 export function buildBillingTestServer(
   connectionString: string,
   extraEnv: NodeJS.ProcessEnv = {},
+  extraGateways: Record<string, PaymentGateway> = {},
 ): Promise<FastifyInstance> {
   return buildServer(testEnv(connectionString, extraEnv), {
     sessionResolver: (req) => {
@@ -149,8 +169,42 @@ export function buildBillingTestServer(
       [MANUAL_GATEWAY_ID]: createManualPaymentGateway(),
       [TESTPAY_GATEWAY_ID]: createTestpayGateway(),
       offlinepay: createUnconfiguredGateway("offlinepay"),
+      ...extraGateways,
     },
   });
+}
+
+/**
+ * A settling gateway that records every initiatePayment call — the
+ * observable for the dormancy proof ("ZERO gateway calls" while the
+ * patient-collection flag is off) and for the flip-activation proof.
+ */
+export interface SpyGateway extends PaymentGateway {
+  initiations: Array<{ idempotencyKey: string; kind: string; amount: number; currency: string }>;
+}
+
+export function createSpyGateway(id: string): SpyGateway {
+  const initiations: SpyGateway["initiations"] = [];
+  return {
+    id,
+    initiations,
+    isConfigured: () => true,
+    async initiatePayment(input) {
+      initiations.push({
+        idempotencyKey: input.idempotencyKey,
+        kind: input.kind,
+        amount: input.amount,
+        currency: input.currency,
+      });
+      return { reference: `${id}:${input.idempotencyKey}`, status: "settled", redirectUrl: null };
+    },
+    async verifyPayment(reference) {
+      return { reference, status: "settled" };
+    },
+    async handleWebhook() {
+      throw new WebhookVerificationError("spy gateway has no webhook channel");
+    },
+  };
 }
 
 export interface BillingFixture {
@@ -289,4 +343,215 @@ let keyCounter = 0;
 /** A unique idempotency key per call. */
 export function nextIdempotencyKey(prefix = "test"): string {
   return `${prefix}-${process.pid}-${Date.now()}-${++keyCounter}`;
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// Phase 6b — revenue-model fixtures. Rides on the Phase 4 clinic fixture
+// (real bookings through the real lifecycle) plus admin procedures for
+// everything billing owns; identity/directory scaffolding rows are
+// inserted directly, as in every prior suite.
+// ═══════════════════════════════════════════════════════════════════════
+
+export const RATE_MONTHLY_FEE_MINOR = 50_000_000; // 50,000 IQD in fils
+export const RATE_PER_BOOKING_FEE_MINOR = 2_000_000; // 2,000 IQD in fils
+export const RATE_COMMISSION_BP = 750; // 7.50%
+export const COMMISSION_BOOKING_VALUE_MINOR = 25_000_000; // 25,000 IQD in fils
+/** 25,000,000 × 7.5% = 1,875,000 fils. */
+export const EXPECTED_COMMISSION_MINOR = 1_875_000;
+
+export interface RevenueFixture {
+  /** Clinic whose doctor's provider runs on the commission model. */
+  commissionClinic: ClinicFixture;
+  /** Clinic whose doctor's provider runs on flat_monthly. */
+  flatClinic: ClinicFixture;
+  commissionProviderId: string;
+  flatProviderId: string;
+}
+
+export async function providerIdForDoctorProfile(
+  app: FastifyInstance,
+  doctorProfileId: string,
+): Promise<string> {
+  const [row] = await app.kernel.db
+    .select({ providerId: doctorProfiles.providerId })
+    .from(doctorProfiles)
+    .where(eq(doctorProfiles.id, doctorProfileId));
+  if (!row) throw new Error(`No doctor profile ${doctorProfileId} in fixture`);
+  return row.providerId;
+}
+
+/**
+ * Rates for the doctor category, two clinics (one per model), and a
+ * country/city attached to both doctors so payment routing can resolve a
+ * country for charge collection.
+ */
+export async function seedRevenueFixture(app: FastifyInstance): Promise<RevenueFixture> {
+  const db = app.kernel.db;
+  const n = ++fixtureCounter;
+  const suffix = `rev-${process.pid}-${n}`;
+
+  // Rates are data rows (§3.9), managed only via the admin command.
+  await adminMutate(app, "billing.setBillingRate", {
+    category: "doctor",
+    model: "flat_monthly",
+    rateKind: "monthly_fee",
+    value: RATE_MONTHLY_FEE_MINOR,
+    currency: "IQD",
+  });
+  await adminMutate(app, "billing.setBillingRate", {
+    category: "doctor",
+    model: "flat_monthly",
+    rateKind: "per_booking_fee",
+    value: RATE_PER_BOOKING_FEE_MINOR,
+    currency: "IQD",
+  });
+  await adminMutate(app, "billing.setBillingRate", {
+    category: "doctor",
+    model: "commission",
+    rateKind: "commission_pct",
+    value: RATE_COMMISSION_BP,
+    currency: "IQD",
+  });
+
+  const commissionClinic = await seedClinic(app);
+  const flatClinic = await seedClinic(app);
+  const commissionProviderId = await providerIdForDoctorProfile(
+    app,
+    commissionClinic.doctorProfileId,
+  );
+  const flatProviderId = await providerIdForDoctorProfile(app, flatClinic.doctorProfileId);
+
+  // Geography scaffolding so the doctors resolve to a routable country.
+  const [country] = await db
+    .insert(countries)
+    .values({
+      slug: `iraq-${suffix}`,
+      isoCode: "IQ",
+      nameEn: "Iraq",
+      nameAr: "العراق",
+      nameCkb: "عێراق",
+    })
+    .returning({ id: countries.id });
+  const [city] = await db
+    .insert(cities)
+    .values({
+      slug: `erbil-${suffix}`,
+      countryId: country!.id,
+      nameEn: "Erbil",
+      nameAr: "أربيل",
+      nameCkb: "هەولێر",
+    })
+    .returning({ id: cities.id });
+  for (const doctorProfileId of [commissionClinic.doctorProfileId, flatClinic.doctorProfileId]) {
+    await db
+      .update(doctorProfiles)
+      .set({ cityId: city!.id })
+      .where(eq(doctorProfiles.id, doctorProfileId));
+  }
+
+  // Model selection through the real admin command (category snapshots
+  // from the directory provider type; rates resolve at charge time).
+  await adminMutate(app, "billing.setProviderBillingModel", {
+    providerId: commissionProviderId,
+    model: "commission",
+    bookingValueMinor: COMMISSION_BOOKING_VALUE_MINOR,
+  });
+  await adminMutate(app, "billing.setProviderBillingModel", {
+    providerId: flatProviderId,
+    model: "flat_monthly",
+  });
+
+  return { commissionClinic, flatClinic, commissionProviderId, flatProviderId };
+}
+
+// ── Real booking lifecycles (Phase 4 procedures, header sessions) ───────
+
+export function secretarySession(clinic: ClinicFixture): CallOptions {
+  return { roles: "secretary", user: clinic.secretaryUserId };
+}
+
+export function doctorSession(clinic: ClinicFixture): CallOptions {
+  return { roles: "doctor", user: clinic.doctorUserId };
+}
+
+let bookingCounter = 0;
+
+async function lifecycleMutate(
+  app: FastifyInstance,
+  procedure: string,
+  input: unknown,
+  session?: CallOptions,
+): Promise<unknown> {
+  const res = await trpc(app, procedure, "mutation", input, session);
+  if (res.statusCode !== 200) {
+    throw new Error(`${procedure} failed in fixture: ${res.statusCode} ${res.body}`);
+  }
+  return result(res);
+}
+
+export async function bookGuestAppointment(
+  app: FastifyInstance,
+  clinic: ClinicFixture,
+): Promise<string> {
+  const slots = await openSlotsNextWeek(app, clinic.doctorLocationId);
+  const slot = slots[bookingCounter++ % slots.length];
+  if (!slot) throw new Error("No open slot available for fixture booking");
+  const booked = (await lifecycleMutate(app, "booking.guestBook", {
+    doctorLocationId: clinic.doctorLocationId,
+    startsAt: slot.startsAt,
+    patient: { fullName: "Billing Patient", phone: nextGuestPhone() },
+  })) as { appointmentId: string };
+  return booked.appointmentId;
+}
+
+/** book → confirm → check-in → start → complete (emits booking.completed.v1). */
+export async function completeBooking(app: FastifyInstance, clinic: ClinicFixture) {
+  const appointmentId = await bookGuestAppointment(app, clinic);
+  await lifecycleMutate(app, "booking.confirm", { appointmentId }, secretarySession(clinic));
+  await lifecycleMutate(app, "booking.checkIn", { appointmentId }, secretarySession(clinic));
+  await lifecycleMutate(app, "booking.start", { appointmentId }, doctorSession(clinic));
+  await lifecycleMutate(app, "booking.complete", { appointmentId }, doctorSession(clinic));
+  return appointmentId;
+}
+
+/** book → cancel (emits booking.cancelled.v1). */
+export async function cancelBooking(app: FastifyInstance, clinic: ClinicFixture) {
+  const appointmentId = await bookGuestAppointment(app, clinic);
+  await lifecycleMutate(
+    app,
+    "booking.cancel",
+    { appointmentId, reason: "billing test" },
+    secretarySession(clinic),
+  );
+  return appointmentId;
+}
+
+/** book → confirm → no-show (emits booking.no_show.v1). */
+export async function noShowBooking(app: FastifyInstance, clinic: ClinicFixture) {
+  const appointmentId = await bookGuestAppointment(app, clinic);
+  await lifecycleMutate(app, "booking.confirm", { appointmentId }, secretarySession(clinic));
+  await lifecycleMutate(app, "booking.noShow", { appointmentId }, secretarySession(clinic));
+  return appointmentId;
+}
+
+/** The charge row accrued for a booking, once the dispatcher delivers. */
+export async function waitForBookingCharge(app: FastifyInstance, appointmentId: string) {
+  return waitFor(async () => {
+    const [row] = await app.kernel.db
+      .select()
+      .from(billingCharges)
+      .where(eq(billingCharges.bookingId, appointmentId));
+    return row;
+  });
+}
+
+/** The policy-evaluation row for a booking, once the dispatcher delivers. */
+export async function waitForPolicyEvaluation(app: FastifyInstance, appointmentId: string) {
+  return waitFor(async () => {
+    const [row] = await app.kernel.db
+      .select()
+      .from(billingPolicyEvaluations)
+      .where(eq(billingPolicyEvaluations.bookingId, appointmentId));
+    return row;
+  });
 }
