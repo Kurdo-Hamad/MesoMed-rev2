@@ -9,6 +9,7 @@ export default defineConfig({
     "./src/schema/search.ts",
     "./src/schema/scheduling.ts",
     "./src/schema/booking.ts",
+    "./src/schema/clinical.ts",
   ],
   out: "./migrations",
   migrations: {

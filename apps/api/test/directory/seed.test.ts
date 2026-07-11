@@ -36,7 +36,11 @@ describe("directory seed pipeline", () => {
           .limit(1);
         return open.length === 0;
       },
-      { timeoutMs: 120_000, intervalMs: 250 },
+      // The assertion is convergence, not speed: ~150 events at the test
+      // env's 0.5s worker poll takes >75s even unloaded, and the
+      // idempotency re-run doubles the backlog. 120s proved marginal on
+      // slower dev machines (Windows embedded-postgres harness).
+      { timeoutMs: 240_000, intervalMs: 250 },
     );
   }
 
@@ -74,7 +78,7 @@ describe("directory seed pipeline", () => {
     expect(firstDoctor?.id).toBe(seedUuid("f", 1));
   });
 
-  it("is idempotent: re-running converges with no duplicates", { timeout: 240_000 }, async () => {
+  it("is idempotent: re-running converges with no duplicates", { timeout: 360_000 }, async () => {
     const { db, config, outbox } = app.kernel;
     await seedDirectory({ db, config, outbox });
     await drainOutbox();

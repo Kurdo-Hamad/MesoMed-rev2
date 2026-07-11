@@ -23,6 +23,9 @@ export const ErrorCode = {
   COUNTRY_COMING_SOON: "COUNTRY_COMING_SOON",
   // Phase 4 (scheduling/booking) — additive only.
   SLOT_UNAVAILABLE: "SLOT_UNAVAILABLE",
+  // Phase 5 (clinical) — additive only.
+  SUPPORT_GRANT_INVALID: "SUPPORT_GRANT_INVALID",
+  SUPPORT_GRANT_EXPIRED: "SUPPORT_GRANT_EXPIRED",
 } as const;
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];

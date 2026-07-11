@@ -29,6 +29,13 @@
       "when": 1783732718262,
       "tag": "0003_scheduling_booking",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1783747162321,
+      "tag": "0004_clinical",
+      "breakpoints": true
     }
   ]
 }

@@ -45,6 +45,10 @@ const APP_TO_TRPC = {
   // Phase 4 (booking): a taken/blocked slot is a conflict with current
   // state — retryable by picking another slot.
   [ErrorCode.SLOT_UNAVAILABLE]: "CONFLICT",
+  // Phase 5 (clinical): an unusable grant is an authorization failure; an
+  // expired one is a stated precondition (re-grant and retry).
+  [ErrorCode.SUPPORT_GRANT_INVALID]: "FORBIDDEN",
+  [ErrorCode.SUPPORT_GRANT_EXPIRED]: "PRECONDITION_FAILED",
 } as const satisfies Record<ErrorCode, TRPCErrorCode>;
 
 const TRPC_TO_APP: Partial<Record<TRPCErrorCode, ErrorCode>> = {
