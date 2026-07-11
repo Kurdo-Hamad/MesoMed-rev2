@@ -7,6 +7,8 @@ export default defineConfig({
     "./src/schema/identity.ts",
     "./src/schema/directory.ts",
     "./src/schema/search.ts",
+    "./src/schema/scheduling.ts",
+    "./src/schema/booking.ts",
   ],
   out: "./migrations",
   migrations: {

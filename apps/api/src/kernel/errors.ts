@@ -42,6 +42,9 @@ const APP_TO_TRPC = {
   // Phase 3 (directory): a gated country is a stated precondition of the
   // request's x-mesomed-country, not a permissions problem.
   [ErrorCode.COUNTRY_COMING_SOON]: "PRECONDITION_FAILED",
+  // Phase 4 (booking): a taken/blocked slot is a conflict with current
+  // state — retryable by picking another slot.
+  [ErrorCode.SLOT_UNAVAILABLE]: "CONFLICT",
 } as const satisfies Record<ErrorCode, TRPCErrorCode>;
 
 const TRPC_TO_APP: Partial<Record<TRPCErrorCode, ErrorCode>> = {

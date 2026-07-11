@@ -26,7 +26,9 @@ let apiOutput = "";
 let apiExited: Promise<number | null>;
 
 async function waitForHealth(): Promise<void> {
-  for (let attempt = 0; attempt < 150; attempt++) {
+  // Generous ceiling: under a fully parallel local run every suite boots its
+  // own embedded Postgres, and the artifact's cold boot can exceed 15s.
+  for (let attempt = 0; attempt < 550; attempt++) {
     try {
       const res = await fetch(`http://127.0.0.1:${API_PORT}/health`);
       if (res.ok) return;
@@ -89,10 +91,22 @@ describe("opentelemetry export", () => {
 
     // SIGTERM triggers the hardened shutdown path, which force-flushes the
     // batch span processor — so span arrival is deterministic, and exit
-    // code 0 proves graceful teardown (MM-QA-001 F-12).
-    api.kill("SIGTERM");
-    const exitCode = await apiExited;
-    expect(exitCode).toBe(0);
+    // code 0 proves graceful teardown (MM-QA-001 F-12). Windows has no
+    // signal delivery (kill() is TerminateProcess), so there the test waits
+    // for the batch processor's scheduled export instead and the graceful
+    // exit-code assertion runs only where signals exist — CI (linux) always
+    // enforces it.
+    if (process.platform === "win32") {
+      for (let attempt = 0; attempt < 150 && traceBodies.length === 0; attempt++) {
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
+      api.kill("SIGKILL");
+      await apiExited;
+    } else {
+      api.kill("SIGTERM");
+      const exitCode = await apiExited;
+      expect(exitCode).toBe(0);
+    }
 
     expect(traceBodies.length).toBeGreaterThan(0);
 

@@ -7,7 +7,9 @@
     ".": "./src/index.ts",
     "./identity": "./identity/index.ts",
     "./directory": "./directory/index.ts",
-    "./billing": "./billing/index.ts"
+    "./billing": "./billing/index.ts",
+    "./scheduling": "./scheduling/index.ts",
+    "./booking": "./booking/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json",
