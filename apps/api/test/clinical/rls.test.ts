@@ -22,6 +22,7 @@ describe("clinical-tier RLS and DB-level guardrails (raw connection, no API)", (
   let app: FastifyInstance;
   let clinic: ClinicFixture;
   let encounterId: string;
+  let prescriptionId: string;
   let raw: pg.Client;
 
   beforeAll(async () => {
@@ -38,6 +39,22 @@ describe("clinical-tier RLS and DB-level guardrails (raw connection, no API)", (
       doctorSession(clinic),
     );
     if (res.statusCode !== 200) throw new Error(`fixture note failed: ${res.body}`);
+    const rx = await trpc(
+      app,
+      "clinical.issuePrescription",
+      "mutation",
+      {
+        encounterId,
+        medicationName: "RLS Fixture Med",
+        dosage: "1 mg",
+        frequency: "1x",
+        duration: "1 day",
+      },
+      doctorSession(clinic),
+    );
+    if (rx.statusCode !== 200) throw new Error(`fixture prescription failed: ${rx.body}`);
+    prescriptionId = (rx.json() as { result: { data: { prescriptionId: string } } }).result.data
+      .prescriptionId;
 
     raw = new pg.Client({ connectionString: tdb.connectionString });
     await raw.connect();
@@ -62,22 +79,32 @@ describe("clinical-tier RLS and DB-level guardrails (raw connection, no API)", (
     }
   }
 
-  it("RLS is enabled with zero policies on encounters and visit_notes — and nowhere else", async () => {
+  it("RLS is enabled with zero policies on the clinical tier — and nowhere else (ADR-0010: + prescriptions)", async () => {
     const rls = await raw.query<{ relname: string; relrowsecurity: boolean }>(
       `select relname, relrowsecurity from pg_class
        where relnamespace = 'public'::regnamespace and relkind = 'r' and relrowsecurity`,
     );
-    expect(rls.rows.map((r) => r.relname).sort()).toEqual(["encounters", "visit_notes"]);
+    // patient_medical_profile / patient_reported_medications are pinned
+    // OUTSIDE the tier by this exact list (deliberate — ADR-0010).
+    expect(rls.rows.map((r) => r.relname).sort()).toEqual([
+      "encounters",
+      "prescriptions",
+      "visit_notes",
+    ]);
 
     const policies = await raw.query(`select polname from pg_policy`);
     expect(policies.rows).toHaveLength(0);
   });
 
-  it("direct SELECT on encounters / visit_notes as mesomed_api is denied", async () => {
+  it("direct SELECT on encounters / visit_notes / prescriptions as mesomed_api is denied", async () => {
     await expect(asApiRole("select * from encounters")).rejects.toThrow(/permission denied/);
     await expect(asApiRole("select * from visit_notes")).rejects.toThrow(/permission denied/);
     await expect(
       asApiRole("select content from visit_notes where encounter_id = $1", [encounterId]),
+    ).rejects.toThrow(/permission denied/);
+    await expect(asApiRole("select * from prescriptions")).rejects.toThrow(/permission denied/);
+    await expect(
+      asApiRole("select medication_name from prescriptions where id = $1", [prescriptionId]),
     ).rejects.toThrow(/permission denied/);
   });
 
@@ -91,6 +118,16 @@ describe("clinical-tier RLS and DB-level guardrails (raw connection, no API)", (
       /permission denied/,
     );
     await expect(asApiRole("delete from visit_notes")).rejects.toThrow(/permission denied/);
+    await expect(
+      asApiRole(
+        "insert into prescriptions (encounter_id, doctor_profile_id, patient_profile_id, medication_name, dosage, frequency, duration) values ($1, gen_random_uuid(), gen_random_uuid(), 'x', 'x', 'x', 'x')",
+        [encounterId],
+      ),
+    ).rejects.toThrow(/permission denied/);
+    await expect(asApiRole("update prescriptions set status = 'discontinued'")).rejects.toThrow(
+      /permission denied/,
+    );
+    await expect(asApiRole("delete from prescriptions")).rejects.toThrow(/permission denied/);
   });
 
   it("RLS backstop: even WITH a select grant, zero policies yield zero rows", async () => {
@@ -100,14 +137,16 @@ describe("clinical-tier RLS and DB-level guardrails (raw connection, no API)", (
     const owner = await raw.query("select count(*)::int as n from encounters");
     expect((owner.rows[0] as { n: number }).n).toBeGreaterThan(0);
 
-    await raw.query("grant select on encounters, visit_notes to mesomed_api");
+    await raw.query("grant select on encounters, visit_notes, prescriptions to mesomed_api");
     try {
       const enc = await asApiRole<{ n: number }>("select count(*)::int as n from encounters");
       expect(enc.rows[0]!.n).toBe(0);
       const notes = await asApiRole<{ n: number }>("select count(*)::int as n from visit_notes");
       expect(notes.rows[0]!.n).toBe(0);
+      const rx = await asApiRole<{ n: number }>("select count(*)::int as n from prescriptions");
+      expect(rx.rows[0]!.n).toBe(0);
     } finally {
-      await raw.query("revoke select on encounters, visit_notes from mesomed_api");
+      await raw.query("revoke select on encounters, visit_notes, prescriptions from mesomed_api");
     }
   });
 
@@ -124,12 +163,19 @@ describe("clinical-tier RLS and DB-level guardrails (raw connection, no API)", (
     ]);
     expect(notes.rows.length).toBeGreaterThan(0);
 
+    const rx = await asApiRole("select * from clinical_read_prescriptions($1, null, $2)", [
+      "rls-test-actor",
+      prescriptionId,
+    ]);
+    expect(rx.rows).toHaveLength(1);
+
     const audit = await raw.query(
       `select action from clinical_access_log where actor_user_id = 'rls-test-actor' order by id`,
     );
     expect(audit.rows.map((r) => (r as { action: string }).action)).toEqual([
       "encounter_read",
       "notes_read",
+      "prescriptions_read",
     ]);
   });
 
@@ -148,9 +194,26 @@ describe("clinical-tier RLS and DB-level guardrails (raw connection, no API)", (
       );
       expect(priv.rows[0]!.api).toBe(true);
       expect(priv.rows[0]!.scratch).toBe(false);
+
+      const rxPriv = await raw.query<{ api: boolean; scratch: boolean }>(
+        `select
+           has_function_privilege('mesomed_api', 'clinical_read_prescriptions(text, uuid, uuid)', 'execute') as api,
+           has_function_privilege('mm_scratch_role', 'clinical_read_prescriptions(text, uuid, uuid)', 'execute') as scratch`,
+      );
+      expect(rxPriv.rows[0]!.api).toBe(true);
+      expect(rxPriv.rows[0]!.scratch).toBe(false);
     } finally {
       await raw.query("drop role mm_scratch_role");
     }
+  });
+
+  it("the patient-authored tables are DELIBERATELY reachable by mesomed_api (no RLS tier)", async () => {
+    // Option-A tables (ADR-0010): ordinary DML by the API role; ownership
+    // is layer-b application logic, not database policy.
+    const profile = await asApiRole("select count(*)::int as n from patient_medical_profile");
+    expect(Array.isArray(profile.rows)).toBe(true);
+    const meds = await asApiRole("select count(*)::int as n from patient_reported_medications");
+    expect(Array.isArray(meds.rows)).toBe(true);
   });
 
   it("clinical_access_log: UPDATE/DELETE denied at the DB level for the API role AND the owner", async () => {

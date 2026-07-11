@@ -10,11 +10,14 @@
  * the authorization decision.
  */
 import { ErrorCode } from "@mesomed/contracts/errors";
+import { TREATING_APPOINTMENT_STATUSES } from "@mesomed/domain/clinical";
 import { sql, type DbExecutor } from "@mesomed/db";
 import { AppError } from "../../kernel/errors.js";
 import type { Session } from "../../kernel/context.js";
+import { hasAppointmentForLocations } from "../booking/queries/appointment-refs.js";
 import { getDoctorProfileIdForUser } from "../directory/queries/doctor-profile-refs.js";
 import { getPatientProfileIdForUser } from "../identity/queries/user-profiles.js";
+import { getDoctorLocationIdsForDoctorProfile } from "../scheduling/queries/doctor-location-refs.js";
 
 /** Actor recorded for encounter creation by the outbox subscriber. */
 export const SYSTEM_ACTOR = "system:outbox";
@@ -51,6 +54,18 @@ const DB_ERROR_TO_APP: ReadonlyArray<[pattern: string, code: ErrorCode, message:
     "CLINICAL_AMEND_TARGET_INVALID",
     ErrorCode.VALIDATION,
     "Amendments must target an original note of the same encounter",
+  ],
+  ["PRESCRIPTION_NOT_FOUND", ErrorCode.NOT_FOUND, "Prescription not found"],
+  [
+    "PRESCRIPTION_NOT_ACTIVE",
+    ErrorCode.PRESCRIPTION_NOT_ACTIVE,
+    "Only the active revision of a prescription can be amended or discontinued",
+  ],
+  ["PRESCRIPTION_STATUS_INVALID", ErrorCode.VALIDATION, "Illegal prescription status transition"],
+  [
+    "PRESCRIPTION_IMMUTABLE",
+    ErrorCode.VALIDATION,
+    "Prescription content is append-only — corrections are new revisions",
   ],
 ];
 
@@ -110,6 +125,56 @@ function toVisitNoteRow(row: VisitNoteSqlRow): VisitNoteRow {
     amendsNoteId: row.amends_note_id,
     authorUserId: row.author_user_id,
     content: row.content,
+    createdAt: toDate(row.created_at),
+  };
+}
+
+export interface PrescriptionRow {
+  id: string;
+  encounterId: string;
+  doctorProfileId: string;
+  patientProfileId: string;
+  medicationName: string;
+  dosage: string;
+  frequency: string;
+  duration: string;
+  instructions: string | null;
+  status: "active" | "superseded" | "discontinued";
+  supersedesPrescriptionId: string | null;
+  issuedAt: Date;
+  createdAt: Date;
+}
+
+type PrescriptionSqlRow = {
+  id: string;
+  encounter_id: string;
+  doctor_profile_id: string;
+  patient_profile_id: string;
+  medication_name: string;
+  dosage: string;
+  frequency: string;
+  duration: string;
+  instructions: string | null;
+  status: "active" | "superseded" | "discontinued";
+  supersedes_prescription_id: string | null;
+  issued_at: string | Date;
+  created_at: string | Date;
+};
+
+function toPrescriptionRow(row: PrescriptionSqlRow): PrescriptionRow {
+  return {
+    id: row.id,
+    encounterId: row.encounter_id,
+    doctorProfileId: row.doctor_profile_id,
+    patientProfileId: row.patient_profile_id,
+    medicationName: row.medication_name,
+    dosage: row.dosage,
+    frequency: row.frequency,
+    duration: row.duration,
+    instructions: row.instructions,
+    status: row.status,
+    supersedesPrescriptionId: row.supersedes_prescription_id,
+    issuedAt: toDate(row.issued_at),
     createdAt: toDate(row.created_at),
   };
 }
@@ -241,6 +306,87 @@ export async function supportReadVisitNotes(
   }
 }
 
+// ── Prescription channel (clinical extension, ADR-0010) ───────────────
+
+export interface PrescriptionContent {
+  medicationName: string;
+  dosage: string;
+  frequency: string;
+  duration: string;
+  instructions: string | null;
+}
+
+export async function issuePrescriptionRow(
+  db: DbExecutor,
+  input: PrescriptionContent & { encounterId: string; actor: string },
+): Promise<string> {
+  try {
+    const result = await db.execute<{ clinical_issue_prescription: string }>(
+      sql`select clinical_issue_prescription(${input.encounterId}, ${input.medicationName}, ${input.dosage}, ${input.frequency}, ${input.duration}, ${input.instructions}, ${input.actor})`,
+    );
+    const row = result.rows[0];
+    if (!row) throw new AppError(ErrorCode.INTERNAL, "clinical_issue_prescription returned no row");
+    return row.clinical_issue_prescription;
+  } catch (error) {
+    translateClinicalDbError(error);
+  }
+}
+
+/**
+ * Atomic amendment: the DB function inserts the new active revision AND
+ * flips the target active → superseded in one call. Returns the new id.
+ */
+export async function amendPrescriptionRow(
+  db: DbExecutor,
+  input: PrescriptionContent & { prescriptionId: string; actor: string },
+): Promise<string> {
+  try {
+    const result = await db.execute<{ clinical_amend_prescription: string }>(
+      sql`select clinical_amend_prescription(${input.prescriptionId}, ${input.medicationName}, ${input.dosage}, ${input.frequency}, ${input.duration}, ${input.instructions}, ${input.actor})`,
+    );
+    const row = result.rows[0];
+    if (!row) throw new AppError(ErrorCode.INTERNAL, "clinical_amend_prescription returned no row");
+    return row.clinical_amend_prescription;
+  } catch (error) {
+    translateClinicalDbError(error);
+  }
+}
+
+export async function discontinuePrescriptionRow(
+  db: DbExecutor,
+  prescriptionId: string,
+  actor: string,
+): Promise<string> {
+  try {
+    const result = await db.execute<{ clinical_discontinue_prescription: string }>(
+      sql`select clinical_discontinue_prescription(${prescriptionId}, ${actor})`,
+    );
+    const row = result.rows[0];
+    if (!row) {
+      throw new AppError(ErrorCode.INTERNAL, "clinical_discontinue_prescription returned no row");
+    }
+    return row.clinical_discontinue_prescription;
+  } catch (error) {
+    translateClinicalDbError(error);
+  }
+}
+
+/** Scoped, audited read — newest first (chain assembly re-orders per chain). */
+export async function readPrescriptionRows(
+  db: DbExecutor,
+  actor: string,
+  scope: { patientProfileId?: string; prescriptionId?: string },
+): Promise<PrescriptionRow[]> {
+  try {
+    const result = await db.execute<PrescriptionSqlRow>(
+      sql`select * from clinical_read_prescriptions(${actor}, ${scope.patientProfileId ?? null}, ${scope.prescriptionId ?? null})`,
+    );
+    return result.rows.map(toPrescriptionRow);
+  } catch (error) {
+    translateClinicalDbError(error);
+  }
+}
+
 // ── Layer-b actor checks (§3.6) ────────────────────────────────────────
 
 /**
@@ -294,4 +440,30 @@ export async function requireEncounterActor(
     }
   }
   throw new AppError(ErrorCode.FORBIDDEN, "Not authorized for this encounter");
+}
+
+/**
+ * Continuity-of-care rule (ADR-0010): the session doctor may read a
+ * patient's clinical history only with at least one appointment with that
+ * patient in a treating status (`TREATING_APPOINTMENT_STATUSES`). Composed
+ * from scheduling's and booking's published queries (§3.1) — clinical
+ * never joins their tables. Returns the doctor's profile id.
+ */
+export async function requireTreatingDoctor(
+  db: DbExecutor,
+  session: Session,
+  patientProfileId: string,
+): Promise<string> {
+  const doctorProfileId = await requireDoctorProfileId(db, session);
+  const doctorLocationIds = await getDoctorLocationIdsForDoctorProfile(db, doctorProfileId);
+  const treating = await hasAppointmentForLocations(
+    db,
+    doctorLocationIds,
+    patientProfileId,
+    TREATING_APPOINTMENT_STATUSES,
+  );
+  if (!treating) {
+    throw new AppError(ErrorCode.FORBIDDEN, "No treating relationship with this patient");
+  }
+  return doctorProfileId;
 }

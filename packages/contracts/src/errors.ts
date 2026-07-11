@@ -32,6 +32,8 @@ export const ErrorCode = {
   // Phase 6b (billing revenue model) — additive only.
   RATE_NOT_CONFIGURED: "RATE_NOT_CONFIGURED",
   BILLING_MODEL_NOT_CONFIGURED: "BILLING_MODEL_NOT_CONFIGURED",
+  // Clinical extension (prescriptions, ADR-0010) — additive only.
+  PRESCRIPTION_NOT_ACTIVE: "PRESCRIPTION_NOT_ACTIVE",
 } as const;
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];

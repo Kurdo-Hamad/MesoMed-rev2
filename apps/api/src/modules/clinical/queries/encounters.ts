@@ -26,7 +26,7 @@ export interface EncounterView {
   createdAt: string;
 }
 
-function toEncounterView(row: EncounterRow): EncounterView {
+export function toEncounterView(row: EncounterRow): EncounterView {
   return {
     encounterId: row.id,
     appointmentId: row.appointmentId,
@@ -47,7 +47,7 @@ export interface VisitNoteView {
   createdAt: string;
 }
 
-function toVisitNoteView(row: VisitNoteRow): VisitNoteView {
+export function toVisitNoteView(row: VisitNoteRow): VisitNoteView {
   return {
     visitNoteId: row.id,
     encounterId: row.encounterId,

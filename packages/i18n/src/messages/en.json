@@ -21,6 +21,7 @@
     "OTP_DELIVERY_FAILED": "We couldn't deliver your verification code. Please try again.",
     "INVALID_STATUS_TRANSITION": "This status change is not allowed.",
     "PHONE_NOT_VERIFIED": "Please verify your phone number first.",
-    "EMAIL_NOT_VERIFIED": "Please verify your email first."
+    "EMAIL_NOT_VERIFIED": "Please verify your email first.",
+    "PRESCRIPTION_NOT_ACTIVE": "Only the active version of a prescription can be changed."
   }
 }

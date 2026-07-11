@@ -1,11 +1,22 @@
 /**
- * Published appointment lookups for the Phase 6b billing module (§3.1).
- * Cancellation-policy evaluation needs the instant the cancellation/no-show
- * transition occurred; `cancelled` and `no_show` are terminal states, so
- * `status_changed_at` read at any later time IS that instant — the
- * evaluation stays deterministic under outbox redelivery.
+ * Published appointment lookups for the Phase 6b billing module and the
+ * clinical module (§3.1). Cancellation-policy evaluation needs the instant
+ * the cancellation/no-show transition occurred; `cancelled` and `no_show`
+ * are terminal states, so `status_changed_at` read at any later time IS
+ * that instant — the evaluation stays deterministic under outbox
+ * redelivery.
  */
-import { appointments, eq, type DbExecutor } from "@mesomed/db";
+import {
+  and,
+  appointments,
+  eq,
+  inArray,
+  sql,
+  type APPOINTMENT_STATUSES,
+  type DbExecutor,
+} from "@mesomed/db";
+
+export type AppointmentStatus = (typeof APPOINTMENT_STATUSES)[number];
 
 export interface AppointmentTransitionRef {
   status: string;
@@ -22,4 +33,33 @@ export async function getAppointmentTransitionRef(
     .where(eq(appointments.id, appointmentId))
     .limit(1);
   return row ?? null;
+}
+
+/**
+ * Published for the clinical module's continuity-of-care check (ADR-0010):
+ * whether the patient has at least one appointment in any of the given
+ * statuses at any of the given doctor locations. The caller supplies the
+ * doctor-side location ids (scheduling's published query) and the status
+ * set (`TREATING_APPOINTMENT_STATUSES` in `@mesomed/domain/clinical`) —
+ * this function reads only booking's own table.
+ */
+export async function hasAppointmentForLocations(
+  db: DbExecutor,
+  doctorLocationIds: readonly string[],
+  patientProfileId: string,
+  statuses: readonly AppointmentStatus[],
+): Promise<boolean> {
+  if (doctorLocationIds.length === 0 || statuses.length === 0) return false;
+  const [row] = await db
+    .select({ one: sql<number>`1` })
+    .from(appointments)
+    .where(
+      and(
+        inArray(appointments.doctorLocationId, [...doctorLocationIds]),
+        eq(appointments.patientProfileId, patientProfileId),
+        inArray(appointments.status, [...statuses]),
+      ),
+    )
+    .limit(1);
+  return row !== undefined;
 }

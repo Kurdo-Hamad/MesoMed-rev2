@@ -58,6 +58,10 @@ const APP_TO_TRPC = {
   // billing model is a stated precondition of the deployment's config.
   [ErrorCode.RATE_NOT_CONFIGURED]: "PRECONDITION_FAILED",
   [ErrorCode.BILLING_MODEL_NOT_CONFIGURED]: "PRECONDITION_FAILED",
+  // Clinical extension (ADR-0010): mutating a superseded/discontinued
+  // revision conflicts with the current revision-chain state — retryable
+  // against the active revision.
+  [ErrorCode.PRESCRIPTION_NOT_ACTIVE]: "CONFLICT",
 } as const satisfies Record<ErrorCode, TRPCErrorCode>;
 
 const TRPC_TO_APP: Partial<Record<TRPCErrorCode, ErrorCode>> = {
