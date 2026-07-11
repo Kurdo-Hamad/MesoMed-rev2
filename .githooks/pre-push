@@ -1,0 +1,8 @@
+#!/bin/bash
+protected_branch='main'
+current_branch=$(git symbolic-ref HEAD | sed -e 's,.*/\(.*\),\1,')
+if [ "$current_branch" = "$protected_branch" ]; then
+    echo "ERROR: Direct push to main is blocked. Create a branch, open a PR, merge instead."
+    exit 1
+fi
+exit 0
