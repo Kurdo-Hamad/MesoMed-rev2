@@ -29,6 +29,7 @@ import { registerPaymentWebhookRoutes } from "./modules/billing/webhook.js";
 import { registerBillingSubscribers } from "./modules/billing/index.js";
 import type { PaymentGatewayRegistry } from "./modules/billing/shared.js";
 import { registerClinicalSubscribers } from "./modules/clinical/index.js";
+import { registerCommunicationSubscribers } from "./modules/communication/index.js";
 import { registerDirectorySubscribers } from "./modules/directory/index.js";
 import { createIdentityModule, type IdentityModule } from "./modules/identity/index.js";
 import { registerAuthRoutes } from "./modules/identity/routes.js";
@@ -176,6 +177,10 @@ export async function buildServer(
   registerSearchSubscribers(events);
   registerClinicalSubscribers({ events, outbox });
   registerBillingSubscribers({ events, outbox, config, gateways: paymentGateways });
+  // Sender loop + reminder cron start-up (real-vs-mock channel selection,
+  // mock-production guardrail) is composition-root wiring for Task 8 — the
+  // subscribers here have no runtime cost until an event actually fires.
+  registerCommunicationSubscribers({ events });
 
   app.get("/health", async () => healthPayload());
   app.get("/ready", async (_req, reply) => {

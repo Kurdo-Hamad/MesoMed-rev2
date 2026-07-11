@@ -5,6 +5,7 @@ import { createBillingRouter } from "../modules/billing/router.js";
 import type { PaymentGatewayRegistry } from "../modules/billing/shared.js";
 import { createBookingRouter } from "../modules/booking/router.js";
 import { createClinicalRouter } from "../modules/clinical/router.js";
+import { createCommunicationRouter } from "../modules/communication/router.js";
 import { createGuestPatientProfile } from "../modules/identity/commands/create-guest-patient-profile.js";
 import { createDirectoryRouter } from "../modules/directory/router.js";
 import { createIdentityRouter } from "../modules/identity/router.js";
@@ -38,6 +39,7 @@ export function createAppRouter(
     booking: createBookingRouter({ createGuestPatientProfile }),
     clinical: createClinicalRouter(),
     billing: createBillingRouter({ gateways: deps.paymentGateways }),
+    communication: createCommunicationRouter(),
     search: createSearchRouter(),
   });
 }

@@ -123,7 +123,7 @@ export function createOtpSender(deps: {
       }
 
       const message = { to: phoneNumber, code, locale: DEFAULT_LOCALE };
-      let delivered: "whatsapp" | "sms" | null = null;
+      let delivered: "whatsapp" | "sms";
 
       try {
         await assertChannelEnabled(deps.config, "whatsapp");
@@ -152,7 +152,7 @@ export function createOtpSender(deps: {
         }
       }
 
-      recordNotificationSend(delivered!, "sent");
+      recordNotificationSend(delivered, "sent");
       await deps.db.insert(otpSendAttempts).values({ normalizedPhone: phoneNumber, sentAt: now });
     },
   };

@@ -34,6 +34,8 @@ export type NotificationStatus = (typeof NOTIFICATION_STATUSES)[number];
 
 export const DEVICE_PLATFORMS = ["ios", "android"] as const;
 
+export type DevicePlatform = (typeof DEVICE_PLATFORMS)[number];
+
 export const registerDeviceTokenInputSchema = z.object({
   /** Expo push token as issued by the Expo SDK on the device. */
   token: z.string().min(1).max(4096),
