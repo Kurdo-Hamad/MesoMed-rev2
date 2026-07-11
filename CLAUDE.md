@@ -3,7 +3,7 @@
 This file governs every Claude Code session working in this repository. Read it fully before any work. The authoritative sources are:
 
 - **MM-PLAN-001-Execution-Plan.md** — locked stack, repository layout, salvage manifest, phase-by-phase execution plan and acceptance gates.
-- **MM-DEC-Authentication-and-Identity-Strategy-Locked-rev01.md** — the locked authentication/identity/notification strategy that Phase 2 (Identity) and the Better Auth integration implement exactly.
+- **MM-DEC-Authentication-and-Identity-Strategy-Locked-rev02.md** — the locked authentication/identity/notification strategy that Phase 2 (Identity) and the Better Auth integration implement exactly.
 
 If anything in this file conflicts with MM-PLAN-001, MM-PLAN-001 wins — update this file to match, don't route around it.
 

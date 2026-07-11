@@ -3,20 +3,22 @@ import cors from "@fastify/cors";
 import * as Sentry from "@sentry/node";
 import { fastifyTRPCPlugin } from "@trpc/server/adapters/fastify";
 import { createEventRegistry, type EventRegistry } from "@mesomed/contracts/events";
+import { IDENTITY_EVENTS } from "@mesomed/contracts/events/identity";
 import { createDb, type Db } from "@mesomed/db";
+import { createMockEmailChannel, createMockOtpChannel, type EmailChannel } from "@mesomed/platform";
 import type pg from "pg";
 import type { Env } from "./env.js";
-import {
-  anonymousSessionResolver,
-  createContextFactory,
-  type SessionResolver,
-} from "./kernel/context.js";
+import { createContextFactory, type SessionResolver } from "./kernel/context.js";
 import { createConfigService, type ConfigService } from "./kernel/config.js";
 import { createOutboxDispatcher, type OutboxDispatcher } from "./kernel/dispatcher.js";
 import { createHandlerRegistry, type HandlerRegistry } from "./kernel/events.js";
 import { healthPayload, readinessPayload } from "./kernel/health.js";
 import { createOutboxEmitter, type OutboxEmitter } from "./kernel/outbox.js";
-import { appRouter } from "./trpc/router.js";
+import { createIdentityModule, type IdentityModule } from "./modules/identity/index.js";
+import { registerAuthRoutes } from "./modules/identity/routes.js";
+import type { IdentityOtpOptions } from "./modules/identity/auth.js";
+import type { OtpChannels } from "./modules/identity/otp-sender.js";
+import { createAppRouter } from "./trpc/router.js";
 
 /** The kernel services the composition root wires, exposed for tests/ops. */
 export interface KernelServices {
@@ -32,6 +34,7 @@ export interface KernelServices {
 declare module "fastify" {
   interface FastifyInstance {
     kernel: KernelServices;
+    identity: IdentityModule;
   }
 }
 
@@ -45,6 +48,12 @@ export interface BuildServerOverrides {
   sessionResolver?: SessionResolver;
   eventRegistry?: EventRegistry;
   eventHandlers?: HandlerRegistry;
+  /** OTP transports (mock by default through Phase 2 — MM-DEC rev02 §8). */
+  otpChannels?: OtpChannels;
+  /** Email transport (mock by default through Phase 2; Resend in Phase 7). */
+  emailChannel?: EmailChannel;
+  /** OTP expiry/attempt tuning — tests shrink these to exercise the limits. */
+  otpOptions?: IdentityOtpOptions;
 }
 
 /**
@@ -79,7 +88,7 @@ export async function buildServer(
 
   const { db, pool, close } = createDb(env.DATABASE_URL);
   // Module event contracts and subscribers accumulate here from Phase 2 on.
-  const registry = overrides.eventRegistry ?? createEventRegistry([]);
+  const registry = overrides.eventRegistry ?? createEventRegistry([...IDENTITY_EVENTS]);
   const events = overrides.eventHandlers ?? createHandlerRegistry();
   const outbox = createOutboxEmitter(registry);
   const config = createConfigService(db);
@@ -95,6 +104,21 @@ export async function buildServer(
     retryDelayS: env.OUTBOX_RETRY_DELAY_S,
   });
 
+  const identity = createIdentityModule({
+    db,
+    config,
+    outbox,
+    log: app.log,
+    env,
+    otpChannels: overrides.otpChannels ?? {
+      whatsapp: createMockOtpChannel("whatsapp"),
+      sms: createMockOtpChannel("sms"),
+    },
+    emailChannel: overrides.emailChannel ?? createMockEmailChannel(),
+    otpOptions: overrides.otpOptions,
+  });
+  registerAuthRoutes(app, identity.auth);
+
   app.get("/health", async () => healthPayload());
   app.get("/ready", async (_req, reply) => {
     const payload = await readinessPayload({ db, dispatcherStarted: dispatcher.isStarted });
@@ -104,16 +128,17 @@ export async function buildServer(
   await app.register(fastifyTRPCPlugin, {
     prefix: "/trpc",
     trpcOptions: {
-      router: appRouter,
+      router: createAppRouter(identity),
       createContext: createContextFactory({
         services: { db, config, outbox },
-        sessionResolver: overrides.sessionResolver ?? anonymousSessionResolver,
+        sessionResolver: overrides.sessionResolver ?? identity.sessionResolver,
         defaultCountry: env.DEFAULT_COUNTRY,
       }),
     },
   });
 
   app.decorate("kernel", { db, pool, config, outbox, events, dispatcher, registry });
+  app.decorate("identity", identity);
 
   app.addHook("onClose", async () => {
     await dispatcher.stop();

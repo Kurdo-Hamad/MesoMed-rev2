@@ -16,6 +16,7 @@ export function testEnv(databaseUrl: string, extra: NodeJS.ProcessEnv = {}): Env
     OUTBOX_WORKER_POLL_INTERVAL_S: "0.5",
     OUTBOX_RETRY_LIMIT: "1",
     OUTBOX_RETRY_DELAY_S: "0",
+    BETTER_AUTH_SECRET: "test-secret-test-secret-test-secret-0000",
     ...extra,
   });
 }

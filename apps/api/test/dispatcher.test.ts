@@ -1,9 +1,8 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { eq } from "drizzle-orm";
 import { z } from "zod";
 import type { FastifyInstance } from "fastify";
 import { createEventRegistry, defineEvent, type AnyEventEnvelope } from "@mesomed/contracts/events";
-import { configEntries, domainEvents, processedEvents } from "@mesomed/db";
+import { configEntries, domainEvents, eq, processedEvents } from "@mesomed/db";
 import { createTestDatabase, type TestDatabase } from "@mesomed/db/testing";
 import { buildServer } from "../src/app.js";
 import { createHandlerRegistry } from "../src/kernel/events.js";

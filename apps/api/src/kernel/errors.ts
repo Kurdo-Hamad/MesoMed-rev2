@@ -30,6 +30,15 @@ const APP_TO_TRPC = {
   [ErrorCode.FORBIDDEN]: "FORBIDDEN",
   [ErrorCode.NOT_FOUND]: "NOT_FOUND",
   [ErrorCode.VALIDATION]: "BAD_REQUEST",
+  // Phase 2 (identity). Domain-specific codes keep their app identity in
+  // `appCode` while mapping onto the closest transport semantics.
+  [ErrorCode.CONFLICT]: "CONFLICT",
+  [ErrorCode.RATE_LIMITED]: "TOO_MANY_REQUESTS",
+  [ErrorCode.PROFILE_ALREADY_CLAIMED]: "CONFLICT",
+  [ErrorCode.OTP_DELIVERY_FAILED]: "BAD_GATEWAY",
+  [ErrorCode.INVALID_STATUS_TRANSITION]: "CONFLICT",
+  [ErrorCode.PHONE_NOT_VERIFIED]: "PRECONDITION_FAILED",
+  [ErrorCode.EMAIL_NOT_VERIFIED]: "PRECONDITION_FAILED",
 } as const satisfies Record<ErrorCode, TRPCErrorCode>;
 
 const TRPC_TO_APP: Partial<Record<TRPCErrorCode, ErrorCode>> = {
@@ -37,6 +46,8 @@ const TRPC_TO_APP: Partial<Record<TRPCErrorCode, ErrorCode>> = {
   UNAUTHORIZED: ErrorCode.UNAUTHORIZED,
   FORBIDDEN: ErrorCode.FORBIDDEN,
   NOT_FOUND: ErrorCode.NOT_FOUND,
+  CONFLICT: ErrorCode.CONFLICT,
+  TOO_MANY_REQUESTS: ErrorCode.RATE_LIMITED,
 };
 
 export function appErrorToTRPCError(error: AppError): TRPCError {

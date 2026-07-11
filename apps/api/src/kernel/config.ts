@@ -1,6 +1,5 @@
 import type { z } from "zod";
-import { eq } from "drizzle-orm";
-import { configEntries, type Db } from "@mesomed/db";
+import { type Db, configEntries, eq } from "@mesomed/db";
 import { ErrorCode } from "@mesomed/contracts/errors";
 import { AppError } from "./errors.js";
 

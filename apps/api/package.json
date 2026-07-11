@@ -4,7 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "exports": {
-    "./router": "./src/trpc/router.ts"
+    "./router": "./src/trpc/router.ts",
+    "./app": "./src/app.ts",
+    "./env": "./src/env.ts"
   },
   "scripts": {
     "dev": "tsx watch src/main.ts",
@@ -15,14 +17,19 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@better-auth/expo": "^1.6.23",
     "@fastify/cors": "^11.3.0",
     "@mesomed/contracts": "workspace:*",
     "@mesomed/db": "workspace:*",
+    "@mesomed/domain": "workspace:*",
+    "@mesomed/i18n": "workspace:*",
+    "@mesomed/platform": "workspace:*",
     "@opentelemetry/auto-instrumentations-node": "^0.78.0",
     "@opentelemetry/exporter-trace-otlp-http": "^0.220.0",
     "@opentelemetry/sdk-node": "^0.220.0",
     "@sentry/node": "^10.64.0",
     "@trpc/server": "^11.18.0",
+    "better-auth": "^1.6.23",
     "drizzle-orm": "^0.45.2",
     "fastify": "^5.10.0",
     "pg": "^8.22.0",

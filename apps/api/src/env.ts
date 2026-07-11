@@ -34,6 +34,11 @@ const envSchema = z.object({
   OUTBOX_RETRY_DELAY_S: z.coerce.number().int().min(0).default(2),
   SENTRY_DSN: z.url().optional(),
   OTEL_EXPORTER_OTLP_ENDPOINT: z.url().optional(),
+  // Better Auth (Phase 2): secret signs session tokens — required, no
+  // default, so a production boot can never fall back to a known value.
+  BETTER_AUTH_SECRET: z.string().min(32, "at least 32 characters"),
+  // Public base URL of this API, used by Better Auth for callback/link URLs.
+  BETTER_AUTH_URL: z.url().default("http://localhost:4000"),
 });
 
 export type Env = z.infer<typeof envSchema>;
