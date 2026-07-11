@@ -169,3 +169,5 @@ switch on `appCode`, never on message strings.
   SELECT/INSERT/UPDATE/DELETE denied; grant-then-select returns zero rows
   (policy-free deny-all); the definer channel returns data and audits;
   `PUBLIC` cannot execute the channel (`rls.test.ts`).
+
+**Note on test timing:** the Phase 3 seed test's outbox-drain timeout was widened 120s→240s during Phase 5 verification. This was environment-driven (local machine contention during full-suite runs), not a regression in outbox dispatch latency — the convergence assertion itself is unchanged. Flagging explicitly so a future widening isn't assumed to be more of the same; if it needs bumping again, treat that as a signal to profile the dispatcher, not just raise the number.

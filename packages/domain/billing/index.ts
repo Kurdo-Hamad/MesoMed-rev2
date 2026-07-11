@@ -6,3 +6,4 @@ export {
   galleryCapForRank,
   type TierKey,
 } from "./tier-utils.js";
+export { paymentPeriod, type PaymentPeriod } from "./payment-period.js";

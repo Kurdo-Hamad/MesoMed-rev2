@@ -26,6 +26,9 @@ export const ErrorCode = {
   // Phase 5 (clinical) — additive only.
   SUPPORT_GRANT_INVALID: "SUPPORT_GRANT_INVALID",
   SUPPORT_GRANT_EXPIRED: "SUPPORT_GRANT_EXPIRED",
+  // Phase 6 (billing) — additive only.
+  PAYMENT_GATEWAY_NOT_CONFIGURED: "PAYMENT_GATEWAY_NOT_CONFIGURED",
+  PAYMENT_NOT_SETTLED: "PAYMENT_NOT_SETTLED",
 } as const;
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];

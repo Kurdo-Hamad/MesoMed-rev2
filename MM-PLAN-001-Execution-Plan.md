@@ -229,7 +229,8 @@ where each decision actually lives (reconciled in ADR-0003, Phase 1).
 
 - **Full-schema RLS rejected:** clinical-tier RLS (encounters, visit_notes) adopted as defense-in-depth, layered under the two-layer application authz model. Recorded in §3.6 and §5 Phase 5 of this plan (restated verbatim as CLAUDE.md convention #6); no standalone ADR file.
 - **Phase week numbers reclassified** as sequencing estimates, not calendar commitments; gate criteria remain the sole condition for advancing phases. Recorded in the §5 preamble; no standalone ADR file.
-- **ADR filename index** (`docs/adr/` is authoritative): `0001` locked stack & Phase 0 foundation · `0002` pre-Phase-1 remediation of MM-QA-001 findings · `0003` Phase 1 kernel.
+- **ADR filename index** (`docs/adr/` is authoritative): `0001` locked stack & Phase 0 foundation · `0002` pre-Phase-1 remediation of MM-QA-001 findings · `0003` Phase 1 kernel · `0004` Phase 2 identity · `0005` Phase 3 directory/search · `0006` Phase 4 scheduling/booking · `0007` Phase 5 clinical · `0008` Phase 6 billing/payments.
+- **Phase 6 `facility_tiers` table:** billing owns its own tier-expiry state (`facility_tiers.tier_expires_at`, extended atomically in the payment tx) because §3.1 forbids billing writing the directory's `facilities.tier_expires_at`; the directory's denormalized copy follows via `billing.tier_payment_recorded.v1`. Recorded in ADR-0008.
 
 ## 7. Claude Code Kickoff Prompt (use verbatim for Phase 0)
 

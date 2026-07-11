@@ -49,6 +49,11 @@ const APP_TO_TRPC = {
   // expired one is a stated precondition (re-grant and retry).
   [ErrorCode.SUPPORT_GRANT_INVALID]: "FORBIDDEN",
   [ErrorCode.SUPPORT_GRANT_EXPIRED]: "PRECONDITION_FAILED",
+  // Phase 6 (billing): a missing routing entry / unconfigured adapter is a
+  // stated precondition of the deployment; a gateway that did not settle a
+  // settle-now payment is an upstream failure.
+  [ErrorCode.PAYMENT_GATEWAY_NOT_CONFIGURED]: "PRECONDITION_FAILED",
+  [ErrorCode.PAYMENT_NOT_SETTLED]: "BAD_GATEWAY",
 } as const satisfies Record<ErrorCode, TRPCErrorCode>;
 
 const TRPC_TO_APP: Partial<Record<TRPCErrorCode, ErrorCode>> = {
