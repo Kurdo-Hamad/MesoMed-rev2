@@ -15,7 +15,10 @@
     "./directory": "./src/directory.ts",
     "./search": "./src/search.ts",
     "./events/identity": "./src/events/identity.ts",
-    "./events/directory": "./src/events/directory.ts"
+    "./events/directory": "./src/events/directory.ts",
+    "./scheduling": "./src/scheduling.ts",
+    "./booking": "./src/booking.ts",
+    "./events/booking": "./src/events/booking.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json",

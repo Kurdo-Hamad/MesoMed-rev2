@@ -5,6 +5,7 @@ import { fastifyTRPCPlugin } from "@trpc/server/adapters/fastify";
 import { createEventRegistry, type EventRegistry } from "@mesomed/contracts/events";
 import { IDENTITY_EVENTS } from "@mesomed/contracts/events/identity";
 import { DIRECTORY_EVENTS } from "@mesomed/contracts/events/directory";
+import { BOOKING_EVENTS } from "@mesomed/contracts/events/booking";
 import { createDb, type Db } from "@mesomed/db";
 import { createMockEmailChannel, createMockOtpChannel, type EmailChannel } from "@mesomed/platform";
 import type pg from "pg";
@@ -92,7 +93,8 @@ export async function buildServer(
   const { db, pool, close } = createDb(env.DATABASE_URL);
   // Module event contracts and subscribers accumulate here from Phase 2 on.
   const registry =
-    overrides.eventRegistry ?? createEventRegistry([...IDENTITY_EVENTS, ...DIRECTORY_EVENTS]);
+    overrides.eventRegistry ??
+    createEventRegistry([...IDENTITY_EVENTS, ...DIRECTORY_EVENTS, ...BOOKING_EVENTS]);
   const events = overrides.eventHandlers ?? createHandlerRegistry();
   const outbox = createOutboxEmitter(registry);
   const config = createConfigService(db);

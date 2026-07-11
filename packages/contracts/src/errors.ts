@@ -21,6 +21,8 @@ export const ErrorCode = {
   EMAIL_NOT_VERIFIED: "EMAIL_NOT_VERIFIED",
   // Phase 3 (directory) — additive only.
   COUNTRY_COMING_SOON: "COUNTRY_COMING_SOON",
+  // Phase 4 (scheduling/booking) — additive only.
+  SLOT_UNAVAILABLE: "SLOT_UNAVAILABLE",
 } as const;
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];
