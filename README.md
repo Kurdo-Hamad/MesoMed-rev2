@@ -81,3 +81,10 @@ has a meta-test proving it actually fires (a lesson recorded in MM-QA-001):
 CI (GitHub Actions) runs lint → typecheck → test → build → format check and a
 Docker image build on every PR and push to `main`. Phase gates are defined in
 MM-PLAN-001 §5 — never start phase N+1 on a red gate.
+## Windows dev-harness notes
+
+Embedded-Postgres integration tests require these fixes on Windows (already applied, documented for fresh clones):
+
+- **Encoding:** initdb defaults to WIN1252 and rejects Arabic/Kurdish fixtures. Test bootstrap must pass `--encoding=UTF8 --no-locale`.
+- **Teardown:** Windows releases async file locks late; embedded-pg shutdown can throw `EBUSY`. Teardown wraps cleanup in a retry.
+- **otel meta-test:** the SIGTERM exit-code assertion is platform-gated (skipped on Windows — the OS can't deliver POSIX signals the same way). CI (Linux) still runs it unskipped; treat a Windows-local skip as expected, not a gap.
