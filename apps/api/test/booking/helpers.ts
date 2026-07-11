@@ -2,16 +2,23 @@ import type { FastifyInstance } from "fastify";
 import type { Role } from "@mesomed/contracts/roles";
 import { doctorProfiles, patientProfiles, providerProfiles, providers, user } from "@mesomed/db";
 import { buildServer } from "../../src/app.js";
+import type { HandlerRegistry } from "../../src/kernel/events.js";
 import { testEnv } from "../helpers.js";
 
 /**
  * Phase 4 test app: the real composition root with a header-injected
  * session (x-test-user + x-test-roles) so layer-b ownership checks can be
  * exercised across distinct users (real-session integration is proven in
- * the identity suites).
+ * the identity suites). A pre-seeded handler registry can be passed to
+ * observe event delivery with test-double subscribers — module subscribers
+ * are registered on top of it by the composition root.
  */
-export function buildBookingTestServer(connectionString: string): Promise<FastifyInstance> {
+export function buildBookingTestServer(
+  connectionString: string,
+  overrides: { eventHandlers?: HandlerRegistry } = {},
+): Promise<FastifyInstance> {
   return buildServer(testEnv(connectionString), {
+    eventHandlers: overrides.eventHandlers,
     sessionResolver: (req) => {
       const roleHeader = req.headers["x-test-roles"];
       const roles = Array.isArray(roleHeader) ? roleHeader[0] : roleHeader;

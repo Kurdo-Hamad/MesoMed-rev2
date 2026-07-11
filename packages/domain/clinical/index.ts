@@ -11,3 +11,19 @@ export {
   type AmendableNote,
   type AmendmentVerdict,
 } from "./amendment-rule.js";
+export {
+  PRESCRIPTION_STATUSES,
+  validatePrescriptionTransition,
+  type PrescriptionStatus,
+  type PrescriptionTransitionVerdict,
+} from "./prescription-status.js";
+export {
+  buildPrescriptionRevisionChains,
+  type RevisionChain,
+  type RevisionLink,
+} from "./revision-chain.js";
+export {
+  TREATING_APPOINTMENT_STATUSES,
+  hasTreatingStatus,
+  type TreatingAppointmentStatus,
+} from "./treating-relationship.js";

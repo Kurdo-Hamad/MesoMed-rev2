@@ -99,3 +99,137 @@ export const listSupportGrantsInputSchema = z.object({
 export const listSupportGrantsOutputSchema = z.object({
   grants: z.array(supportGrantSchema),
 });
+
+// ── Prescriptions (clinical extension, ADR-0010) ───────────────────────
+// Doctor-authored clinical records: append-only content, amendments are
+// new rows linked by supersedesPrescriptionId (§3.5). Prescription content
+// crosses the wire only in these procedure outputs — never in events.
+
+export const PRESCRIPTION_STATUSES = ["active", "superseded", "discontinued"] as const;
+export type PrescriptionStatus = (typeof PRESCRIPTION_STATUSES)[number];
+
+export const prescriptionSchema = z.object({
+  prescriptionId: z.string(),
+  encounterId: z.string(),
+  doctorProfileId: z.string(),
+  patientProfileId: z.string(),
+  medicationName: z.string(),
+  dosage: z.string(),
+  frequency: z.string(),
+  duration: z.string(),
+  instructions: z.string().nullable(),
+  status: z.enum(PRESCRIPTION_STATUSES),
+  /** Null on an original; the superseded revision's id on an amendment. */
+  supersedesPrescriptionId: z.string().nullable(),
+  issuedAt: z.string(),
+  createdAt: z.string(),
+});
+
+/** One revision chain, original first, latest revision last. */
+export const prescriptionChainSchema = z.object({
+  revisions: z.array(prescriptionSchema),
+});
+
+const prescriptionContentFields = {
+  medicationName: z.string().min(1).max(500),
+  dosage: z.string().min(1).max(500),
+  frequency: z.string().min(1).max(500),
+  duration: z.string().min(1).max(500),
+  instructions: z.string().min(1).max(5_000).optional(),
+};
+
+export const issuePrescriptionInputSchema = z.object({
+  encounterId: z.string().uuid(),
+  ...prescriptionContentFields,
+});
+
+export const amendPrescriptionInputSchema = z.object({
+  /** The ACTIVE revision being corrected — it flips to superseded. */
+  prescriptionId: z.string().uuid(),
+  ...prescriptionContentFields,
+});
+
+export const prescriptionIdInputSchema = z.object({ prescriptionId: z.string().uuid() });
+
+export const prescriptionResultSchema = z.object({
+  prescriptionId: z.string(),
+  encounterId: z.string(),
+  status: z.enum(PRESCRIPTION_STATUSES),
+  supersedesPrescriptionId: z.string().nullable(),
+});
+
+// ── Patient medical profile (patient-authored, option A — ADR-0010) ────
+
+export const BLOOD_TYPES = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-", "unknown"] as const;
+export type BloodType = (typeof BLOOD_TYPES)[number];
+
+export const medicalProfileSchema = z.object({
+  patientProfileId: z.string(),
+  bloodType: z.enum(BLOOD_TYPES),
+  allergies: z.array(z.string()),
+  notes: z.string().nullable(),
+  updatedAt: z.string(),
+});
+
+export const upsertMedicalProfileInputSchema = z.object({
+  bloodType: z.enum(BLOOD_TYPES),
+  allergies: z.array(z.string().min(1).max(500)).max(100),
+  notes: z.string().min(1).max(10_000).optional(),
+});
+
+// ── Patient-reported medications (patient-authored, NOT prescriptions) ─
+
+export const MEDICATION_SOURCES = ["self_prescribed", "over_the_counter"] as const;
+export type MedicationSource = (typeof MEDICATION_SOURCES)[number];
+
+export const reportedMedicationSchema = z.object({
+  reportedMedicationId: z.string(),
+  patientProfileId: z.string(),
+  medicationName: z.string(),
+  dosage: z.string().nullable(),
+  source: z.enum(MEDICATION_SOURCES),
+  notes: z.string().nullable(),
+  createdAt: z.string(),
+});
+
+export const addReportedMedicationInputSchema = z.object({
+  medicationName: z.string().min(1).max(500),
+  dosage: z.string().min(1).max(500).optional(),
+  source: z.enum(MEDICATION_SOURCES),
+  notes: z.string().min(1).max(5_000).optional(),
+});
+
+export const reportedMedicationIdInputSchema = z.object({
+  reportedMedicationId: z.string().uuid(),
+});
+
+export const removeReportedMedicationResultSchema = z.object({
+  reportedMedicationId: z.string(),
+  removed: z.boolean(),
+});
+
+// ── Clinical history reads (ADR-0010) ──────────────────────────────────
+// Prescriptions and patient-reported medications are structurally distinct
+// arrays in every payload — never merged into one medication list.
+
+export const patientClinicalHistoryInputSchema = z.object({
+  patientProfileId: z.string().uuid(),
+});
+
+export const patientClinicalHistoryOutputSchema = z.object({
+  patientProfileId: z.string(),
+  encounters: z.array(encounterSchema),
+  /** Notes grouped per encounter, same shape as encounterNotes. */
+  visitNotes: z.array(visitNotesOutputSchema),
+  prescriptionChains: z.array(prescriptionChainSchema),
+  medicalProfile: medicalProfileSchema.nullable(),
+  reportedMedications: z.array(reportedMedicationSchema),
+});
+
+/** Patient self-view. Visit notes are deliberately absent (ADR-0010). */
+export const myClinicalRecordOutputSchema = z.object({
+  patientProfileId: z.string(),
+  prescriptionChains: z.array(prescriptionChainSchema),
+  medicalProfile: medicalProfileSchema.nullable(),
+  reportedMedications: z.array(reportedMedicationSchema),
+});

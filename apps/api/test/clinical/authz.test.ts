@@ -90,6 +90,65 @@ describe("clinical authz matrix", () => {
       deniedRoles: ["patient", "secretary", "admin"],
     },
     {
+      procedure: "clinical.issuePrescription",
+      kind: "mutation",
+      input: {
+        encounterId: UUID,
+        medicationName: "x",
+        dosage: "x",
+        frequency: "x",
+        duration: "x",
+      },
+      deniedRoles: ["patient", "secretary", "admin"],
+    },
+    {
+      procedure: "clinical.amendPrescription",
+      kind: "mutation",
+      input: {
+        prescriptionId: UUID,
+        medicationName: "x",
+        dosage: "x",
+        frequency: "x",
+        duration: "x",
+      },
+      deniedRoles: ["patient", "secretary", "admin"],
+    },
+    {
+      procedure: "clinical.discontinuePrescription",
+      kind: "mutation",
+      input: { prescriptionId: UUID },
+      deniedRoles: ["patient", "secretary", "admin"],
+    },
+    {
+      procedure: "clinical.patientClinicalHistory",
+      kind: "query",
+      input: { patientProfileId: UUID },
+      deniedRoles: ["patient", "secretary", "admin"],
+    },
+    {
+      procedure: "clinical.myClinicalRecord",
+      kind: "query",
+      deniedRoles: ["doctor", "secretary", "admin"],
+    },
+    {
+      procedure: "clinical.upsertMedicalProfile",
+      kind: "mutation",
+      input: { bloodType: "A+", allergies: [] },
+      deniedRoles: ["doctor", "secretary", "admin"],
+    },
+    {
+      procedure: "clinical.addReportedMedication",
+      kind: "mutation",
+      input: { medicationName: "x", source: "over_the_counter" },
+      deniedRoles: ["doctor", "secretary", "admin"],
+    },
+    {
+      procedure: "clinical.removeReportedMedication",
+      kind: "mutation",
+      input: { reportedMedicationId: UUID },
+      deniedRoles: ["doctor", "secretary", "admin"],
+    },
+    {
       procedure: "clinical.grantSupportAccess",
       kind: "mutation",
       input: { encounterId: UUID, reason: "reason text", expiresAt: "2027-01-01T00:00:00.000Z" },
@@ -130,10 +189,16 @@ describe("clinical authz matrix", () => {
     );
     // The booking.completed.v1 subscriber is the only creation path.
     expect(mutations.map(([name]) => name).sort()).toEqual([
+      "addReportedMedication",
       "addVisitNote",
+      "amendPrescription",
       "amendVisitNote",
+      "discontinuePrescription",
       "grantSupportAccess",
+      "issuePrescription",
+      "removeReportedMedication",
       "revokeSupportAccess",
+      "upsertMedicalProfile",
     ]);
   });
 

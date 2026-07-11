@@ -86,13 +86,125 @@ export const clinicalAccessLog = pgTable(
     encounterId: uuid("encounter_id"),
     visitNoteId: uuid("visit_note_id"),
     grantId: uuid("grant_id"),
+    prescriptionId: uuid("prescription_id"),
   },
   (table) => [
     index("clinical_access_log_encounter_idx").on(table.encounterId, table.occurredAt),
     index("clinical_access_log_actor_idx").on(table.actorUserId, table.occurredAt),
     check(
       "clinical_access_log_action_check",
-      sql`${table.action} in ('encounter_created', 'encounter_read', 'note_added', 'note_amended', 'notes_read', 'support_notes_read', 'grant_created', 'grant_revoked')`,
+      sql`${table.action} in ('encounter_created', 'encounter_read', 'note_added', 'note_amended', 'notes_read', 'support_notes_read', 'grant_created', 'grant_revoked', 'prescription_issued', 'prescription_amended', 'prescription_discontinued', 'prescriptions_read')`,
+    ),
+  ],
+);
+
+export const PRESCRIPTION_STATUSES = ["active", "superseded", "discontinued"] as const;
+
+/**
+ * Doctor-authored prescriptions (clinical extension, ADR-0010). Content is
+ * append-only (§3.5): an amendment is a NEW active row whose
+ * `supersedesPrescriptionId` points at the prior revision, flipped
+ * active → superseded in the same tx; discontinuation is a status flip
+ * with no content change. Migration 0007's guardrail tail enforces this
+ * (guard triggers, SECURITY DEFINER channel, audit) — same clinical tier
+ * as encounters/visit_notes (§3.6 as amended by ADR-0010). The self-FK on
+ * `supersedesPrescriptionId` is added in the migration tail (visit_notes
+ * precedent).
+ */
+export const prescriptions = pgTable(
+  "prescriptions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    encounterId: uuid("encounter_id")
+      .notNull()
+      .references(() => encounters.id),
+    /** Denormalized from the encounter — enables patient-scoped reads. */
+    doctorProfileId: uuid("doctor_profile_id").notNull(),
+    patientProfileId: uuid("patient_profile_id").notNull(),
+    medicationName: text("medication_name").notNull(),
+    dosage: text("dosage").notNull(),
+    frequency: text("frequency").notNull(),
+    duration: text("duration").notNull(),
+    instructions: text("instructions"),
+    status: text("status", { enum: PRESCRIPTION_STATUSES }).notNull().default("active"),
+    /** Null on an original revision; the superseded revision's id on an amendment. */
+    supersedesPrescriptionId: uuid("supersedes_prescription_id"),
+    issuedAt: timestamp("issued_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("prescriptions_patient_profile_idx").on(table.patientProfileId, table.issuedAt),
+    index("prescriptions_encounter_idx").on(table.encounterId),
+    /** A revision can be superseded by at most one row — chains stay linear. */
+    uniqueIndex("prescriptions_supersedes_unique")
+      .on(table.supersedesPrescriptionId)
+      .where(sql`${table.supersedesPrescriptionId} is not null`),
+    check(
+      "prescriptions_status_check",
+      sql`${table.status} in ('active', 'superseded', 'discontinued')`,
+    ),
+    check(
+      "prescriptions_no_self_supersede_check",
+      sql`${table.supersedesPrescriptionId} <> ${table.id}`,
+    ),
+  ],
+).enableRLS();
+
+export const BLOOD_TYPES = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-", "unknown"] as const;
+
+/**
+ * Patient-authored medical profile (ADR-0010, option A — locked): free
+ * upsert by the owning patient, NO revision history, doctors read-only.
+ * Patient-owned safety data the patient has no incentive to falsify;
+ * deliberately outside the RLS/audit clinical tier — ordinary DML by
+ * `mesomed_api`, ownership enforced in the handler (§3.6 layer b).
+ * `patientProfileId` (identity) is a cross-module reference without FK.
+ */
+export const patientMedicalProfiles = pgTable(
+  "patient_medical_profile",
+  {
+    /** One row per patient — the profile IS the patient's row. */
+    patientProfileId: uuid("patient_profile_id").primaryKey(),
+    bloodType: text("blood_type", { enum: BLOOD_TYPES }).notNull().default("unknown"),
+    allergies: text("allergies").array().notNull().default([]),
+    notes: text("notes"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    check(
+      "patient_medical_profile_blood_type_check",
+      sql`${table.bloodType} in ('A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'unknown')`,
+    ),
+  ],
+);
+
+export const MEDICATION_SOURCES = ["self_prescribed", "over_the_counter"] as const;
+
+/**
+ * Patient-reported medications (ADR-0010) — patient-authored, structurally
+ * distinct from clinical prescriptions in every payload, never merged into
+ * one medication list. Not clinical records: hard delete is acceptable.
+ * Same non-tier treatment as the medical profile (no RLS, no audit).
+ */
+export const patientReportedMedications = pgTable(
+  "patient_reported_medications",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    patientProfileId: uuid("patient_profile_id").notNull(),
+    medicationName: text("medication_name").notNull(),
+    dosage: text("dosage"),
+    source: text("source", { enum: MEDICATION_SOURCES }).notNull(),
+    notes: text("notes"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("patient_reported_medications_patient_idx").on(table.patientProfileId, table.createdAt),
+    check(
+      "patient_reported_medications_source_check",
+      sql`${table.source} in ('self_prescribed', 'over_the_counter')`,
     ),
   ],
 );

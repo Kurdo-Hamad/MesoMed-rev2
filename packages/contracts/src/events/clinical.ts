@@ -63,10 +63,56 @@ export const supportAccessRevokedV1 = defineEvent(
   }),
 );
 
+// ── Prescriptions (clinical extension, ADR-0010) ───────────────────────
+// Same privacy invariant as visit notes: ids only, never medication
+// content. Phase 7 communication subscribes to these (MM-DEC §6); no
+// subscriber exists in this slice.
+
+export const prescriptionIssuedV1 = defineEvent(
+  "clinical",
+  "prescription_issued",
+  1,
+  z.object({
+    prescriptionId: z.string(),
+    encounterId: z.string(),
+    doctorProfileId: z.string(),
+    patientProfileId: z.string(),
+  }),
+);
+
+export const prescriptionAmendedV1 = defineEvent(
+  "clinical",
+  "prescription_amended",
+  1,
+  z.object({
+    prescriptionId: z.string(),
+    encounterId: z.string(),
+    doctorProfileId: z.string(),
+    patientProfileId: z.string(),
+    /** The revision this one supersedes — flipped to superseded in the same tx. */
+    supersedesPrescriptionId: z.string(),
+  }),
+);
+
+export const prescriptionDiscontinuedV1 = defineEvent(
+  "clinical",
+  "prescription_discontinued",
+  1,
+  z.object({
+    prescriptionId: z.string(),
+    encounterId: z.string(),
+    doctorProfileId: z.string(),
+    patientProfileId: z.string(),
+  }),
+);
+
 /** All clinical event contracts, for registry composition in the API. */
 export const CLINICAL_EVENTS = [
   encounterCreatedV1,
   visitNoteAddedV1,
   supportAccessGrantedV1,
   supportAccessRevokedV1,
+  prescriptionIssuedV1,
+  prescriptionAmendedV1,
+  prescriptionDiscontinuedV1,
 ] as const;

@@ -20,7 +20,7 @@ The following is §3 of MM-PLAN-001, verbatim. These are not suggestions — cod
 3. **Event contracts are forever:** every event has `{ name, version, payload }` Zod schema in `packages/contracts/events`. Additive changes only; breaking change = new version, old handlers kept until drained.
 4. **Consistency classification:** booking slot allocation and clinical writes = strongly consistent (single tx + partial unique index on non-cancelled appointments — port from current schema). Directory, search, feeds, notifications = eventually consistent via outbox.
 5. **Clinical integrity:** `clinical_access_log` append-only, populated by SECURITY DEFINER Postgres trigger (port concept from current 0002 migration). Visit notes: corrections are amendments, never UPDATEs to content. Admin access only via time-boxed support grants.
-6. **Two-layer authorization + clinical-tier RLS:** (a) role check in kernel authz middleware per procedure; (b) resource-ownership check inside command/query handlers. DB role for the API is least-privilege (no superuser/owner in production). Full-schema RLS is rejected — it protects a path the app doesn't use and creates false assurance (proven failure mode in the current codebase: 130 assertions guarding an unused path). Exception: `encounters` and `visit_notes` carry targeted RLS policies as defense-in-depth against API-layer bugs (deny-all direct select, access only via SECURITY DEFINER support-access function) — cheap, high-value, applied to clinical tables only.
+6. **Two-layer authorization + clinical-tier RLS:** (a) role check in kernel authz middleware per procedure; (b) resource-ownership check inside command/query handlers. DB role for the API is least-privilege (no superuser/owner in production). Full-schema RLS is rejected — it protects a path the app doesn't use and creates false assurance (proven failure mode in the current codebase: 130 assertions guarding an unused path). Exception: `encounters`, `visit_notes` and `prescriptions` (added by ADR-0010) carry targeted RLS policies as defense-in-depth against API-layer bugs (deny-all direct select, access only via SECURITY DEFINER support-access function) — cheap, high-value, applied to clinical tables only.
 7. **Patient identity continuity:** guest bookings create internal patient profiles keyed on normalized phone number (unverified). Account registration claims existing profile by: (a) phone match + OTP-verified phone ownership, or (b) phone match + verified email. Merge is atomic; no unverified claim step exists. Merge policy is a domain rule in `identity`.
 8. **Adapters:** domain/module code imports interfaces from `packages/platform` only. Concrete providers are wired in `apps/api` composition root via env/config. Second adapter is built when the second provider is real — never speculatively.
 9. **Config over code:** countries, enabled categories, gateways, channels, tier pricing = rows in config tables validated by `packages/config` schemas. Adding a country must not require code changes to existing modules.
@@ -59,3 +59,12 @@ mesomed/
 Execution proceeds phase by phase per MM-PLAN-001 §5. **The acceptance gate, not the calendar, controls sequencing** — never start phase N+1 on a red gate for phase N. Every phase ends with an ADR (`docs/adr/`) recording what was decided or deviated, per convention #14.
 
 Phase 0 (Foundation) scaffolds the monorepo, tooling, and a health-check-only API/web/mobile — no business modules. Business logic starts at Phase 1 (Kernel/outbox) and Phase 2 (Identity, implementing MM-DEC exactly).
+
+## Development environment (binding)
+
+The WSL clone at `~/mesomed` is the only authoritative working copy. All builds,
+tests, gate runs, commits, and Claude Code sessions execute from WSL. The
+Windows-side checkout (`C:\Users\Lenovo\Documents\MesoMed.rev2`) is read-only
+reference — never build, never test, never commit from it (precedent: a CRLF
+incident corrupted a prior commit). If a session finds itself running the gate
+or committing from a Windows path, stop and surface it before proceeding.
