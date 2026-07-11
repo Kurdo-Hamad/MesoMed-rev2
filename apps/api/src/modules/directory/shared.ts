@@ -1,0 +1,154 @@
+/**
+ * Directory module internals shared by commands, queries and subscribers.
+ */
+import { packText } from "@mesomed/contracts/directory";
+import { ErrorCode } from "@mesomed/contracts/errors";
+import type { Locale } from "@mesomed/contracts/i18n";
+import {
+  cities,
+  categories,
+  doctorProfiles,
+  eq,
+  facilities,
+  providers,
+  type DbExecutor,
+} from "@mesomed/db";
+import { AppError } from "../../kernel/errors.js";
+import type { OutboxEmitter } from "../../kernel/outbox.js";
+
+// Wire-shape helpers live with the LocalizedText contract; re-exported so
+// module internals keep one import site.
+export { packOptionalText, packText } from "@mesomed/contracts/directory";
+
+/**
+ * The locale-specific facility name column driving the stable landing sort
+ * (tier_rank, name_<locale>, id) — one partial index exists per locale.
+ */
+export function facilityNameColumn(locale: Locale) {
+  switch (locale) {
+    case "en":
+      return facilities.nameEn;
+    case "ar":
+      return facilities.nameAr;
+    case "ckb":
+      return facilities.nameCkb;
+  }
+}
+
+export function doctorNameColumn(locale: Locale) {
+  switch (locale) {
+    case "en":
+      return doctorProfiles.nameEn;
+    case "ar":
+      return doctorProfiles.nameAr;
+    case "ckb":
+      return doctorProfiles.nameCkb;
+  }
+}
+
+/** Resolve an active-or-not city row id by slug; NOT_FOUND when absent. */
+export async function requireCityId(db: DbExecutor, slug: string): Promise<string> {
+  const [row] = await db.select({ id: cities.id }).from(cities).where(eq(cities.slug, slug));
+  if (!row) throw new AppError(ErrorCode.NOT_FOUND, `Unknown city "${slug}"`);
+  return row.id;
+}
+
+export async function requireCategoryId(db: DbExecutor, slug: string): Promise<string> {
+  const [row] = await db
+    .select({ id: categories.id })
+    .from(categories)
+    .where(eq(categories.slug, slug));
+  if (!row) throw new AppError(ErrorCode.NOT_FOUND, `Unknown category "${slug}"`);
+  return row.id;
+}
+
+/**
+ * Recompute the denormalized public-visibility flag for every listing of a
+ * directory provider and emit `directory.*_updated.v1` for each listing
+ * whose flag flipped, so downstream read models (search) stay consistent.
+ * Runs on the caller's transaction — the emit is atomic with the update.
+ *
+ * The predicate is intentionally centralized here (Phase 2 gate: provider
+ * approved AND listing active). Phase 6 extends this one function with
+ * billing state; queries filter on `publicly_visible` and never change.
+ */
+export async function recomputeProviderVisibility(
+  tx: DbExecutor,
+  outbox: OutboxEmitter,
+  providerId: string,
+): Promise<void> {
+  const [provider] = await tx
+    .select({ approved: providers.approved })
+    .from(providers)
+    .where(eq(providers.id, providerId));
+  if (!provider) return;
+
+  const facilityRows = await tx
+    .select()
+    .from(facilities)
+    .where(eq(facilities.providerId, providerId));
+  for (const facility of facilityRows) {
+    const visible = provider.approved && facility.active;
+    if (visible === facility.publiclyVisible) continue;
+    await tx
+      .update(facilities)
+      .set({ publiclyVisible: visible, updatedAt: new Date() })
+      .where(eq(facilities.id, facility.id));
+    const [category] = await tx
+      .select({ slug: categories.slug })
+      .from(categories)
+      .where(eq(categories.id, facility.categoryId));
+    const [city] = await tx
+      .select({ slug: cities.slug })
+      .from(cities)
+      .where(eq(cities.id, facility.cityId));
+    await outbox.emit(tx, {
+      name: "directory.facility_updated.v1",
+      aggregateType: "facility",
+      aggregateId: facility.id,
+      payload: {
+        facilityId: facility.id,
+        slug: facility.slug,
+        name: packText(facility.nameEn, facility.nameAr, facility.nameCkb),
+        categorySlug: category?.slug ?? "",
+        citySlug: city?.slug ?? "",
+        tierRank: facility.tierRank,
+        publiclyVisible: visible,
+      },
+    });
+  }
+
+  const doctorRows = await tx
+    .select()
+    .from(doctorProfiles)
+    .where(eq(doctorProfiles.providerId, providerId));
+  for (const doctor of doctorRows) {
+    const visible = provider.approved && doctor.active;
+    if (visible === doctor.publiclyVisible) continue;
+    await tx
+      .update(doctorProfiles)
+      .set({ publiclyVisible: visible, updatedAt: new Date() })
+      .where(eq(doctorProfiles.id, doctor.id));
+    let citySlug: string | null = null;
+    if (doctor.cityId) {
+      const [city] = await tx
+        .select({ slug: cities.slug })
+        .from(cities)
+        .where(eq(cities.id, doctor.cityId));
+      citySlug = city?.slug ?? null;
+    }
+    await outbox.emit(tx, {
+      name: "directory.doctor_profile_updated.v1",
+      aggregateType: "doctor_profile",
+      aggregateId: doctor.id,
+      payload: {
+        doctorProfileId: doctor.id,
+        slug: doctor.slug,
+        name: packText(doctor.nameEn, doctor.nameAr, doctor.nameCkb),
+        specialtyKey: doctor.specialtyKey,
+        citySlug,
+        publiclyVisible: visible,
+      },
+    });
+  }
+}

@@ -12,7 +12,10 @@
     "./roles": "./src/roles.ts",
     "./system": "./src/system.ts",
     "./identity": "./src/identity.ts",
-    "./events/identity": "./src/events/identity.ts"
+    "./directory": "./src/directory.ts",
+    "./search": "./src/search.ts",
+    "./events/identity": "./src/events/identity.ts",
+    "./events/directory": "./src/events/directory.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json",

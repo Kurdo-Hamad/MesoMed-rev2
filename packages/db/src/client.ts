@@ -23,6 +23,15 @@ export function createDb(connectionString: string): DbHandle {
   const pool = new pg.Pool({ connectionString });
   const db = drizzle(pool, { schema });
   let closed = false;
+  // An idle pooled connection can die out-of-band (server restart; the test
+  // harness stopping its embedded server while pool.end() is in flight).
+  // Without a listener that's an unhandled 'error' event that crashes the
+  // process even though the pool already discards the dead client (pg docs
+  // require a handler). Log-and-continue before close; silent during/after
+  // close, where the disconnect is the expected consequence of teardown.
+  pool.on("error", (error) => {
+    if (!closed) console.error("pg pool idle client error:", error.message);
+  });
   return {
     db,
     pool,

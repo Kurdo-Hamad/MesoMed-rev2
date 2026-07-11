@@ -15,6 +15,13 @@
       "when": 1783710104132,
       "tag": "0001_identity",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1783723041773,
+      "tag": "0002_directory",
+      "breakpoints": true
     }
   ]
 }

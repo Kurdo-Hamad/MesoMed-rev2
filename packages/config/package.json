@@ -8,14 +8,17 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test": "vitest run"
   },
   "dependencies": {
+    "@mesomed/contracts": "workspace:*",
     "zod": "^4.4.3"
   },
   "devDependencies": {
     "@mesomed/typescript-config": "workspace:*",
     "@mesomed/eslint-config": "workspace:*",
-    "typescript": "~6.0.3"
+    "typescript": "~6.0.3",
+    "vitest": "^4.1.10"
   }
 }

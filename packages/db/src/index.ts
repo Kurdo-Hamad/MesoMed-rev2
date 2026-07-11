@@ -2,6 +2,8 @@ import journal from "../migrations/meta/_journal.json" with { type: "json" };
 
 export * from "./schema/kernel.js";
 export * from "./schema/identity.js";
+export * from "./schema/directory.js";
+export * from "./schema/search.js";
 export * from "./client.js";
 
 // Query operators re-exported from the drizzle-orm build this package's
@@ -9,6 +11,7 @@ export * from "./client.js";
 // second drizzle-orm instance (e.g. hoisted differently by a dependency)
 // produces incompatible column types at compile time.
 export { and, asc, desc, eq, gt, gte, inArray, isNull, lt, lte, ne, or, sql } from "drizzle-orm";
+export type { SQL } from "drizzle-orm";
 
 /** Where the drizzle migrator records applied migrations (pinned, not defaulted). */
 export const MIGRATIONS_SCHEMA = "drizzle";

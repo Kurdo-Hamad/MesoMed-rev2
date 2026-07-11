@@ -1,8 +1,10 @@
 import { healthResponseSchema } from "@mesomed/contracts/health";
 import { healthPayload } from "../kernel/health.js";
 import { publicProcedure, router } from "../kernel/trpc.js";
+import { createDirectoryRouter } from "../modules/directory/router.js";
 import { createIdentityRouter } from "../modules/identity/router.js";
 import type { IdentityModule } from "../modules/identity/index.js";
+import { createSearchRouter } from "../modules/search/router.js";
 import { systemRouter } from "./system.js";
 
 const healthRouter = router({
@@ -20,6 +22,8 @@ export function createAppRouter(identity: IdentityModule) {
     health: healthRouter,
     system: systemRouter,
     identity: createIdentityRouter(identity.auth),
+    directory: createDirectoryRouter(),
+    search: createSearchRouter(),
   });
 }
 

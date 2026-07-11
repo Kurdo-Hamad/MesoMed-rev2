@@ -19,6 +19,8 @@ export const ErrorCode = {
   INVALID_STATUS_TRANSITION: "INVALID_STATUS_TRANSITION",
   PHONE_NOT_VERIFIED: "PHONE_NOT_VERIFIED",
   EMAIL_NOT_VERIFIED: "EMAIL_NOT_VERIFIED",
+  // Phase 3 (directory) — additive only.
+  COUNTRY_COMING_SOON: "COUNTRY_COMING_SOON",
 } as const;
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];
