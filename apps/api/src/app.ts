@@ -24,6 +24,7 @@ import { createOutboxDispatcher, type OutboxDispatcher } from "./kernel/dispatch
 import { createHandlerRegistry, type HandlerRegistry } from "./kernel/events.js";
 import { healthPayload, readinessPayload } from "./kernel/health.js";
 import { createOutboxEmitter, type OutboxEmitter } from "./kernel/outbox.js";
+import { REDACT_PATHS } from "./kernel/redaction.js";
 import { registerPaymentWebhookRoutes } from "./modules/billing/webhook.js";
 import { registerBillingSubscribers } from "./modules/billing/index.js";
 import type { PaymentGatewayRegistry } from "./modules/billing/shared.js";
@@ -95,6 +96,7 @@ export async function buildServer(
     logger: {
       level: env.LOG_LEVEL,
       transport: env.NODE_ENV === "development" ? { target: "pino-pretty" } : undefined,
+      redact: { paths: REDACT_PATHS, censor: "[REDACTED]" },
     },
   });
 
