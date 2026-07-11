@@ -14,6 +14,57 @@
       "verifyBody": "ئەم بەستەرە بکەرەوە بۆ پشتڕاستکردنەوەی ئیمەیڵەکەت: {url}"
     }
   },
+  "communication": {
+    "booking_confirmation": {
+      "sms": "میزۆمێد: ژوانەکەت لەگەڵ {doctorName} پشتڕاستکرایەوە بۆ {dateTime} لە {locationName}.",
+      "pushTitle": "ژوان پشتڕاستکرایەوە",
+      "pushBody": "ژوانەکەت لەگەڵ {doctorName} پشتڕاستکرایەوە بۆ {dateTime} لە {locationName}.",
+      "emailSubject": "ژوانەکەت لە میزۆمێد پشتڕاستکرایەوە",
+      "emailBody": "ژوانەکەت لەگەڵ {doctorName} پشتڕاستکرایەوە بۆ {dateTime} لە {locationName}."
+    },
+    "reschedule_notice": {
+      "sms": "میزۆمێد: ژوانەکەت لەگەڵ {doctorName} گوازرایەوە بۆ {dateTime} لە {locationName}.",
+      "pushTitle": "ژوانەکەت گۆڕدرا",
+      "pushBody": "ژوانەکەت لەگەڵ {doctorName} گوازرایەوە بۆ {dateTime} لە {locationName}.",
+      "emailSubject": "ژوانەکەت لە میزۆمێد گۆڕدرا",
+      "emailBody": "ژوانەکەت لەگەڵ {doctorName} گوازرایەوە بۆ {dateTime} لە {locationName}."
+    },
+    "cancellation_notice": {
+      "sms": "میزۆمێد: ژوانەکەت لەگەڵ {doctorName} لە {dateTime} لە {locationName} هەڵوەشایەوە.",
+      "pushTitle": "ژوان هەڵوەشایەوە",
+      "pushBody": "ژوانەکەت لەگەڵ {doctorName} لە {dateTime} لە {locationName} هەڵوەشایەوە.",
+      "emailSubject": "ژوانەکەت لە میزۆمێد هەڵوەشایەوە",
+      "emailBody": "ژوانەکەت لەگەڵ {doctorName} لە {dateTime} لە {locationName} هەڵوەشایەوە."
+    },
+    "reminder": {
+      "sms": "بیرخستنەوەی میزۆمێد: بەیانی ژوانت هەیە لەگەڵ {doctorName}، {dateTime}، لە {locationName}.",
+      "pushTitle": "بیرخستنەوەی ژوان",
+      "pushBody": "بەیانی ژوانت هەیە لەگەڵ {doctorName}، {dateTime}، لە {locationName}.",
+      "emailSubject": "بیرخستنەوە: بەیانی ژوانت هەیە لە میزۆمێد",
+      "emailBody": "بەیانی ژوانت هەیە لەگەڵ {doctorName}، {dateTime}، لە {locationName}."
+    },
+    "prescription_issued": {
+      "sms": "میزۆمێد: {doctorName} ڕەچەتەیەکی نوێی بۆ دەرکردیت. ئەپەکە بکەرەوە بۆ بینینی.",
+      "pushTitle": "ڕەچەتەی نوێ",
+      "pushBody": "{doctorName} ڕەچەتەیەکی نوێی بۆ دەرکردیت. ئەپەکە بکەرەوە بۆ بینینی.",
+      "emailSubject": "ڕەچەتەیەکی نوێت هەیە لە میزۆمێد",
+      "emailBody": "{doctorName} ڕەچەتەیەکی نوێی بۆ دەرکردیت. ئەپی میزۆمێد بکەرەوە بۆ بینینی."
+    },
+    "subscription_activated": {
+      "sms": "میزۆمێد: بەشداریکردنەکەت وەک دابینکەری خزمەتگوزاری ئێستا چالاکە.",
+      "pushTitle": "بەشداریکردن چالاکە",
+      "pushBody": "بەشداریکردنەکەت لە میزۆمێد ئێستا چالاکە.",
+      "emailSubject": "بەشداریکردنەکەت لە میزۆمێد چالاکە",
+      "emailBody": "بەشداریکردنەکەت وەک دابینکەری خزمەتگوزاری لە میزۆمێد ئێستا چالاکە و پەڕەکەت بە ئاشکرا دیارە."
+    },
+    "subscription_expired": {
+      "sms": "میزۆمێد: بەشداریکردنەکەت بەسەرچوو. نوێی بکەرەوە بۆ ئەوەی پەڕەکەت دیار بمێنێت.",
+      "pushTitle": "بەشداریکردن بەسەرچوو",
+      "pushBody": "بەشداریکردنەکەت لە میزۆمێد بەسەرچوو. نوێی بکەرەوە بۆ ئەوەی پەڕەکەت دیار بمێنێت.",
+      "emailSubject": "بەشداریکردنەکەت لە میزۆمێد بەسەرچوو",
+      "emailBody": "بەشداریکردنەکەت لە میزۆمێد بەسەرچوو. نوێی بکەرەوە بۆ ئەوەی پەڕەکەت دیار بمێنێت."
+    }
+  },
   "errors": {
     "CONFLICT": "داواکارییەکە لەگەڵ دۆخی ئێستا ناکۆکە.",
     "RATE_LIMITED": "هەوڵی زۆر کرا. تکایە دواتر هەوڵ بدەرەوە.",
@@ -22,6 +73,10 @@
     "INVALID_STATUS_TRANSITION": "ئەم گۆڕینی دۆخە ڕێگەپێدراو نییە.",
     "PHONE_NOT_VERIFIED": "تکایە سەرەتا ژمارەی تەلەفۆنەکەت پشتڕاست بکەرەوە.",
     "EMAIL_NOT_VERIFIED": "تکایە سەرەتا ئیمەیڵەکەت پشتڕاست بکەرەوە.",
-    "PRESCRIPTION_NOT_ACTIVE": "تەنها وەشانی چالاکی ڕەچەتە دەتوانرێت بگۆڕدرێت."
+    "PRESCRIPTION_NOT_ACTIVE": "تەنها وەشانی چالاکی ڕەچەتە دەتوانرێت بگۆڕدرێت.",
+    "CHANNEL_DISABLED": "ئەم کەناڵی پەیوەندییە بە کاتی لەکارخراوە.",
+    "DESTINATION_NOT_ALLOWED": "ناتوانرێت نامە بۆ ئەم ئاراستەیە بنێردرێت.",
+    "CHANNEL_BUDGET_EXCEEDED": "سنووری ڕۆژانەی نامەکان بۆ ئەم کەناڵە پڕبووەتەوە. تکایە بەیانی هەوڵ بدەرەوە.",
+    "AI_QUOTA_EXCEEDED": "گەڕانی نیشانەکان ئێستا داواکاری زۆری هەیە. تکایە دواتر هەوڵ بدەرەوە."
   }
 }

@@ -1,6 +1,10 @@
 import { z } from "zod";
 import { PAYMENT_KINDS, type PaymentKind } from "@mesomed/contracts/billing";
 import { COUNTRY_GATING_STATUSES, type CountryGatingStatus } from "@mesomed/contracts/directory";
+import {
+  NOTIFICATION_CHANNELS,
+  type NotificationChannel,
+} from "@mesomed/contracts/communication";
 
 /**
  * Config-over-code schemas (MM-PLAN-001 §3.9): configuration lives in
@@ -182,6 +186,223 @@ export async function resolvePatientCollectionEnabled(config: ConfigReader): Pro
     return (await config.get(patientCollectionSchema, PATIENT_COLLECTION_CONFIG_KEY)).enabled;
   } catch (error) {
     if ((error as { code?: string }).code === "NOT_FOUND") return false;
+    throw error;
+  }
+}
+
+// ── Communication abuse controls (MM-PLAN-001 §5 Phase 7, MM-ARC-002 §6.6) ──
+
+/** `config_entries` key for the global per-channel kill-switch. */
+export const CHANNEL_KILL_SWITCH_CONFIG_KEY = "communication.channel_kill_switch";
+
+/**
+ * Global per-channel kill-switch: channel → killed. Flipping a channel is
+ * a config-row edit that takes effect within the config-cache TTL — no
+ * deploy (§3.9). A missing row or missing entry means the channel is
+ * enabled; `true` refuses every send on that channel.
+ */
+export const channelKillSwitchSchema = z.partialRecord(
+  z.enum(NOTIFICATION_CHANNELS),
+  z.boolean(),
+);
+
+export type ChannelKillSwitch = z.infer<typeof channelKillSwitchSchema>;
+
+export async function resolveChannelKilled(
+  config: ConfigReader,
+  channel: NotificationChannel,
+): Promise<boolean> {
+  let killSwitch: ChannelKillSwitch;
+  try {
+    killSwitch = await config.get(channelKillSwitchSchema, CHANNEL_KILL_SWITCH_CONFIG_KEY);
+  } catch (error) {
+    if ((error as { code?: string }).code === "NOT_FOUND") return false;
+    throw error;
+  }
+  return killSwitch[channel] ?? false;
+}
+
+/** `config_entries` key for the destination-country allowlist. */
+export const DESTINATION_COUNTRIES_CONFIG_KEY = "communication.destination_countries";
+
+/**
+ * Destination-country allowlist: ISO country → E.164 calling prefixes.
+ * Phone-channel sends are permitted only to numbers matching a prefix of
+ * an allowlisted country. Fail closed: a missing row or an unmatched
+ * prefix denies the send. Iraq-only at launch; adding a country is a
+ * config edit, never a code change (§3.9).
+ */
+export const destinationCountriesSchema = z.record(
+  z.string().regex(/^[A-Z]{2}$/, "ISO 3166-1 alpha-2, uppercase"),
+  z.object({ prefixes: z.array(z.string().regex(/^\+\d{1,4}$/)).min(1) }),
+);
+
+export type DestinationCountries = z.infer<typeof destinationCountriesSchema>;
+
+/** The launch allowlist seed (MM-ARC-002 §6.6: Iraq-only). */
+export const DEFAULT_DESTINATION_COUNTRIES: DestinationCountries = {
+  IQ: { prefixes: ["+964"] },
+};
+
+/**
+ * The allowlisted country an E.164 destination belongs to, or null when
+ * no allowlisted prefix matches (deny). A missing config row falls back to
+ * the launch seed rather than failing open.
+ */
+export async function resolveDestinationCountry(
+  config: ConfigReader,
+  phone: string,
+): Promise<string | null> {
+  let countries: DestinationCountries;
+  try {
+    countries = await config.get(destinationCountriesSchema, DESTINATION_COUNTRIES_CONFIG_KEY);
+  } catch (error) {
+    if ((error as { code?: string }).code === "NOT_FOUND") {
+      countries = DEFAULT_DESTINATION_COUNTRIES;
+    } else {
+      throw error;
+    }
+  }
+  for (const [country, { prefixes }] of Object.entries(countries)) {
+    if (prefixes.some((prefix) => phone.startsWith(prefix))) return country;
+  }
+  return null;
+}
+
+/** `config_entries` key for per-channel daily spend budgets. */
+export const CHANNEL_BUDGETS_CONFIG_KEY = "communication.channel_budgets";
+
+/**
+ * Daily spend budget per channel, counted in sends: at `alarmAt` an alert
+ * row is written; at `dailyLimit` further sends are refused (plus an
+ * alert). A channel without an entry is unbudgeted — budgets are an
+ * operational choice, but the enforcement path is always wired.
+ */
+export const channelBudgetsSchema = z.partialRecord(
+  z.enum(NOTIFICATION_CHANNELS),
+  z.object({
+    dailyLimit: z.number().int().min(0),
+    alarmAt: z.number().int().min(0),
+  }),
+);
+
+export type ChannelBudgets = z.infer<typeof channelBudgetsSchema>;
+
+export async function resolveChannelBudget(
+  config: ConfigReader,
+  channel: NotificationChannel,
+): Promise<{ dailyLimit: number; alarmAt: number } | null> {
+  let budgets: ChannelBudgets;
+  try {
+    budgets = await config.get(channelBudgetsSchema, CHANNEL_BUDGETS_CONFIG_KEY);
+  } catch (error) {
+    if ((error as { code?: string }).code === "NOT_FOUND") return null;
+    throw error;
+  }
+  return budgets[channel] ?? null;
+}
+
+/** Scopes a send-rate limit can key on (MM-ARC-002 §6.6). */
+export const SEND_RATE_SCOPES = ["phone", "ip", "device"] as const;
+
+export type SendRateScope = (typeof SEND_RATE_SCOPES)[number];
+
+/** `config_entries` key for the per-scope send-rate policy. */
+export const SEND_RATE_POLICY_CONFIG_KEY = "communication.send_rate_policy";
+
+export const sendRatePolicySchema = z.partialRecord(
+  z.enum(SEND_RATE_SCOPES),
+  z.object({
+    maxSends: z.number().int().min(1),
+    windowSeconds: z.number().int().min(1),
+  }),
+);
+
+export type SendRatePolicy = z.infer<typeof sendRatePolicySchema>;
+
+/**
+ * Applies when no config row exists: the abuse guardrails are on by
+ * default — a deployment can loosen them by config, never by omission.
+ */
+export const DEFAULT_SEND_RATE_POLICY: Required<SendRatePolicy> = {
+  phone: { maxSends: 30, windowSeconds: 3600 },
+  ip: { maxSends: 15, windowSeconds: 3600 },
+  device: { maxSends: 15, windowSeconds: 3600 },
+};
+
+export async function resolveSendRatePolicy(
+  config: ConfigReader,
+  scope: SendRateScope,
+): Promise<{ maxSends: number; windowSeconds: number }> {
+  let policy: SendRatePolicy;
+  try {
+    policy = await config.get(sendRatePolicySchema, SEND_RATE_POLICY_CONFIG_KEY);
+  } catch (error) {
+    if ((error as { code?: string }).code === "NOT_FOUND") return DEFAULT_SEND_RATE_POLICY[scope];
+    throw error;
+  }
+  return policy[scope] ?? DEFAULT_SEND_RATE_POLICY[scope];
+}
+
+/** `config_entries` key for the velocity anomaly-detection policy. */
+export const VELOCITY_POLICY_CONFIG_KEY = "communication.velocity_policy";
+
+/**
+ * Velocity anomaly detection (MM-ARC-002 §6.6): more than `threshold`
+ * sends to one destination key on one channel within the window writes an
+ * alert row. Detection only — it never blocks; blocking is the rate
+ * limits' and budgets' job.
+ */
+export const velocityPolicySchema = z.object({
+  threshold: z.number().int().min(1),
+  windowSeconds: z.number().int().min(1),
+});
+
+export type VelocityPolicy = z.infer<typeof velocityPolicySchema>;
+
+export const DEFAULT_VELOCITY_POLICY: VelocityPolicy = { threshold: 20, windowSeconds: 600 };
+
+export async function resolveVelocityPolicy(config: ConfigReader): Promise<VelocityPolicy> {
+  try {
+    return await config.get(velocityPolicySchema, VELOCITY_POLICY_CONFIG_KEY);
+  } catch (error) {
+    if ((error as { code?: string }).code === "NOT_FOUND") return DEFAULT_VELOCITY_POLICY;
+    throw error;
+  }
+}
+
+// ── AI triage quotas (MM-PLAN-001 §5 Phase 7, MM-ARC-002 §6.7) ──────────
+
+/** `config_entries` key for the AI triage rate policy. */
+export const AI_TRIAGE_RATE_POLICY_CONFIG_KEY = "ai.triage_rate_policy";
+
+const tokenBucketSchema = z.object({
+  capacity: z.number().min(1),
+  refillPerSecond: z.number().positive(),
+});
+
+/**
+ * Two independent quotas on the triage procedure (§6.7): `perCaller`
+ * throttles one user/IP; `global` caps the whole deployment's model spend.
+ * Both are enforced separately and both fail with distinct typed errors.
+ */
+export const aiTriageRatePolicySchema = z.object({
+  perCaller: tokenBucketSchema,
+  global: tokenBucketSchema,
+});
+
+export type AiTriageRatePolicy = z.infer<typeof aiTriageRatePolicySchema>;
+
+export const DEFAULT_AI_TRIAGE_RATE_POLICY: AiTriageRatePolicy = {
+  perCaller: { capacity: 10, refillPerSecond: 0.1 },
+  global: { capacity: 120, refillPerSecond: 2 },
+};
+
+export async function resolveAiTriageRatePolicy(config: ConfigReader): Promise<AiTriageRatePolicy> {
+  try {
+    return await config.get(aiTriageRatePolicySchema, AI_TRIAGE_RATE_POLICY_CONFIG_KEY);
+  } catch (error) {
+    if ((error as { code?: string }).code === "NOT_FOUND") return DEFAULT_AI_TRIAGE_RATE_POLICY;
     throw error;
   }
 }

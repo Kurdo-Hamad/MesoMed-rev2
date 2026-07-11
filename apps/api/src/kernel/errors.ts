@@ -62,6 +62,14 @@ const APP_TO_TRPC = {
   // revision conflicts with the current revision-chain state — retryable
   // against the active revision.
   [ErrorCode.PRESCRIPTION_NOT_ACTIVE]: "CONFLICT",
+  // Phase 7 (communication + AI): a killed channel is a stated operational
+  // precondition of the deployment; a non-allowlisted destination is a
+  // policy denial; an exhausted channel budget and the AI quotas are
+  // throttles with retry semantics.
+  [ErrorCode.CHANNEL_DISABLED]: "PRECONDITION_FAILED",
+  [ErrorCode.DESTINATION_NOT_ALLOWED]: "FORBIDDEN",
+  [ErrorCode.CHANNEL_BUDGET_EXCEEDED]: "TOO_MANY_REQUESTS",
+  [ErrorCode.AI_QUOTA_EXCEEDED]: "TOO_MANY_REQUESTS",
 } as const satisfies Record<ErrorCode, TRPCErrorCode>;
 
 const TRPC_TO_APP: Partial<Record<TRPCErrorCode, ErrorCode>> = {
