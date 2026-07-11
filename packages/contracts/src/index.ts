@@ -5,6 +5,8 @@ export * from "./events/identity.js";
 export * from "./events/directory.js";
 export * from "./events/booking.js";
 export * from "./events/clinical.js";
+export * from "./events/billing.js";
+export * from "./billing.js";
 export * from "./booking.js";
 export * from "./clinical.js";
 export * from "./directory.js";

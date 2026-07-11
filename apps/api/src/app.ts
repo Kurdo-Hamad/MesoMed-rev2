@@ -7,8 +7,15 @@ import { IDENTITY_EVENTS } from "@mesomed/contracts/events/identity";
 import { DIRECTORY_EVENTS } from "@mesomed/contracts/events/directory";
 import { BOOKING_EVENTS } from "@mesomed/contracts/events/booking";
 import { CLINICAL_EVENTS } from "@mesomed/contracts/events/clinical";
+import { BILLING_EVENTS } from "@mesomed/contracts/events/billing";
 import { createDb, type Db } from "@mesomed/db";
-import { createMockEmailChannel, createMockOtpChannel, type EmailChannel } from "@mesomed/platform";
+import {
+  createManualPaymentGateway,
+  createMockEmailChannel,
+  createMockOtpChannel,
+  MANUAL_GATEWAY_ID,
+  type EmailChannel,
+} from "@mesomed/platform";
 import type pg from "pg";
 import type { Env } from "./env.js";
 import { createContextFactory, type SessionResolver } from "./kernel/context.js";
@@ -17,6 +24,8 @@ import { createOutboxDispatcher, type OutboxDispatcher } from "./kernel/dispatch
 import { createHandlerRegistry, type HandlerRegistry } from "./kernel/events.js";
 import { healthPayload, readinessPayload } from "./kernel/health.js";
 import { createOutboxEmitter, type OutboxEmitter } from "./kernel/outbox.js";
+import { registerPaymentWebhookRoutes } from "./modules/billing/webhook.js";
+import type { PaymentGatewayRegistry } from "./modules/billing/shared.js";
 import { registerClinicalSubscribers } from "./modules/clinical/index.js";
 import { registerDirectorySubscribers } from "./modules/directory/index.js";
 import { createIdentityModule, type IdentityModule } from "./modules/identity/index.js";
@@ -60,6 +69,13 @@ export interface BuildServerOverrides {
   emailChannel?: EmailChannel;
   /** OTP expiry/attempt tuning — tests shrink these to exercise the limits. */
   otpOptions?: IdentityOtpOptions;
+  /**
+   * Payment gateway adapters keyed by id (Phase 6). Default wires the
+   * complete `manual` gateway only; FIB/ZainCash adapters join here when
+   * their integrations are real (§8) — tests inject fakes to exercise the
+   * webhook signature/idempotency paths.
+   */
+  paymentGateways?: PaymentGatewayRegistry;
 }
 
 /**
@@ -101,6 +117,7 @@ export async function buildServer(
       ...DIRECTORY_EVENTS,
       ...BOOKING_EVENTS,
       ...CLINICAL_EVENTS,
+      ...BILLING_EVENTS,
     ]);
   const events = overrides.eventHandlers ?? createHandlerRegistry();
   const outbox = createOutboxEmitter(registry);
@@ -132,9 +149,24 @@ export async function buildServer(
   });
   registerAuthRoutes(app, identity.auth);
 
-  // Module subscribers (§3.1): directory mirrors identity approval; search
-  // maintains its read models from directory events; clinical creates
-  // encounters from completed bookings — its only creation path.
+  // Payment gateway adapters (§3.8): concrete providers wired here only.
+  const paymentGateways: PaymentGatewayRegistry = overrides.paymentGateways ?? {
+    [MANUAL_GATEWAY_ID]: createManualPaymentGateway(),
+  };
+  await registerPaymentWebhookRoutes(app, {
+    db,
+    outbox,
+    gateways: paymentGateways,
+    rateLimit: {
+      max: env.WEBHOOK_RATE_LIMIT_MAX,
+      timeWindowMs: env.WEBHOOK_RATE_LIMIT_WINDOW_MS,
+    },
+  });
+
+  // Module subscribers (§3.1): directory mirrors identity approval and
+  // billing subscription/tier state; search maintains its read models from
+  // directory events; clinical creates encounters from completed bookings —
+  // its only creation path.
   registerDirectorySubscribers({ events, outbox });
   registerSearchSubscribers(events);
   registerClinicalSubscribers({ events, outbox });
@@ -148,7 +180,7 @@ export async function buildServer(
   await app.register(fastifyTRPCPlugin, {
     prefix: "/trpc",
     trpcOptions: {
-      router: createAppRouter(identity),
+      router: createAppRouter(identity, { paymentGateways }),
       createContext: createContextFactory({
         services: { db, config, outbox },
         sessionResolver: overrides.sessionResolver ?? identity.sessionResolver,

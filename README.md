@@ -88,3 +88,4 @@ Embedded-Postgres integration tests require these fixes on Windows (already appl
 - **Encoding:** initdb defaults to WIN1252 and rejects Arabic/Kurdish fixtures. Test bootstrap must pass `--encoding=UTF8 --no-locale`.
 - **Teardown:** Windows releases async file locks late; embedded-pg shutdown can throw `EBUSY`. Teardown wraps cleanup in a retry.
 - **otel meta-test:** the SIGTERM exit-code assertion is platform-gated (skipped on Windows — the OS can't deliver POSIX signals the same way). CI (Linux) still runs it unskipped; treat a Windows-local skip as expected, not a gap.
+- **format:check noise:** with `core.autocrlf`, the working tree holds CRLF while git blobs are LF, so repo-wide `prettier --check` warns on files you never touched. CI (Linux) checks out LF and passes; locally, verify only the files you changed.

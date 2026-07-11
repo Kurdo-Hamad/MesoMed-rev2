@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { PAYMENT_KINDS, type PaymentKind } from "@mesomed/contracts/billing";
 import { COUNTRY_GATING_STATUSES, type CountryGatingStatus } from "@mesomed/contracts/directory";
 
 /**
@@ -51,4 +52,45 @@ export async function resolveCountryGating(
     throw error;
   }
   return gating[countryCode.toUpperCase()] ?? "coming_soon";
+}
+
+// ── Payment gateway routing (MM-PLAN-001 §5 Phase 6) ────────────────────
+
+/** `config_entries` key for the billing payment-routing value. */
+export const PAYMENT_ROUTING_CONFIG_KEY = "billing.payment_routing";
+
+/**
+ * Payment routing (§3.9: country × payment kind → gateway id). The gateway
+ * id is a free string validated at resolution time against the adapters
+ * actually registered in the composition root — adding a gateway is a new
+ * adapter plus a config edit, never a schema migration. A country or kind
+ * absent from the map fails closed with a typed error at the call site.
+ */
+export const paymentRoutingSchema = z.record(
+  z.string().regex(/^[A-Z]{2}$/, "ISO 3166-1 alpha-2, uppercase"),
+  // Partial: a country may route only the kinds it has launched.
+  z.partialRecord(z.enum(PAYMENT_KINDS), z.string().min(1)),
+);
+
+export type PaymentRouting = z.infer<typeof paymentRoutingSchema>;
+
+/**
+ * Resolve the configured gateway id for (country, kind), or null when the
+ * config row is missing or has no entry — the caller maps null onto its
+ * typed PAYMENT_GATEWAY_NOT_CONFIGURED error (§3.11). Other failures
+ * propagate, as with country gating.
+ */
+export async function resolvePaymentGatewayId(
+  config: ConfigReader,
+  countryCode: string,
+  kind: PaymentKind,
+): Promise<string | null> {
+  let routing: PaymentRouting;
+  try {
+    routing = await config.get(paymentRoutingSchema, PAYMENT_ROUTING_CONFIG_KEY);
+  } catch (error) {
+    if ((error as { code?: string }).code === "NOT_FOUND") return null;
+    throw error;
+  }
+  return routing[countryCode.toUpperCase()]?.[kind] ?? null;
 }

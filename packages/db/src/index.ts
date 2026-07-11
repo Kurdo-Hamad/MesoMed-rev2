@@ -7,6 +7,7 @@ export * from "./schema/search.js";
 export * from "./schema/scheduling.js";
 export * from "./schema/booking.js";
 export * from "./schema/clinical.js";
+export * from "./schema/billing.js";
 export * from "./client.js";
 
 // Query operators re-exported from the drizzle-orm build this package's

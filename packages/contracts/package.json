@@ -20,7 +20,9 @@
     "./booking": "./src/booking.ts",
     "./events/booking": "./src/events/booking.ts",
     "./clinical": "./src/clinical.ts",
-    "./events/clinical": "./src/events/clinical.ts"
+    "./events/clinical": "./src/events/clinical.ts",
+    "./billing": "./src/billing.ts",
+    "./events/billing": "./src/events/billing.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json",

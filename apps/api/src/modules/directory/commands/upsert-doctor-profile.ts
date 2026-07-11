@@ -10,7 +10,7 @@ import { doctorProfiles, eq, providers, specialties, type DbTransaction } from "
 import { AppError } from "../../../kernel/errors.js";
 import type { OutboxEmitter } from "../../../kernel/outbox.js";
 import { isProviderProfileApproved } from "../../identity/queries/provider-visibility.js";
-import { packText, requireCityId } from "../shared.js";
+import { doctorPubliclyVisible, packText, requireCityId } from "../shared.js";
 
 export type UpsertDoctorProfileInput = z.output<typeof upsertDoctorProfileInputSchema> & {
   /** Deterministic id for seed/import creates — never exposed via tRPC. */
@@ -57,10 +57,14 @@ export async function upsertDoctorProfile(
   }
 
   const [provider] = await tx
-    .select({ approved: providers.approved })
+    .select({
+      approved: providers.approved,
+      identityProfileId: providers.identityProfileId,
+      subscriptionActive: providers.subscriptionActive,
+    })
     .from(providers)
     .where(eq(providers.id, providerId));
-  const publiclyVisible = (provider?.approved ?? false) && input.active;
+  const publiclyVisible = provider !== undefined && doctorPubliclyVisible(provider, input.active);
 
   const values = {
     providerId,

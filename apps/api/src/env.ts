@@ -32,6 +32,10 @@ const envSchema = z.object({
   OUTBOX_WORKER_POLL_INTERVAL_S: z.coerce.number().min(0.5).default(2),
   OUTBOX_RETRY_LIMIT: z.coerce.number().int().min(0).default(5),
   OUTBOX_RETRY_DELAY_S: z.coerce.number().int().min(0).default(2),
+  // Payment webhook rate limiting (Phase 6). Applies to the webhook scope
+  // only; sized for gateway retry storms, tuned down in tests.
+  WEBHOOK_RATE_LIMIT_MAX: z.coerce.number().int().min(1).default(120),
+  WEBHOOK_RATE_LIMIT_WINDOW_MS: z.coerce.number().int().min(1_000).default(60_000),
   SENTRY_DSN: z.url().optional(),
   OTEL_EXPORTER_OTLP_ENDPOINT: z.url().optional(),
   // Better Auth (Phase 2): secret signs session tokens — required, no

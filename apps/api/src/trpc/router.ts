@@ -1,6 +1,8 @@
 import { healthResponseSchema } from "@mesomed/contracts/health";
 import { healthPayload } from "../kernel/health.js";
 import { publicProcedure, router } from "../kernel/trpc.js";
+import { createBillingRouter } from "../modules/billing/router.js";
+import type { PaymentGatewayRegistry } from "../modules/billing/shared.js";
 import { createBookingRouter } from "../modules/booking/router.js";
 import { createClinicalRouter } from "../modules/clinical/router.js";
 import { createGuestPatientProfile } from "../modules/identity/commands/create-guest-patient-profile.js";
@@ -21,7 +23,10 @@ const healthRouter = router({
  * kernel because it will depend on module routers, which the kernel must
  * never do.
  */
-export function createAppRouter(identity: IdentityModule) {
+export function createAppRouter(
+  identity: IdentityModule,
+  deps: { paymentGateways: PaymentGatewayRegistry },
+) {
   return router({
     health: healthRouter,
     system: systemRouter,
@@ -32,6 +37,7 @@ export function createAppRouter(identity: IdentityModule) {
     // booking never value-imports another module's internals (§3.1).
     booking: createBookingRouter({ createGuestPatientProfile }),
     clinical: createClinicalRouter(),
+    billing: createBillingRouter({ gateways: deps.paymentGateways }),
     search: createSearchRouter(),
   });
 }

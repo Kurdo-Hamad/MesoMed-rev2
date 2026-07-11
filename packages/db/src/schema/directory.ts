@@ -189,6 +189,14 @@ export const providers = pgTable(
     providerType: text("provider_type", { enum: DIRECTORY_PROVIDER_TYPES }).notNull(),
     identityProfileId: uuid("identity_profile_id"),
     approved: boolean("approved").notNull().default(false),
+    /**
+     * Mirror of the billing subscription state (active/grace ⇒ true),
+     * synced by the directory's billing.subscription_* subscribers — same
+     * single-writer discipline as `approved` (Phase 6). Only consulted for
+     * account-backed doctors: listings with no identity account have
+     * nobody to bill and stay visible on approved + active alone.
+     */
+    subscriptionActive: boolean("subscription_active").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },

@@ -68,17 +68,35 @@ export async function requireCategoryId(db: DbExecutor, slug: string): Promise<s
  * whose flag flipped, so downstream read models (search) stay consistent.
  * Runs on the caller's transaction — the emit is atomic with the update.
  *
- * The predicate is intentionally centralized here (Phase 2 gate: provider
- * approved AND listing active). Phase 6 extends this one function with
- * billing state; queries filter on `publicly_visible` and never change.
+ * The predicate is intentionally centralized here. Facilities: provider
+ * approved AND listing active (Phase 2 gate). Doctors additionally require
+ * the billing-subscription mirror (Phase 6) — but only for account-backed
+ * profiles: an admin-curated listing (no identityProfileId) has no account
+ * to bill and stays visible on approved + active alone. Queries filter on
+ * `publicly_visible` and never change.
  */
+export function doctorPubliclyVisible(
+  provider: { approved: boolean; identityProfileId: string | null; subscriptionActive: boolean },
+  active: boolean,
+): boolean {
+  return (
+    provider.approved &&
+    active &&
+    (provider.identityProfileId === null || provider.subscriptionActive)
+  );
+}
+
 export async function recomputeProviderVisibility(
   tx: DbExecutor,
   outbox: OutboxEmitter,
   providerId: string,
 ): Promise<void> {
   const [provider] = await tx
-    .select({ approved: providers.approved })
+    .select({
+      approved: providers.approved,
+      identityProfileId: providers.identityProfileId,
+      subscriptionActive: providers.subscriptionActive,
+    })
     .from(providers)
     .where(eq(providers.id, providerId));
   if (!provider) return;
@@ -123,7 +141,7 @@ export async function recomputeProviderVisibility(
     .from(doctorProfiles)
     .where(eq(doctorProfiles.providerId, providerId));
   for (const doctor of doctorRows) {
-    const visible = provider.approved && doctor.active;
+    const visible = doctorPubliclyVisible(provider, doctor.active);
     if (visible === doctor.publiclyVisible) continue;
     await tx
       .update(doctorProfiles)

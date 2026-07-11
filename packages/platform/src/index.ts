@@ -6,3 +6,15 @@ export { OtpSendError, type OtpChannel, type OtpChannelKind, type OtpMessage } f
 export { createMockOtpChannel, type MockOtpChannel } from "./otp-mock.js";
 export { EmailSendError, type EmailChannel, type EmailMessage } from "./email.js";
 export { createMockEmailChannel, type MockEmailChannel } from "./email-mock.js";
+export {
+  WebhookUnsupportedError,
+  WebhookVerificationError,
+  type PaymentGateway,
+  type PaymentInitiation,
+  type PaymentInitiationInput,
+  type PaymentNotification,
+  type PaymentStatus,
+  type PaymentVerification,
+  type WebhookInput,
+} from "./payments.js";
+export { createManualPaymentGateway, MANUAL_GATEWAY_ID } from "./payments-manual.js";
