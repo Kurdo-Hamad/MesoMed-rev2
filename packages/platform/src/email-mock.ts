@@ -4,6 +4,7 @@
 import { EmailSendError, type EmailChannel, type EmailMessage } from "./email.js";
 
 export interface MockEmailChannel extends EmailChannel {
+  readonly isMock: true;
   /** Messages successfully "delivered", in send order. */
   readonly sent: readonly EmailMessage[];
   /** While true, send() rejects with EmailSendError. */
@@ -13,6 +14,7 @@ export interface MockEmailChannel extends EmailChannel {
 export function createMockEmailChannel(): MockEmailChannel {
   const sent: EmailMessage[] = [];
   return {
+    isMock: true,
     sent,
     failing: false,
     send(message: EmailMessage): Promise<void> {

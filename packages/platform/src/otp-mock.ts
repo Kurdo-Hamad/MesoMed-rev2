@@ -5,6 +5,7 @@
 import { OtpSendError, type OtpChannel, type OtpChannelKind, type OtpMessage } from "./otp.js";
 
 export interface MockOtpChannel extends OtpChannel {
+  readonly isMock: true;
   /** Messages successfully "delivered", in send order. */
   readonly sent: readonly OtpMessage[];
   /** While true, send() rejects with OtpSendError. */
@@ -15,6 +16,7 @@ export function createMockOtpChannel(kind: OtpChannelKind): MockOtpChannel {
   const sent: OtpMessage[] = [];
   return {
     channel: kind,
+    isMock: true,
     sent,
     failing: false,
     send(message: OtpMessage): Promise<void> {
