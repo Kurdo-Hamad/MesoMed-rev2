@@ -54,6 +54,19 @@ describe("module isolation (MM-PLAN-001 §3.1)", () => {
   });
 });
 
+describe("published query surface (MM-PLAN-001 §3.1)", () => {
+  it("allows a module to value-import another module's published queries", async () => {
+    const result = await lintFixture("src/modules/beta/uses-module-query.ts");
+    expect(result.errorCount).toBe(0);
+  });
+
+  it("rejects a published query reaching into another module's internals", async () => {
+    const result = await lintFixture("src/modules/alpha/queries/reaches-into-module.ts");
+    expect(result.errorCount).toBeGreaterThan(0);
+    expect(ruleIds(result)).toContain("boundaries/dependencies");
+  });
+});
+
 describe("adapter discipline (MM-PLAN-001 §3.8)", () => {
   it("rejects module code importing a concrete platform adapter", async () => {
     const result = await lintFixture("src/modules/beta/uses-adapter.ts");

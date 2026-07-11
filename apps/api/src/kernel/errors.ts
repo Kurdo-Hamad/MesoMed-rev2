@@ -39,6 +39,9 @@ const APP_TO_TRPC = {
   [ErrorCode.INVALID_STATUS_TRANSITION]: "CONFLICT",
   [ErrorCode.PHONE_NOT_VERIFIED]: "PRECONDITION_FAILED",
   [ErrorCode.EMAIL_NOT_VERIFIED]: "PRECONDITION_FAILED",
+  // Phase 3 (directory): a gated country is a stated precondition of the
+  // request's x-mesomed-country, not a permissions problem.
+  [ErrorCode.COUNTRY_COMING_SOON]: "PRECONDITION_FAILED",
 } as const satisfies Record<ErrorCode, TRPCErrorCode>;
 
 const TRPC_TO_APP: Partial<Record<TRPCErrorCode, ErrorCode>> = {

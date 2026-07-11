@@ -5,7 +5,9 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./identity": "./identity/index.ts"
+    "./identity": "./identity/index.ts",
+    "./directory": "./directory/index.ts",
+    "./billing": "./billing/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json",

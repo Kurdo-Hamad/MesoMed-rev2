@@ -4,7 +4,7 @@
  * through these functions — never by joining identity tables directly
  * (convention #1).
  */
-import { and, eq, providerProfiles, type Db } from "@mesomed/db";
+import { and, eq, providerProfiles, type Db, type DbExecutor } from "@mesomed/db";
 
 export interface ApprovedProvider {
   providerProfileId: string;
@@ -22,6 +22,19 @@ export async function listApprovedProviders(db: Db): Promise<ApprovedProvider[]>
     .from(providerProfiles)
     .where(eq(providerProfiles.status, "approved"));
   return rows;
+}
+
+/** Approval state of one provider profile — false when the row is absent. */
+export async function isProviderProfileApproved(
+  db: DbExecutor,
+  providerProfileId: string,
+): Promise<boolean> {
+  const [row] = await db
+    .select({ status: providerProfiles.status })
+    .from(providerProfiles)
+    .where(eq(providerProfiles.id, providerProfileId))
+    .limit(1);
+  return row?.status === "approved";
 }
 
 export async function isProviderPubliclyVisible(db: Db, userId: string): Promise<boolean> {

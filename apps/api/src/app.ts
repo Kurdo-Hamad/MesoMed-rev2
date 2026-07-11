@@ -4,6 +4,7 @@ import * as Sentry from "@sentry/node";
 import { fastifyTRPCPlugin } from "@trpc/server/adapters/fastify";
 import { createEventRegistry, type EventRegistry } from "@mesomed/contracts/events";
 import { IDENTITY_EVENTS } from "@mesomed/contracts/events/identity";
+import { DIRECTORY_EVENTS } from "@mesomed/contracts/events/directory";
 import { createDb, type Db } from "@mesomed/db";
 import { createMockEmailChannel, createMockOtpChannel, type EmailChannel } from "@mesomed/platform";
 import type pg from "pg";
@@ -14,8 +15,10 @@ import { createOutboxDispatcher, type OutboxDispatcher } from "./kernel/dispatch
 import { createHandlerRegistry, type HandlerRegistry } from "./kernel/events.js";
 import { healthPayload, readinessPayload } from "./kernel/health.js";
 import { createOutboxEmitter, type OutboxEmitter } from "./kernel/outbox.js";
+import { registerDirectorySubscribers } from "./modules/directory/index.js";
 import { createIdentityModule, type IdentityModule } from "./modules/identity/index.js";
 import { registerAuthRoutes } from "./modules/identity/routes.js";
+import { registerSearchSubscribers } from "./modules/search/index.js";
 import type { IdentityOtpOptions } from "./modules/identity/auth.js";
 import type { OtpChannels } from "./modules/identity/otp-sender.js";
 import { createAppRouter } from "./trpc/router.js";
@@ -88,7 +91,8 @@ export async function buildServer(
 
   const { db, pool, close } = createDb(env.DATABASE_URL);
   // Module event contracts and subscribers accumulate here from Phase 2 on.
-  const registry = overrides.eventRegistry ?? createEventRegistry([...IDENTITY_EVENTS]);
+  const registry =
+    overrides.eventRegistry ?? createEventRegistry([...IDENTITY_EVENTS, ...DIRECTORY_EVENTS]);
   const events = overrides.eventHandlers ?? createHandlerRegistry();
   const outbox = createOutboxEmitter(registry);
   const config = createConfigService(db);
@@ -118,6 +122,11 @@ export async function buildServer(
     otpOptions: overrides.otpOptions,
   });
   registerAuthRoutes(app, identity.auth);
+
+  // Module subscribers (§3.1): directory mirrors identity approval; search
+  // maintains its read models from directory events.
+  registerDirectorySubscribers({ events, outbox });
+  registerSearchSubscribers(events);
 
   app.get("/health", async () => healthPayload());
   app.get("/ready", async (_req, reply) => {
