@@ -88,10 +88,8 @@ export async function registerPaymentWebhookRoutes(
     });
     // Keep the exact request bytes: adapters verify signatures over what
     // the gateway signed, not over a re-serialized parse.
-    scope.addContentTypeParser(
-      "application/json",
-      { parseAs: "string" },
-      (_req, body, done) => done(null, body),
+    scope.addContentTypeParser("application/json", { parseAs: "string" }, (_req, body, done) =>
+      done(null, body),
     );
 
     scope.post(PAYMENT_WEBHOOK_PATH, async (request, reply) => {

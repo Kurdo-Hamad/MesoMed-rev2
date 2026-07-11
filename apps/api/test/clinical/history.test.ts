@@ -87,7 +87,13 @@ describe("clinical history: continuity of care and patient self-view", () => {
     ));
     ({ prescriptionId: discontinuedId } = await mutate<{ prescriptionId: string }>(
       "clinical.issuePrescription",
-      { encounterId, medicationName: "Aspirin", dosage: "75 mg", frequency: "1x daily", duration: "90 days" },
+      {
+        encounterId,
+        medicationName: "Aspirin",
+        dosage: "75 mg",
+        frequency: "1x daily",
+        duration: "90 days",
+      },
       doctorSession(clinic),
     ));
     await mutate(
@@ -129,16 +135,20 @@ describe("clinical history: continuity of care and patient self-view", () => {
 
   it("a merely BOOKED appointment establishes the treating relationship for Doctor B", async () => {
     // Doctor B gets a schedule and the patient books — and never completes.
-    await mutate("scheduling.setWeeklySchedule", {
-      doctorLocationId: clinic.otherDoctorLocationId,
-      schedules: [0, 1, 2, 3, 4, 5, 6].map((dayOfWeek) => ({
-        dayOfWeek,
-        startTime: "09:00",
-        endTime: "17:00",
-        slotDurationMinutes: 30,
-        breaks: [],
-      })),
-    }, ADMIN);
+    await mutate(
+      "scheduling.setWeeklySchedule",
+      {
+        doctorLocationId: clinic.otherDoctorLocationId,
+        schedules: [0, 1, 2, 3, 4, 5, 6].map((dayOfWeek) => ({
+          dayOfWeek,
+          startTime: "09:00",
+          endTime: "17:00",
+          slotDurationMinutes: 30,
+          breaks: [],
+        })),
+      },
+      ADMIN,
+    );
     const [slot] = await openSlotsNextWeek(app, clinic.otherDoctorLocationId);
     await mutate("booking.guestBook", {
       doctorLocationId: clinic.otherDoctorLocationId,
@@ -179,11 +189,7 @@ describe("clinical history: continuity of care and patient self-view", () => {
       "superseded",
       "active",
     ]);
-    expect(metforminChain!.revisions.map((r) => r.dosage)).toEqual([
-      "500 mg",
-      "850 mg",
-      "1000 mg",
-    ]);
+    expect(metforminChain!.revisions.map((r) => r.dosage)).toEqual(["500 mg", "850 mg", "1000 mg"]);
     expect(metforminChain!.revisions[0]!.doctorProfileId).toBe(clinic.doctorProfileId);
 
     // The discontinued prescription is its own single-revision chain.

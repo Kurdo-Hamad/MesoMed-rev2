@@ -11,8 +11,7 @@ export const PRESCRIPTION_STATUSES = ["active", "superseded", "discontinued"] as
 export type PrescriptionStatus = (typeof PRESCRIPTION_STATUSES)[number];
 
 export type PrescriptionTransitionVerdict =
-  | { ok: true }
-  | { ok: false; reason: "not_active" | "illegal_target" };
+  { ok: true } | { ok: false; reason: "not_active" | "illegal_target" };
 
 /** Whether a revision in `from` may transition to `to`. */
 export function validatePrescriptionTransition(

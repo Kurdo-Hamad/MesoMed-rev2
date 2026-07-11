@@ -82,10 +82,7 @@ describe("prescriptions: commands, immutability, audit, events", () => {
     originalId = body.prescriptionId;
     expect(body).toMatchObject({ encounterId, status: "active", supersedesPrescriptionId: null });
 
-    const [row] = await tdb.db
-      .select()
-      .from(prescriptions)
-      .where(eq(prescriptions.id, originalId));
+    const [row] = await tdb.db.select().from(prescriptions).where(eq(prescriptions.id, originalId));
     expect(row).toMatchObject({
       encounterId,
       doctorProfileId: clinic.doctorProfileId,

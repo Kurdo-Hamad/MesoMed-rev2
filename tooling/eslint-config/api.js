@@ -55,9 +55,7 @@ export const apiConfig = [
           policies: [
             {
               from: { element: { types: "module" } },
-              disallow: [
-                { to: { element: { types: "module" } }, dependency: { kind: "value" } },
-              ],
+              disallow: [{ to: { element: { types: "module" } }, dependency: { kind: "value" } }],
               message:
                 "Cross-module writes must go through domain events; cross-module reads must use published query functions (MM-PLAN-001 §3.1).",
             },
