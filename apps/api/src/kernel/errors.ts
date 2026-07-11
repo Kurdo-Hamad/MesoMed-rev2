@@ -54,6 +54,10 @@ const APP_TO_TRPC = {
   // settle-now payment is an upstream failure.
   [ErrorCode.PAYMENT_GATEWAY_NOT_CONFIGURED]: "PRECONDITION_FAILED",
   [ErrorCode.PAYMENT_NOT_SETTLED]: "BAD_GATEWAY",
+  // Phase 6b (billing revenue model): a missing rate row / unselected
+  // billing model is a stated precondition of the deployment's config.
+  [ErrorCode.RATE_NOT_CONFIGURED]: "PRECONDITION_FAILED",
+  [ErrorCode.BILLING_MODEL_NOT_CONFIGURED]: "PRECONDITION_FAILED",
 } as const satisfies Record<ErrorCode, TRPCErrorCode>;
 
 const TRPC_TO_APP: Partial<Record<TRPCErrorCode, ErrorCode>> = {

@@ -94,3 +94,94 @@ export async function resolvePaymentGatewayId(
   }
   return routing[countryCode.toUpperCase()]?.[kind] ?? null;
 }
+
+// ── Known payment gateways (MM-PLAN-001 §5 Phase 6b) ────────────────────
+
+/** `config_entries` key for the config-driven gateway-id registry. */
+export const KNOWN_GATEWAYS_CONFIG_KEY = "billing.known_gateways";
+
+/**
+ * Gateway ids routable before their adapters ship. `manual` is complete;
+ * `fib`, `zaincash` and `stripe` are interface-ready ids staged ahead of
+ * their adapters (§8 deferral) — routing to one of them fails closed until
+ * a real adapter is wired in the composition root.
+ */
+export const DEFAULT_KNOWN_GATEWAY_IDS = ["manual", "fib", "zaincash", "stripe"] as const;
+
+export const knownGatewaysSchema = z.array(
+  z
+    .string()
+    .min(1)
+    .max(50)
+    .regex(/^[a-z][a-z0-9_]*$/),
+);
+
+export type KnownGateways = z.infer<typeof knownGatewaysSchema>;
+
+/**
+ * The full set of routable gateway ids: the launch defaults plus any ids
+ * registered via the config row. Adding a gateway is an adapter in
+ * `packages/platform` plus config rows — NEVER a schema migration or a
+ * code change here (§3.9); resolution stays fail-closed until the adapter
+ * is really wired.
+ */
+export async function resolveKnownGatewayIds(config: ConfigReader): Promise<readonly string[]> {
+  let registered: KnownGateways;
+  try {
+    registered = await config.get(knownGatewaysSchema, KNOWN_GATEWAYS_CONFIG_KEY);
+  } catch (error) {
+    if ((error as { code?: string }).code === "NOT_FOUND") return DEFAULT_KNOWN_GATEWAY_IDS;
+    throw error;
+  }
+  return [...new Set([...DEFAULT_KNOWN_GATEWAY_IDS, ...registered])];
+}
+
+// ── Billing trial default (MM-PLAN-001 §5 Phase 6b) ─────────────────────
+
+/** `config_entries` key for the global free-trial default. */
+export const BILLING_TRIAL_CONFIG_KEY = "billing.trial";
+
+/**
+ * Global trial default: subscription-fee accrual is waived for this many
+ * calendar months from the provider's billing-config creation, unless the
+ * provider carries a `trial_ends_at` override. Per-booking charges are
+ * NEVER affected by trial. 0 (or a missing row) = no global trial.
+ */
+export const billingTrialSchema = z.object({
+  defaultMonths: z.number().int().min(0).max(24),
+});
+
+export type BillingTrial = z.infer<typeof billingTrialSchema>;
+
+export async function resolveTrialDefaultMonths(config: ConfigReader): Promise<number> {
+  try {
+    return (await config.get(billingTrialSchema, BILLING_TRIAL_CONFIG_KEY)).defaultMonths;
+  } catch (error) {
+    if ((error as { code?: string }).code === "NOT_FOUND") return 0;
+    throw error;
+  }
+}
+
+// ── Patient-collection master switch (MM-PLAN-001 §5 Phase 6b) ──────────
+
+/** `config_entries` key for the global patient-collection flag. */
+export const PATIENT_COLLECTION_CONFIG_KEY = "billing.patient_collection_enabled";
+
+export const patientCollectionSchema = z.object({ enabled: z.boolean() });
+
+/**
+ * The single global gate on collecting cancellation/no-show charges from
+ * patients. Policy evaluation always runs and records its outcome; while
+ * this resolves false (including a missing row — fail closed, the launch
+ * state) handlers record nothing collectable, settle nothing, and never
+ * touch a gateway. Flipping the flag activates the already-wired path —
+ * a config edit, zero code change.
+ */
+export async function resolvePatientCollectionEnabled(config: ConfigReader): Promise<boolean> {
+  try {
+    return (await config.get(patientCollectionSchema, PATIENT_COLLECTION_CONFIG_KEY)).enabled;
+  } catch (error) {
+    if ((error as { code?: string }).code === "NOT_FOUND") return false;
+    throw error;
+  }
+}
