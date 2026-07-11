@@ -2,6 +2,7 @@ import { healthResponseSchema } from "@mesomed/contracts/health";
 import { healthPayload } from "../kernel/health.js";
 import { publicProcedure, router } from "../kernel/trpc.js";
 import { createBookingRouter } from "../modules/booking/router.js";
+import { createClinicalRouter } from "../modules/clinical/router.js";
 import { createGuestPatientProfile } from "../modules/identity/commands/create-guest-patient-profile.js";
 import { createDirectoryRouter } from "../modules/directory/router.js";
 import { createIdentityRouter } from "../modules/identity/router.js";
@@ -30,6 +31,7 @@ export function createAppRouter(identity: IdentityModule) {
     // The guest-profile write is identity code injected at this seam, so
     // booking never value-imports another module's internals (§3.1).
     booking: createBookingRouter({ createGuestPatientProfile }),
+    clinical: createClinicalRouter(),
     search: createSearchRouter(),
   });
 }

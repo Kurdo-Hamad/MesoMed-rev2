@@ -18,7 +18,9 @@
     "./events/directory": "./src/events/directory.ts",
     "./scheduling": "./src/scheduling.ts",
     "./booking": "./src/booking.ts",
-    "./events/booking": "./src/events/booking.ts"
+    "./events/booking": "./src/events/booking.ts",
+    "./clinical": "./src/clinical.ts",
+    "./events/clinical": "./src/events/clinical.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json",

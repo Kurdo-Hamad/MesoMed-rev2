@@ -6,6 +6,7 @@ import { createEventRegistry, type EventRegistry } from "@mesomed/contracts/even
 import { IDENTITY_EVENTS } from "@mesomed/contracts/events/identity";
 import { DIRECTORY_EVENTS } from "@mesomed/contracts/events/directory";
 import { BOOKING_EVENTS } from "@mesomed/contracts/events/booking";
+import { CLINICAL_EVENTS } from "@mesomed/contracts/events/clinical";
 import { createDb, type Db } from "@mesomed/db";
 import { createMockEmailChannel, createMockOtpChannel, type EmailChannel } from "@mesomed/platform";
 import type pg from "pg";
@@ -16,6 +17,7 @@ import { createOutboxDispatcher, type OutboxDispatcher } from "./kernel/dispatch
 import { createHandlerRegistry, type HandlerRegistry } from "./kernel/events.js";
 import { healthPayload, readinessPayload } from "./kernel/health.js";
 import { createOutboxEmitter, type OutboxEmitter } from "./kernel/outbox.js";
+import { registerClinicalSubscribers } from "./modules/clinical/index.js";
 import { registerDirectorySubscribers } from "./modules/directory/index.js";
 import { createIdentityModule, type IdentityModule } from "./modules/identity/index.js";
 import { registerAuthRoutes } from "./modules/identity/routes.js";
@@ -94,7 +96,12 @@ export async function buildServer(
   // Module event contracts and subscribers accumulate here from Phase 2 on.
   const registry =
     overrides.eventRegistry ??
-    createEventRegistry([...IDENTITY_EVENTS, ...DIRECTORY_EVENTS, ...BOOKING_EVENTS]);
+    createEventRegistry([
+      ...IDENTITY_EVENTS,
+      ...DIRECTORY_EVENTS,
+      ...BOOKING_EVENTS,
+      ...CLINICAL_EVENTS,
+    ]);
   const events = overrides.eventHandlers ?? createHandlerRegistry();
   const outbox = createOutboxEmitter(registry);
   const config = createConfigService(db);
@@ -126,9 +133,11 @@ export async function buildServer(
   registerAuthRoutes(app, identity.auth);
 
   // Module subscribers (§3.1): directory mirrors identity approval; search
-  // maintains its read models from directory events.
+  // maintains its read models from directory events; clinical creates
+  // encounters from completed bookings — its only creation path.
   registerDirectorySubscribers({ events, outbox });
   registerSearchSubscribers(events);
+  registerClinicalSubscribers({ events, outbox });
 
   app.get("/health", async () => healthPayload());
   app.get("/ready", async (_req, reply) => {
