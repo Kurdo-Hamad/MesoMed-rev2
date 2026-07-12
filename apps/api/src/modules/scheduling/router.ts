@@ -14,6 +14,7 @@ import {
   linkDoctorLocationResultSchema,
   listDoctorLocationsInputSchema,
   listDoctorLocationsOutputSchema,
+  myWorkplacesOutputSchema,
   removeBlockedSlotInputSchema,
   removeBlockedSlotResultSchema,
   setWeeklyScheduleInputSchema,
@@ -29,6 +30,7 @@ import { linkDoctorLocation } from "./commands/link-doctor-location.js";
 import { setWeeklySchedule } from "./commands/set-weekly-schedule.js";
 import { upsertLocation } from "./commands/upsert-location.js";
 import { listDoctorLocations } from "./queries/doctor-locations.js";
+import { listMyWorkplaces } from "./queries/my-workplaces.js";
 import { assertCanManageDoctorLocation } from "./shared.js";
 
 export function createSchedulingRouter() {
@@ -38,6 +40,11 @@ export function createSchedulingRouter() {
       .input(listDoctorLocationsInputSchema)
       .output(listDoctorLocationsOutputSchema)
       .query(({ ctx, input }) => listDoctorLocations(ctx.db, input.doctorProfileId)),
+
+    // ── Clinic-side reads (Phase 8 dashboards) ─────────────────────────
+    myWorkplaces: roleProcedure("doctor", "secretary")
+      .output(myWorkplacesOutputSchema)
+      .query(({ ctx }) => listMyWorkplaces(ctx.db, ctx.session)),
 
     // ── Structure commands (admin) ─────────────────────────────────────
     upsertLocation: roleProcedure("admin")

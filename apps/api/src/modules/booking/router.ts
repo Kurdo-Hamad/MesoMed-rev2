@@ -19,6 +19,8 @@ import {
   appointmentIdInputSchema,
   bookResultSchema,
   cancelAppointmentInputSchema,
+  clinicDayInputSchema,
+  clinicDayOutputSchema,
   guestBookInputSchema,
   myAppointmentsOutputSchema,
   rescheduleAppointmentInputSchema,
@@ -35,6 +37,7 @@ import { publicProcedure, router } from "../../kernel/trpc.js";
 import { bookAppointment, type CreateGuestPatientProfile } from "./commands/book-appointment.js";
 import { rescheduleAppointment } from "./commands/reschedule-appointment.js";
 import { transitionAppointment } from "./commands/transition-appointment.js";
+import { getClinicDay } from "./queries/clinic-day.js";
 import { getWeekAvailability } from "./queries/week-availability.js";
 import { listMyAppointments } from "./queries/my-appointments.js";
 import { isSecretaryAssigned } from "../scheduling/queries/schedule-inputs.js";
@@ -195,6 +198,12 @@ export function createBookingRouter({ createGuestPatientProfile }: BookingRouter
           }),
         ),
       ),
+
+    // ── Clinic reads (Phase 8 dashboards) ──────────────────────────────
+    clinicDay: roleProcedure("doctor", "secretary", "admin")
+      .input(clinicDayInputSchema)
+      .output(clinicDayOutputSchema)
+      .query(({ ctx, input }) => getClinicDay(ctx.db, ctx.session, input)),
 
     // ── Patient reads ──────────────────────────────────────────────────
     myAppointments: roleProcedure("patient")
