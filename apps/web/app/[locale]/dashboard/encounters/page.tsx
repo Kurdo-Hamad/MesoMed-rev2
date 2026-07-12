@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import type { Locale } from "@mesomed/i18n";
+import { formatLocalizedDate, type Locale } from "@mesomed/i18n";
 import { trpc } from "../../../../lib/trpc";
 
 const field =
@@ -30,7 +30,8 @@ export default function EncountersPage() {
   }
 
   const rows = encounters.data?.encounters ?? [];
-  const dateLabel = new Intl.DateTimeFormat(locale, { dateStyle: "full", timeStyle: "short" });
+  const dateLabel = (value: string) =>
+    formatLocalizedDate(new Date(value), locale, { dateStyle: "full", timeStyle: "short" });
 
   return (
     <main className="py-8">
@@ -53,8 +54,8 @@ export default function EncountersPage() {
                 }
                 className="flex w-full items-center justify-between px-4 py-3 text-start"
               >
-                <span className="text-body font-semibold text-ink">
-                  {dateLabel.format(new Date(encounter.startsAt))}
+                <span className="text-body font-semibold text-ink" dir="ltr">
+                  {dateLabel(encounter.startsAt)}
                 </span>
                 <span className="text-small text-neutral-500">
                   {openId === encounter.encounterId ? t("collapse") : t("expand")}
@@ -88,7 +89,8 @@ function EncounterNotes({ encounterId }: { encounterId: string }) {
     },
   });
 
-  const stamp = new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" });
+  const stamp = (value: string) =>
+    formatLocalizedDate(new Date(value), locale, { dateStyle: "medium", timeStyle: "short" });
 
   function submit(event: FormEvent) {
     event.preventDefault();
@@ -113,8 +115,8 @@ function EncounterNotes({ encounterId }: { encounterId: string }) {
                 <p className="mb-1 text-caption font-semibold text-warning">{t("amendment")}</p>
               )}
               <p className="whitespace-pre-wrap text-body text-neutral-700">{note.content}</p>
-              <p className="mt-1 text-caption text-neutral-400">
-                {stamp.format(new Date(note.createdAt))}
+              <p className="mt-1 text-caption text-neutral-400" dir="ltr">
+                {stamp(note.createdAt)}
               </p>
             </li>
           ))}

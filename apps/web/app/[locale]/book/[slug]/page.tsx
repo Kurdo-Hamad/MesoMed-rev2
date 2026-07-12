@@ -3,7 +3,7 @@
 import { use, useMemo, useState, type FormEvent } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { CalendarCheck, ChevronLeft, ChevronRight } from "lucide-react";
-import type { Locale } from "@mesomed/i18n";
+import { formatLocalizedDate, pinLtr, type Locale } from "@mesomed/i18n";
 import { normalizePhone } from "@mesomed/contracts/phone";
 import { FilterSelect } from "../../../../components/filter-select";
 import { Link } from "../../../../i18n/navigation";
@@ -140,7 +140,8 @@ function WeekGrid({
   const locale = useLocale() as Locale;
 
   const dayLabel = useMemo(
-    () => new Intl.DateTimeFormat(locale, { weekday: "short", day: "numeric", month: "short" }),
+    () => (date: Date) =>
+      formatLocalizedDate(date, locale, { weekday: "short", day: "numeric", month: "short" }),
     [locale],
   );
   const timeLabel = useMemo(
@@ -196,8 +197,11 @@ function WeekGrid({
                 key={day.date}
                 className={`rounded-lg border p-2 ${day.isToday ? "border-brand" : "border-line"}`}
               >
-                <p className="mb-2 text-center text-caption font-semibold text-neutral-600">
-                  {dayLabel.format(new Date(`${day.date}T12:00:00`))}
+                <p
+                  className="mb-2 text-center text-caption font-semibold text-neutral-600"
+                  dir="ltr"
+                >
+                  {dayLabel(new Date(`${day.date}T12:00:00`))}
                 </p>
                 {!day.isOpen || day.isPast ? (
                   <p className="py-4 text-center text-caption text-neutral-500">{t("closed")}</p>
@@ -276,10 +280,10 @@ function PatientForm({
   const [note, setNote] = useState("");
   const [phoneInvalid, setPhoneInvalid] = useState(false);
 
-  const slotLabel = new Intl.DateTimeFormat(locale, {
+  const slotLabel = formatLocalizedDate(new Date(slot.startsAt), locale, {
     dateStyle: "full",
     timeStyle: "short",
-  }).format(new Date(slot.startsAt));
+  });
 
   function submit(event: FormEvent) {
     event.preventDefault();
@@ -310,7 +314,10 @@ function PatientForm({
     <form onSubmit={submit} className="mt-8 rounded-lg border border-line bg-surface p-5">
       <h2 className="text-heading font-bold text-ink">{t("details")}</h2>
       <p className="mt-1 text-small text-neutral-600">
-        {t("selectedSlot")}: <span className="font-semibold text-ink">{slotLabel}</span>
+        {t("selectedSlot")}:{" "}
+        <span className="font-semibold text-ink" dir="ltr">
+          {slotLabel}
+        </span>
       </p>
 
       <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -411,7 +418,7 @@ function Confirmation({
   const t = useTranslations("web.book");
   const locale = useLocale() as Locale;
   const when = new Date(result.startsAt);
-  const date = new Intl.DateTimeFormat(locale, { dateStyle: "full" }).format(when);
+  const date = pinLtr(formatLocalizedDate(when, locale, { dateStyle: "full" }));
   const time = new Intl.DateTimeFormat(locale, { timeStyle: "short" }).format(when);
 
   return (

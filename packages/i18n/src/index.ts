@@ -23,3 +23,5 @@ export function textDirection(locale: Locale): "rtl" | "ltr" {
 }
 
 export type Messages = typeof en;
+
+export { formatLocalizedDate, formatNumericDate, pinLtr } from "./format-date";

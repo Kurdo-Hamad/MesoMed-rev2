@@ -57,6 +57,20 @@
   into a fresh database's run (a 384 ms false-pass caught in review).
 - **Frozen-surface pin regeneration** happens only at a release cut
   (ADR-0013); regenerating to green a red pin is a review reject.
+- **ar/ckb dates render numeric `d/M/yyyy`, ASCII digits, no month-name
+  catalog** — supersedes deviation #3 below. `packages/i18n/format-date.ts`
+  centralizes every date-rendering surface: `formatLocalizedDate` keeps en's
+  existing long-form `Intl` output unchanged, and for ar/ckb bypasses
+  `Intl`'s locale-derived month names and numbering system entirely —
+  `day`/`month`/`year` parts are extracted via `Intl.DateTimeFormat`
+  with `numberingSystem: "latn"` and reassembled in a pinned day/month/year
+  order, so neither ar's real CLDR month names nor ckb's English fallback
+  (the original bug) can appear, and neither locale's Arabic-Indic digit
+  default can leak through. `pinLtr` (Unicode LRI/PDI isolates) protects
+  dates interpolated into translated sentences from bidi reordering; the
+  existing `dir="ltr"` convention (already used for phones/emails) covers
+  dates rendered as standalone JSX nodes. Time-of-day formatting is
+  unchanged and still locale-derived — only the date portion was in scope.
 
 ## Deviations / carry-ins (convention #14)
 
@@ -66,10 +80,11 @@
 2. **ckb/ar search-text normalization (MM-ARC-002 §1.7)** — did NOT land
    in Phase 7 or earlier and was not absorbed here; search remains
    Postgres `'simple'` FTS + pg_trgm (ADR-0005). Carry-in.
-3. **ckb dates render via Intl fallback (English)** — V8/ICU carries no
-   `ckb` CLDR locale, so `Intl.DateTimeFormat("ckb")` falls back. Needs
-   a product decision (custom Sorani month-name catalog vs accepting the
-   fallback); flagged in the RTL review set.
+3. ~~**ckb dates render via Intl fallback (English)**~~ — **Resolved**: see
+   the numeric-date decision of record above. Both ar and ckb now render
+   dates as numeric `d/M/yyyy` with ASCII digits; no month-name catalog
+   was built (the product decision was to skip locale month names
+   entirely, not to add Sorani ones).
 4. **Patient reschedule UI deferred** — dashboard offers cancel +
    re-book; the API's `booking.reschedule` is not yet surfaced.
 5. **Notifications feed not surfaced** — `communication.
@@ -86,3 +101,11 @@ recordSubscriptionPayment` is admin-API only; the e2e drives it
    docs/rtl-review/phase8/; the deployment configuration and manual-step
    checklist are in docs/deploy/phase8-production-deployment.md. Neither
    is self-certified or executed autonomously.
+10. **RTL screenshot regeneration for the numeric-date fix is a carry-in**
+    — the screenshots in docs/rtl-review/phase8/ still show the pre-fix
+    dates (e.g. ckb's English month-name fallback, ar's `yyyy/mm/dd`
+    order); this dev environment has no working headless-browser renderer
+    to recapture them (missing system libraries, no sudo). Recapturing
+    every ar/ckb page with a date is a follow-up, blocked on browser
+    availability, before RTL sign-off can consider this fix visually
+    verified.
