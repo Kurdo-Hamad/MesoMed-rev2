@@ -166,7 +166,7 @@ fix — not merely a test that the mechanism exists in isolation.
 
 - **F-1 (merge blocker) — dedupe key collapsed onto the aggregate, not the
   occurrence.** `notification_log.dedupeKey` was `template:aggregateId:
-  channel`, where `aggregateId` was `appointmentId` (or `patientProfileId`
+channel`, where `aggregateId` was `appointmentId` (or `patientProfileId`
   when there's no appointment). This silently dropped every notification
   after the first for the SAME aggregate: a patient's second-ever
   prescription (no appointment, so keyed on `patientProfileId` alone) never
@@ -175,7 +175,7 @@ fix — not merely a test that the mechanism exists in isolation.
   lapse/reactivation cycle never notified (keyed on the stable
   `subscriptionId`). Fixed by threading the triggering `domain_events.id`
   through `EventHandlerFn` as an additive third parameter (`(envelope, tx,
-  eventId)` — existing 2-parameter handlers remain valid, TS permits fewer
+eventId)` — existing 2-parameter handlers remain valid, TS permits fewer
   declared parameters) and using it as the new `occurrenceKey` component of
   the dedupe key; the non-event-driven reminder cron uses
   `appointmentId:startsAt` instead (a reschedule changes `startsAt`, so it
@@ -248,7 +248,7 @@ fix — not merely a test that the mechanism exists in isolation.
   no-op — logout must never error on a stale token).
 - **F-10 — the in-memory rate limiter grows without bound and its
   multi-instance semantics were undocumented.** `packages/domain/ai/
-  rate-limit.ts`'s module-level `Map` never evicted anything (every
+rate-limit.ts`'s module-level `Map` never evicted anything (every
   distinct key — e.g. every IP hitting the public AI triage endpoint —
   accumulated forever) and, with N API instances, a configured cap is
   actually enforced N× wider (each instance holds its own independent Map).
@@ -287,7 +287,7 @@ fix — not merely a test that the mechanism exists in isolation.
 - **F-13 — OTP messages always rendered in ckb and always claimed a fixed
   "10 minutes" regardless of the actual configured expiry.** The
   hardcoded "10" was worse than a missed preference: `IdentityOtpOptions
-  .expiresInSeconds` defaults to 300s (5 minutes), so the message was
+.expiresInSeconds` defaults to 300s (5 minutes), so the message was
   actively wrong by default. Fixed both: `OtpMessage` gained
   `expiresInMinutes`, computed once from the same `expiresInSeconds`
   value the Better Auth phone plugin itself uses (`DEFAULT_OTP_EXPIRES_IN_SECONDS`,
@@ -364,25 +364,25 @@ fix — not merely a test that the mechanism exists in isolation.
 The following must all hold before flipping any channel from mock to real
 in a given environment:
 
-| Requirement | Evidence |
-|---|---|
-| Secrets never committed to the repo or logged | `.env.example` documents var names only, no values; `kernel/redaction.ts` redacts `phoneNumber`/`normalizedPhone`/`phone`/`to`/`destination`/`fullName`/`name`/`email` to depth 5 in all pino output |
-| Rate limits proven | `apps/api/test/ai/router.test.ts`: "fires the per-caller rate limit independently of the global limit", "fires the global rate limit across distinct callers"; `apps/api/test/identity/otp.test.ts`: "fires the per-IP send-rate limit...", "fires the per-device send-rate limit..."; `packages/domain/ai/rate-limit.test.ts`: capacity/refill/distinct-key/eviction (ADR-0011 F-10) |
-| Abuse cases tested | `apps/api/test/communication/abuse.test.ts`: channel kill-switch, destination-country allowlist, daily channel budget, per-scope send-rate limit, and (rewritten, ADR-0011 F-2) an end-to-end velocity anomaly test driving real rows through the real `NotificationSender.pump()` call path, not a hand-seeded count |
-| Kill-switch proven | `apps/api/test/identity/otp.test.ts`: "falls back to SMS when the whatsapp channel is killed", "answers a typed refusal when both channels are killed"; `apps/api/test/communication/abuse.test.ts`: "fires CHANNEL_DISABLED when the channel is killed" |
-| Fallback delivery proven | `apps/api/test/communication/dispatch.test.ts`: "a failing email channel doesn't block push delivery, and the email row fails after maxAttempts"; "falls back to WhatsApp when the push token is dead..." (F-8); "honors a disabled SMS preference..." (F-4); "cascades to SMS when the dead-push-token fallback's WhatsApp attempt also fails" and "honors a disabled SMS preference on the dead-push-token fallback — never cascades to SMS" (F-19); `apps/api/test/ai/triage-service.test.ts`: "falls back to the keyword engine when the model provider is killed" |
-| Vendor calls are timeout-bounded | `packages/platform/{whatsapp-meta,sms-twilio,push-expo,email-resend}.test.ts`: "aborts a stalled request after timeoutMs instead of hanging" (ADR-0011 F-3), one per adapter |
-| Notification occurrences are never silently deduped away | `apps/api/test/communication/dispatch.test.ts`: second reschedule, second prescription, subscription lapse/reactivate cycle; `apps/api/test/communication/reminders.test.ts`: reschedule re-plans a fresh reminder (ADR-0011 F-1, merge blocker) |
-| One bad row can't wedge the queue | `apps/api/test/communication/dispatch.test.ts`: "a single malformed row doesn't block the rest of the batch" (ADR-0011 F-7) |
-| `req.ip` resolves correctly behind a configured proxy, and collapses safely when unconfigured | `apps/api/test/trust-proxy.test.ts` (ADR-0011 F-5) |
-| Device tokens are released on logout | `apps/api/test/communication/router.test.ts`: own-token unregister, cross-user no-op, unregister-of-nonexistent-token no-op (ADR-0011 F-9) |
-| A successful delivery is never resent because of a later DB write failure | `apps/api/test/communication/dispatch.test.ts`: "retries persisting the sent status after a transient DB failure instead of resending" (ADR-0011 F-11) |
-| Shutdown waits for an in-flight pump | `apps/api/test/communication/dispatch.test.ts`: "stop() waits for an in-flight pump to finish before resolving" (ADR-0011 F-12) |
-| OTP messages state the real expiry and a best-effort recipient locale | `packages/platform/{whatsapp-meta,sms-twilio}.test.ts`: "renders the message's actual expiresInMinutes, not a hardcoded figure"; `apps/api/test/identity/locale-from-accept-language.test.ts` (ADR-0011 F-13) |
-| The ops notification feed is admin-gated and excludes PII | `apps/api/test/communication/router.test.ts`: "rejects a non-admin caller...", "lists recent notifications for an admin caller, excluding destination/paramsJson" (ADR-0011 F-14) |
-| The red-flag pre-screen catches common breathing-emergency phrasings in English and Arabic | `packages/domain/ai/symptom-triage-utils.test.ts`: apostrophe-variant and non-contraction phrasings, Arabic breathing-difficulty phrases (ADR-0011 F-17) |
-| Production guardrail proven | `apps/api/test/mock-production-guard.test.ts`: both the missing-credentials-rejects and full-credentials-boots-past-guard paths |
-| PII never persisted outside sanctioned columns | `apps/api/test/communication/dispatch.test.ts`: "never persists the patient's name — notification_log carries linkage PII only"; adapter tests above additionally assert the destination/token never appears in a thrown error's message or cause (ADR-0011 F-6) |
+| Requirement                                                                                   | Evidence                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| --------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Secrets never committed to the repo or logged                                                 | `.env.example` documents var names only, no values; `kernel/redaction.ts` redacts `phoneNumber`/`normalizedPhone`/`phone`/`to`/`destination`/`fullName`/`name`/`email` to depth 5 in all pino output                                                                                                                                                                                                                                                                                                                                                                   |
+| Rate limits proven                                                                            | `apps/api/test/ai/router.test.ts`: "fires the per-caller rate limit independently of the global limit", "fires the global rate limit across distinct callers"; `apps/api/test/identity/otp.test.ts`: "fires the per-IP send-rate limit...", "fires the per-device send-rate limit..."; `packages/domain/ai/rate-limit.test.ts`: capacity/refill/distinct-key/eviction (ADR-0011 F-10)                                                                                                                                                                                  |
+| Abuse cases tested                                                                            | `apps/api/test/communication/abuse.test.ts`: channel kill-switch, destination-country allowlist, daily channel budget, per-scope send-rate limit, and (rewritten, ADR-0011 F-2) an end-to-end velocity anomaly test driving real rows through the real `NotificationSender.pump()` call path, not a hand-seeded count                                                                                                                                                                                                                                                  |
+| Kill-switch proven                                                                            | `apps/api/test/identity/otp.test.ts`: "falls back to SMS when the whatsapp channel is killed", "answers a typed refusal when both channels are killed"; `apps/api/test/communication/abuse.test.ts`: "fires CHANNEL_DISABLED when the channel is killed"                                                                                                                                                                                                                                                                                                               |
+| Fallback delivery proven                                                                      | `apps/api/test/communication/dispatch.test.ts`: "a failing email channel doesn't block push delivery, and the email row fails after maxAttempts"; "falls back to WhatsApp when the push token is dead..." (F-8); "honors a disabled SMS preference..." (F-4); "cascades to SMS when the dead-push-token fallback's WhatsApp attempt also fails" and "honors a disabled SMS preference on the dead-push-token fallback — never cascades to SMS" (F-19); `apps/api/test/ai/triage-service.test.ts`: "falls back to the keyword engine when the model provider is killed" |
+| Vendor calls are timeout-bounded                                                              | `packages/platform/{whatsapp-meta,sms-twilio,push-expo,email-resend}.test.ts`: "aborts a stalled request after timeoutMs instead of hanging" (ADR-0011 F-3), one per adapter                                                                                                                                                                                                                                                                                                                                                                                           |
+| Notification occurrences are never silently deduped away                                      | `apps/api/test/communication/dispatch.test.ts`: second reschedule, second prescription, subscription lapse/reactivate cycle; `apps/api/test/communication/reminders.test.ts`: reschedule re-plans a fresh reminder (ADR-0011 F-1, merge blocker)                                                                                                                                                                                                                                                                                                                       |
+| One bad row can't wedge the queue                                                             | `apps/api/test/communication/dispatch.test.ts`: "a single malformed row doesn't block the rest of the batch" (ADR-0011 F-7)                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| `req.ip` resolves correctly behind a configured proxy, and collapses safely when unconfigured | `apps/api/test/trust-proxy.test.ts` (ADR-0011 F-5)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| Device tokens are released on logout                                                          | `apps/api/test/communication/router.test.ts`: own-token unregister, cross-user no-op, unregister-of-nonexistent-token no-op (ADR-0011 F-9)                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| A successful delivery is never resent because of a later DB write failure                     | `apps/api/test/communication/dispatch.test.ts`: "retries persisting the sent status after a transient DB failure instead of resending" (ADR-0011 F-11)                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| Shutdown waits for an in-flight pump                                                          | `apps/api/test/communication/dispatch.test.ts`: "stop() waits for an in-flight pump to finish before resolving" (ADR-0011 F-12)                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| OTP messages state the real expiry and a best-effort recipient locale                         | `packages/platform/{whatsapp-meta,sms-twilio}.test.ts`: "renders the message's actual expiresInMinutes, not a hardcoded figure"; `apps/api/test/identity/locale-from-accept-language.test.ts` (ADR-0011 F-13)                                                                                                                                                                                                                                                                                                                                                          |
+| The ops notification feed is admin-gated and excludes PII                                     | `apps/api/test/communication/router.test.ts`: "rejects a non-admin caller...", "lists recent notifications for an admin caller, excluding destination/paramsJson" (ADR-0011 F-14)                                                                                                                                                                                                                                                                                                                                                                                      |
+| The red-flag pre-screen catches common breathing-emergency phrasings in English and Arabic    | `packages/domain/ai/symptom-triage-utils.test.ts`: apostrophe-variant and non-contraction phrasings, Arabic breathing-difficulty phrases (ADR-0011 F-17)                                                                                                                                                                                                                                                                                                                                                                                                               |
+| Production guardrail proven                                                                   | `apps/api/test/mock-production-guard.test.ts`: both the missing-credentials-rejects and full-credentials-boots-past-guard paths                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| PII never persisted outside sanctioned columns                                                | `apps/api/test/communication/dispatch.test.ts`: "never persists the patient's name — notification_log carries linkage PII only"; adapter tests above additionally assert the destination/token never appears in a thrown error's message or cause (ADR-0011 F-6)                                                                                                                                                                                                                                                                                                       |
 
 ## `notification_log` retention
 
@@ -449,6 +449,7 @@ explicitly rather than left an undocumented gap.
   comment now says so explicitly (previously unstated, which risked a
   deploy configuring the intended Baghdad send hour without the UTC+3
   offset).
+
 ## Gate evidence
 
 - **Kill-switch/fallback:** identity OTP send with WhatsApp killed → SMS
@@ -488,7 +489,7 @@ full-suite run intermittently failed F-11's `dispatch.test.ts` case
 `buildServer` (app.ts) unconditionally starts its own background
 `NotificationSender` at the production default 5s poll interval, against
 the real db and its own internally-wired mock channels; `dispatch.test.ts`
-additionally builds and drives its *own* instrumented sender against the
+additionally builds and drives its _own_ instrumented sender against the
 same row via `.pump()`. Under an unloaded run the manual `pump()` call
 (issued within milliseconds of the row appearing) always wins that race;
 under full-suite contention the event loop can stall long enough for the
@@ -520,7 +521,7 @@ scrypt was a red herring. The one operation that could plausibly approach
 30s under pathological initdb/fsync contention was structural: the second
 `describe` block ("claim atomicity") provisioned its embedded-Postgres
 cluster (`createTestDatabase()` + `buildServer()`, i.e. initdb + start +
-migrations) *inside the test body*, which vitest bounds by the 30s
+migrations) _inside the test body_, which vitest bounds by the 30s
 `testTimeout` — whereas every other integration test in the suite, and
 this file's own first `describe`, provisions in a `beforeAll` bounded by
 the far larger 120s `hookTimeout`. Fixed at the root by hoisting that

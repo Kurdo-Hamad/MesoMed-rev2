@@ -21,7 +21,12 @@ describe("AI triage service (MM-PLAN-001 §5 Phase 7, MM-EXEC-003 Phase 6 port)"
     ]);
     const [kneeSymptom] = await tdb.db
       .insert(symptoms)
-      .values({ slug: "knee-ache-triage-test", nameEn: "knee ache", nameAr: "ألم الركبة", nameCkb: "ئازاری ئەژنۆ" })
+      .values({
+        slug: "knee-ache-triage-test",
+        nameEn: "knee ache",
+        nameAr: "ألم الركبة",
+        nameCkb: "ئازاری ئەژنۆ",
+      })
       .returning({ id: symptoms.id });
     await tdb.db
       .insert(symptomSpecialtyMap)
@@ -37,7 +42,9 @@ describe("AI triage service (MM-PLAN-001 §5 Phase 7, MM-EXEC-003 Phase 6 port)"
   }
 
   it("the deterministic red-flag screen fires unconditionally, before the model is ever called", async () => {
-    const ai = createMockAiGateway(['{"specialties": ["cardiology-triage-test"], "red_flag": false}']);
+    const ai = createMockAiGateway([
+      '{"specialties": ["cardiology-triage-test"], "red_flag": false}',
+    ]);
     const service = buildService(ai);
 
     const result = await service.triageSymptoms("severe chest pain and can't breathe");
@@ -67,7 +74,9 @@ describe("AI triage service (MM-PLAN-001 §5 Phase 7, MM-EXEC-003 Phase 6 port)"
   });
 
   it("drops a model-returned specialty that isn't in the live whitelist, then falls back", async () => {
-    const ai = createMockAiGateway(['{"specialties": ["not-a-real-specialty"], "red_flag": false}']);
+    const ai = createMockAiGateway([
+      '{"specialties": ["not-a-real-specialty"], "red_flag": false}',
+    ]);
     const service = buildService(ai);
 
     const result = await service.triageSymptoms(KNEE_ACHE_SYMPTOM_TEXT);
@@ -95,7 +104,10 @@ describe("AI triage service (MM-PLAN-001 §5 Phase 7, MM-EXEC-003 Phase 6 port)"
   it("never logs the raw symptom text, even on the model-failure fallback path", async () => {
     const lines: string[] = [];
     const stream = { write: (line: string) => lines.push(line) };
-    const log = pino({ level: "warn", redact: { paths: REDACT_PATHS, censor: "[REDACTED]" } }, stream);
+    const log = pino(
+      { level: "warn", redact: { paths: REDACT_PATHS, censor: "[REDACTED]" } },
+      stream,
+    );
 
     const ai = createMockAiGateway();
     ai.failing = true;

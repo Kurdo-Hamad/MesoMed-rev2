@@ -38,9 +38,9 @@ describe("createExpoPushAdapter", () => {
   });
 
   it("maps other ticket errors to PushSendError", async () => {
-    const fetchImpl = vi.fn().mockResolvedValue(
-      jsonResponse({ data: { status: "error", message: "rate limited" } }),
-    );
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValue(jsonResponse({ data: { status: "error", message: "rate limited" } }));
     const adapter = createExpoPushAdapter({ fetchImpl });
 
     await expect(

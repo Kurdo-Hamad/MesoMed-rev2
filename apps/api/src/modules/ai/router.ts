@@ -29,7 +29,10 @@ export function createAiRouter(deps: { ai: AiGateway }) {
           throw new AppError(ErrorCode.RATE_LIMITED, "Too many triage requests from this caller");
         }
         if (!checkRateLimit("ai.triage.global", policy.global, now)) {
-          throw new AppError(ErrorCode.AI_QUOTA_EXCEEDED, "Triage capacity exceeded — try again shortly");
+          throw new AppError(
+            ErrorCode.AI_QUOTA_EXCEEDED,
+            "Triage capacity exceeded — try again shortly",
+          );
         }
 
         const service = createTriageService({ db: ctx.db, ai: deps.ai, log: ctx.req.log });

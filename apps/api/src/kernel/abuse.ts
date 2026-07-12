@@ -34,10 +34,16 @@ export async function assertChannelEnabled(
 }
 
 /** Fail-closed destination-country allowlist (Iraq-only at launch). */
-export async function assertDestinationAllowed(config: ConfigService, phone: string): Promise<void> {
+export async function assertDestinationAllowed(
+  config: ConfigService,
+  phone: string,
+): Promise<void> {
   const country = await resolveDestinationCountry(config, phone);
   if (country === null) {
-    throw new AppError(ErrorCode.DESTINATION_NOT_ALLOWED, `Destination "${phone}" is not allowlisted`);
+    throw new AppError(
+      ErrorCode.DESTINATION_NOT_ALLOWED,
+      `Destination "${phone}" is not allowlisted`,
+    );
   }
 }
 
@@ -112,7 +118,11 @@ export async function assertSendRate(
     .select({ count: sql<number>`count(*)::int` })
     .from(sendRateEvents)
     .where(
-      and(eq(sendRateEvents.scope, scope), eq(sendRateEvents.key, key), gt(sendRateEvents.sentAt, cutoff)),
+      and(
+        eq(sendRateEvents.scope, scope),
+        eq(sendRateEvents.key, key),
+        gt(sendRateEvents.sentAt, cutoff),
+      ),
     );
   const count = row!.count;
   if (count >= policy.maxSends) {
@@ -150,7 +160,13 @@ export async function recordVelocity(
   const [row] = await db
     .select({ count: sql<number>`count(*)::int` })
     .from(sendRateEvents)
-    .where(and(eq(sendRateEvents.scope, "phone"), eq(sendRateEvents.key, key), gt(sendRateEvents.sentAt, cutoff)));
+    .where(
+      and(
+        eq(sendRateEvents.scope, "phone"),
+        eq(sendRateEvents.key, key),
+        gt(sendRateEvents.sentAt, cutoff),
+      ),
+    );
   const count = row!.count;
   if (count > policy.threshold) {
     await db.insert(abuseAlerts).values({

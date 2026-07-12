@@ -99,9 +99,7 @@ describe("send-rate policy", () => {
       maxSends: 2,
       windowSeconds: 60,
     });
-    expect(await resolveSendRatePolicy(config, "device")).toEqual(
-      DEFAULT_SEND_RATE_POLICY.device,
-    );
+    expect(await resolveSendRatePolicy(config, "device")).toEqual(DEFAULT_SEND_RATE_POLICY.device);
   });
 });
 

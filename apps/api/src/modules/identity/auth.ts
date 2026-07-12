@@ -27,7 +27,10 @@ export interface IdentityAuthOptions {
   secret: string;
   trustedOrigins: readonly string[];
   /** Deliver an OTP (identity OTP dispatch service). Throwing fails the endpoint. */
-  sendOtp: (input: { phoneNumber: string; code: string }, context?: OtpSendContext) => Promise<void>;
+  sendOtp: (
+    input: { phoneNumber: string; code: string },
+    context?: OtpSendContext,
+  ) => Promise<void>;
   /** Deliver a provider verification email. Never called for placeholder emails. */
   sendVerificationEmail: (input: { email: string; url: string }) => Promise<void>;
   /** Runs after phone ownership is proven — assigns role + claims profile in one tx. */

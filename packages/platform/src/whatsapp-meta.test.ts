@@ -62,7 +62,12 @@ describe("createMetaWhatsAppAdapter", () => {
       OTP_CATALOG,
     );
 
-    await adapter.otp.send({ to: "+9647701234567", code: "482913", locale: "en", expiresInMinutes: 5 });
+    await adapter.otp.send({
+      to: "+9647701234567",
+      code: "482913",
+      locale: "en",
+      expiresInMinutes: 5,
+    });
 
     const [, init] = fetchImpl.mock.calls[0]!;
     const payload = JSON.parse((init as RequestInit).body as string);
@@ -76,7 +81,12 @@ describe("createMetaWhatsAppAdapter", () => {
       OTP_CATALOG,
     );
 
-    await adapter.otp.send({ to: "+9647701234567", code: "482913", locale: "en", expiresInMinutes: 5 });
+    await adapter.otp.send({
+      to: "+9647701234567",
+      code: "482913",
+      locale: "en",
+      expiresInMinutes: 5,
+    });
 
     const [, init] = fetchImpl.mock.calls[0]!;
     const payload = JSON.parse((init as RequestInit).body as string);

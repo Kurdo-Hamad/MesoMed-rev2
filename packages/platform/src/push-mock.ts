@@ -1,7 +1,12 @@
 /**
  * Mock/log push provider (Phase 7). Records messages for test inspection.
  */
-import { PushSendError, PushTokenInvalidError, type PushChannel, type PushMessage } from "./push.js";
+import {
+  PushSendError,
+  PushTokenInvalidError,
+  type PushChannel,
+  type PushMessage,
+} from "./push.js";
 
 export interface MockPushChannel extends PushChannel {
   readonly isMock: true;

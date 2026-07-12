@@ -1,7 +1,12 @@
 /**
  * Mock/log notify provider (Phase 7). Records messages for test inspection.
  */
-import { NotifySendError, type NotifyChannel, type NotifyChannelKind, type NotifyMessage } from "./notify.js";
+import {
+  NotifySendError,
+  type NotifyChannel,
+  type NotifyChannelKind,
+  type NotifyMessage,
+} from "./notify.js";
 
 export interface MockNotifyChannel extends NotifyChannel {
   readonly isMock: true;

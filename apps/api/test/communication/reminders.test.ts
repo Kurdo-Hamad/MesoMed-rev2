@@ -3,7 +3,10 @@ import type { FastifyInstance } from "fastify";
 import { appointments, eq, notificationLog, patientProfiles } from "@mesomed/db";
 import { createTestDatabase, type TestDatabase } from "@mesomed/db/testing";
 import { buildBookingTestServer, seedClinic } from "../booking/helpers.js";
-import { baghdadTomorrowWindowUtc, planNextDayReminders } from "../../src/modules/communication/reminders.js";
+import {
+  baghdadTomorrowWindowUtc,
+  planNextDayReminders,
+} from "../../src/modules/communication/reminders.js";
 
 describe("next-day appointment reminders (MM-PLAN-001 §5 Phase 7)", () => {
   let tdb: TestDatabase;

@@ -69,7 +69,12 @@ describe("createTwilioSmsAdapter", () => {
       OTP_CATALOG,
     );
 
-    await adapter.otp.send({ to: "+9647701234567", code: "111222", locale: "en", expiresInMinutes: 5 });
+    await adapter.otp.send({
+      to: "+9647701234567",
+      code: "111222",
+      locale: "en",
+      expiresInMinutes: 5,
+    });
 
     const [, init] = fetchImpl.mock.calls[0]!;
     const body = new URLSearchParams((init as RequestInit).body as string);

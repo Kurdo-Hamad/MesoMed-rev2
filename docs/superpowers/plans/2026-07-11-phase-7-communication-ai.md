@@ -4,7 +4,7 @@
 
 **Goal:** Communication module (event-driven notification dispatch, trilingual templates, notification log, channel preferences, device tokens, next-day reminder cron), real WhatsApp/SMS/Expo-push/Resend adapters behind platform interfaces, mandatory abuse controls, PII log redaction, and the AI triage module — landing as one PR `phase-7-communication-ai` → `main`, gate green, zero regressions vs 700 tests / 80 files.
 
-**Architecture:** Subscribers consume booking/billing/clinical events id-only and *plan* deliveries by inserting `notification_log` rows (status `pending`) inside the handler transaction — exactly-once by construction. A kernel-style sender loop processes pending rows (channel adapters, attempts, backoff, terminal `failed`), so a dead channel retries without blocking others. Channel routing: push if a device token exists and preferences allow; else WhatsApp→SMS for phone destinations; email secondary. Abuse guardrails (kill-switch, destination allowlist, daily budget, per-key rate, velocity alerts) are kernel infrastructure (shared by identity OTP and communication sends), config-driven per convention #9. AI triage ports the staged pipeline behind an `AiGateway` platform interface (Vercel AI SDK, Anthropic default) with deterministic keyword fallback.
+**Architecture:** Subscribers consume booking/billing/clinical events id-only and _plan_ deliveries by inserting `notification_log` rows (status `pending`) inside the handler transaction — exactly-once by construction. A kernel-style sender loop processes pending rows (channel adapters, attempts, backoff, terminal `failed`), so a dead channel retries without blocking others. Channel routing: push if a device token exists and preferences allow; else WhatsApp→SMS for phone destinations; email secondary. Abuse guardrails (kill-switch, destination allowlist, daily budget, per-key rate, velocity alerts) are kernel infrastructure (shared by identity OTP and communication sends), config-driven per convention #9. AI triage ports the staged pipeline behind an `AiGateway` platform interface (Vercel AI SDK, Anthropic default) with deterministic keyword fallback.
 
 **Tech Stack:** Fastify + tRPC + Drizzle + pg-boss (existing), `ai` + `@ai-sdk/anthropic` (new, platform package only), raw `fetch` adapters for Meta Graph API / Twilio SMS / Expo Push / Resend (injectable fetch for fixture-based contract tests).
 
@@ -21,6 +21,7 @@
 ### Task 1: Branch + contracts + config schemas
 
 **Files:**
+
 - Modify: `packages/contracts/src/errors.ts` — add `CHANNEL_DISABLED`, `DESTINATION_NOT_ALLOWED`, `CHANNEL_BUDGET_EXCEEDED`, `AI_QUOTA_EXCEEDED` (Phase 7, additive).
 - Modify: `apps/api/src/kernel/errors.ts` — map: CHANNEL_DISABLED→PRECONDITION_FAILED, DESTINATION_NOT_ALLOWED→FORBIDDEN, CHANNEL_BUDGET_EXCEEDED→TOO_MANY_REQUESTS, AI_QUOTA_EXCEEDED→TOO_MANY_REQUESTS.
 - Modify: `packages/i18n/src/messages/{en,ar,ckb}.json` — `errors.*` entries for the four codes.
@@ -38,6 +39,7 @@
 ### Task 2: DB schema + migration 0008
 
 **Files:**
+
 - Create: `packages/db/src/schema/communication.ts`
   - `notification_log`: id uuid pk; `patientProfileId` uuid null; `userId` text null; `appointmentId` uuid null; `template` text; `channel` text enum push|whatsapp|sms|email; `destination` text null (**schema comment: PII — phone/email/device token; crypto-shred scope; retention 12–24 months per ADR-0011**); `locale` text; `status` text enum pending|sent|failed|denied notNull default pending; `attempts` integer notNull default 0; `nextAttemptAt` timestamptz notNull defaultNow; `lastError` text; `dedupeKey` text notNull unique; `createdAt`/`updatedAt`. Indexes: `(status, next_attempt_at)` partial `WHERE status='pending'` for the sender; `(channel, created_at)` for spend/ops.
   - `user_channel_preferences`: `userId` text pk; booleans `pushEnabled|whatsappEnabled|smsEnabled|emailEnabled` default true; `locale` text null; timestamps.
@@ -55,6 +57,7 @@
 ### Task 3: Platform adapters — WhatsApp (Meta), SMS, Expo push, Resend email, AiGateway
 
 **Files (packages/platform/src):**
+
 - Create `notify.ts`: `NotifyChannel` interface `{ readonly kind: "whatsapp"|"sms"; send(msg: { to: string; body: string }): Promise<void> }` + `NotifySendError`.
 - Create `push.ts`: `PushChannel` `{ send(msg: { token: string; title: string; body: string; data?: Record<string,string> }): Promise<void> }` + `PushSendError` + `PushTokenInvalidError` (Expo `DeviceNotRegistered`).
 - Create `whatsapp-meta.ts`: `createMetaWhatsAppAdapter({ accessToken, phoneNumberId, baseUrl?, fetchImpl? })` returning `{ notify: NotifyChannel, otp: OtpChannel }`. Meta Graph API `POST {baseUrl}/{phoneNumberId}/messages` with `type: "text"`; OTP body rendered from i18n catalog key `identity.otp.message` by locale. Non-2xx → typed send errors. No secret in error messages.
@@ -71,6 +74,7 @@
 ### Task 4: Kernel — redaction, abuse guards, metrics, scheduler
 
 **Files:**
+
 - Create `apps/api/src/kernel/redaction.ts`: exported `REDACT_PATHS` (phone/name/email/destination/to fields at depths 1–3: `phoneNumber`, `*.phoneNumber`, `*.*.phoneNumber`, `normalizedPhone` …, `fullName` …, `patientPhone`, `to`, `destination`, `email` variants) + wired into the Fastify logger options in `app.ts` (`redact: { paths: REDACT_PATHS, censor: "[REDACTED]" }`).
 - Test `apps/api/test/redaction.test.ts`: pino instance with app's redact config logging `{ phoneNumber: "+9647...", err: {...} }` and nested variants → output folded.
 - Create `apps/api/src/kernel/abuse.ts` (uses kernel tables + config service; typed AppErrors):
@@ -86,6 +90,7 @@
 ### Task 5: Identity OTP hardening + real-channel integration
 
 **Files:**
+
 - Modify `apps/api/src/modules/identity/otp-sender.ts`: before sending — `assertChannelEnabled` per channel (whatsapp killed → try sms; both killed → OTP_DELIVERY_FAILED/CHANNEL_DISABLED), `assertDestinationAllowed(phone)`, `assertSendRate(phone)` (existing per-phone policy retained), budget spend per channel used. Signature gains optional `{ ip?, deviceId? }` context → `assertSendRate` for ip/device scopes when present.
 - Modify `apps/api/src/modules/identity/auth.ts` + `index.ts`: thread request IP (`x-forwarded-for`/socket) and `x-device-id` header into `sendOtp` via better-auth hook context.
 - Tests `apps/api/test/identity/otp.test.ts` (extend; existing assertions untouched): per-IP limit fires; per-device limit fires; kill-switch (whatsapp) → SMS fallback used; both killed → typed refusal; non-IQ destination → denied; WhatsApp-first/SMS-fallback e2e against adapter interface still green.
@@ -93,6 +98,7 @@
 ### Task 6: Communication module
 
 **Files (apps/api/src/modules/communication/):**
+
 - `templates.ts`: template registry over `@mesomed/i18n` catalogs. Message keys `communication.<template>.<variant>` where template ∈ `booking_confirmation | reschedule_notice | cancellation_notice | reminder | prescription_issued | subscription_activated | subscription_expired`, variant ∈ `sms` (shared by whatsapp/sms), `push.title`, `push.body`, `email.subject`, `email.body`. Params `{doctorName, dateTime, locationName}` (booking set); prescription: `{doctorName}`; subscription: `{}`/dates. `renderTemplate(template, variant, locale, params)` ports rev01 semantics (unknown locale → ckb; missing params left visible). rev01 sms bodies ported verbatim to catalogs.
 - `shared.ts`: channel router `resolveDeliveryPlan(db, { patientProfileId })` → re-reads contact PII at send time via published queries; returns `{ locale, deliveries: [{channel, destination}] }` — push when token+pref, else whatsapp/sms phone, plus email when present+pref.
 - `commands/plan-notification.ts`: `planNotification(tx, {...})` inserts `notification_log` pending row(s) with `dedupeKey` = `${template}:${appointmentId ?? aggregate}:${channel}` `ON CONFLICT DO NOTHING`.
@@ -112,6 +118,7 @@
 ### Task 7: AI module
 
 **Files:**
+
 - `packages/domain/package.json`: add `"./ai": "./ai/index.ts"` + create `packages/domain/ai/index.ts` re-exporting utils + rate-limit.
 - `apps/api/src/modules/ai/triage-service.ts`: port of the deferred pipeline — sanitization + deterministic red-flag first; AiGateway (Zod-parse via ported `parseTriageResponse`); whitelist intersection vs active DB specialties (directory published query `queries/triage-taxonomy.ts`: active specialties + symptom keyword entries); keyword fallback; 8s timeout inside gateway call; **no symptom text in logs, no free-text output returned** (slugs + boolean only); prompt delimiting preserved.
 - `apps/api/src/modules/ai/router.ts`: `ai.triageSymptoms` **mutation** (body-only — GET query strings land in access logs; deliberate PII posture), public. Rate limits before any work: per-user (session) or per-IP token bucket AND separate global bucket via `@mesomed/domain/ai` `checkRateLimit` with `ai.triage_rate_policy` config → RATE_LIMITED / AI_QUOTA_EXCEEDED distinct.
@@ -139,6 +146,7 @@
 - Push branch (gh.exe with --repo per memory), open PR with gate evidence. STOP — no merge, no Phase 8.
 
 ## Self-Review notes
+
 - Every prompt scope item maps: communication module (T6), adapters (T3), abuse controls (T1/T4/T5/T6 tests), PII discipline (T2 comments, T4 redaction, T6 id-only subscribers), AI module (T7), runbooks (T9), mock→real checklist (T9), gate criteria (T6/T7/T8 tests + T10).
 - Reminder scan uses new `(status, starts_at)` index — no unbounded per-row scan.
 - OTP flow: MM-DEC rev02 exactly; no step-up added (rev03 = ADR open item only).

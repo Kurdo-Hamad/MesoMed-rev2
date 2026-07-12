@@ -10,12 +10,12 @@ import { resolveTrustProxy } from "../src/app.js";
  * parsing and the actual effect on Fastify's own IP resolution.
  */
 describe("resolveTrustProxy (ADR-0011 F-5)", () => {
-  it("defaults to false (trust nothing) when unset or explicitly \"false\"", () => {
+  it('defaults to false (trust nothing) when unset or explicitly "false"', () => {
     expect(resolveTrustProxy(undefined)).toBe(false);
     expect(resolveTrustProxy("false")).toBe(false);
   });
 
-  it("parses \"true\" as boolean true (trust every hop)", () => {
+  it('parses "true" as boolean true (trust every hop)', () => {
     expect(resolveTrustProxy("true")).toBe(true);
   });
 

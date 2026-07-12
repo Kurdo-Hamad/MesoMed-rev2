@@ -40,7 +40,11 @@ export {
   type MetaWhatsAppAdapter,
   type MetaWhatsAppAdapterOptions,
 } from "./whatsapp-meta.js";
-export { createTwilioSmsAdapter, type TwilioSmsAdapter, type TwilioSmsAdapterOptions } from "./sms-twilio.js";
+export {
+  createTwilioSmsAdapter,
+  type TwilioSmsAdapter,
+  type TwilioSmsAdapterOptions,
+} from "./sms-twilio.js";
 export { createExpoPushAdapter, type ExpoPushAdapterOptions } from "./push-expo.js";
 export { createResendEmailAdapter, type ResendEmailAdapterOptions } from "./email-resend.js";
 export {

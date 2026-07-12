@@ -106,10 +106,7 @@
       "compositePrimaryKeys": {
         "channel_spend_channel_day_pk": {
           "name": "channel_spend_channel_day_pk",
-          "columns": [
-            "channel",
-            "day"
-          ]
+          "columns": ["channel", "day"]
         }
       },
       "uniqueConstraints": {},
@@ -289,12 +286,8 @@
           "name": "processed_events_event_id_domain_events_id_fk",
           "tableFrom": "processed_events",
           "tableTo": "domain_events",
-          "columnsFrom": [
-            "event_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["event_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -302,10 +295,7 @@
       "compositePrimaryKeys": {
         "processed_events_event_id_handler_pk": {
           "name": "processed_events_event_id_handler_pk",
-          "columns": [
-            "event_id",
-            "handler"
-          ]
+          "columns": ["event_id", "handler"]
         }
       },
       "uniqueConstraints": {},
@@ -487,12 +477,8 @@
           "name": "account_user_id_user_id_fk",
           "tableFrom": "account",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -656,12 +642,8 @@
           "name": "patient_profiles_user_id_user_id_fk",
           "tableFrom": "patient_profiles",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -783,12 +765,8 @@
           "name": "provider_profiles_user_id_user_id_fk",
           "tableFrom": "provider_profiles",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -796,12 +774,8 @@
           "name": "provider_profiles_status_changed_by_user_id_fk",
           "tableFrom": "provider_profiles",
           "tableTo": "user",
-          "columnsFrom": [
-            "status_changed_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["status_changed_by"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -913,12 +887,8 @@
           "name": "session_user_id_user_id_fk",
           "tableFrom": "session",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1082,12 +1052,8 @@
           "name": "user_roles_user_id_user_id_fk",
           "tableFrom": "user_roles",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1357,12 +1323,8 @@
           "name": "cities_country_id_countries_id_fk",
           "tableFrom": "cities",
           "tableTo": "countries",
-          "columnsFrom": [
-            "country_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["country_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1633,12 +1595,8 @@
           "name": "doctor_profiles_provider_id_providers_id_fk",
           "tableFrom": "doctor_profiles",
           "tableTo": "providers",
-          "columnsFrom": [
-            "provider_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["provider_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1646,12 +1604,8 @@
           "name": "doctor_profiles_city_id_cities_id_fk",
           "tableFrom": "doctor_profiles",
           "tableTo": "cities",
-          "columnsFrom": [
-            "city_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["city_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -2103,12 +2057,8 @@
           "name": "facilities_provider_id_providers_id_fk",
           "tableFrom": "facilities",
           "tableTo": "providers",
-          "columnsFrom": [
-            "provider_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["provider_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -2116,12 +2066,8 @@
           "name": "facilities_category_id_categories_id_fk",
           "tableFrom": "facilities",
           "tableTo": "categories",
-          "columnsFrom": [
-            "category_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["category_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -2129,12 +2075,8 @@
           "name": "facilities_city_id_cities_id_fk",
           "tableFrom": "facilities",
           "tableTo": "cities",
-          "columnsFrom": [
-            "city_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["city_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -2204,12 +2146,8 @@
           "name": "facility_category_section_types_category_id_categories_id_fk",
           "tableFrom": "facility_category_section_types",
           "tableTo": "categories",
-          "columnsFrom": [
-            "category_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["category_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2217,12 +2155,8 @@
           "name": "facility_category_section_types_section_type_id_facility_section_types_id_fk",
           "tableFrom": "facility_category_section_types",
           "tableTo": "facility_section_types",
-          "columnsFrom": [
-            "section_type_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["section_type_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2305,12 +2239,8 @@
           "name": "facility_media_facility_id_facilities_id_fk",
           "tableFrom": "facility_media",
           "tableTo": "facilities",
-          "columnsFrom": [
-            "facility_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["facility_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2505,12 +2435,8 @@
           "name": "facility_sections_facility_id_facilities_id_fk",
           "tableFrom": "facility_sections",
           "tableTo": "facilities",
-          "columnsFrom": [
-            "facility_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["facility_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2518,12 +2444,8 @@
           "name": "facility_sections_section_type_id_facility_section_types_id_fk",
           "tableFrom": "facility_sections",
           "tableTo": "facility_section_types",
-          "columnsFrom": [
-            "section_type_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["section_type_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -2625,12 +2547,8 @@
           "name": "homepage_promotions_city_id_cities_id_fk",
           "tableFrom": "homepage_promotions",
           "tableTo": "cities",
-          "columnsFrom": [
-            "city_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["city_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -3016,12 +2934,8 @@
           "name": "symptom_specialty_map_symptom_id_symptoms_id_fk",
           "tableFrom": "symptom_specialty_map",
           "tableTo": "symptoms",
-          "columnsFrom": [
-            "symptom_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["symptom_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -3266,10 +3180,7 @@
       "compositePrimaryKeys": {
         "search_documents_entity_type_entity_id_pk": {
           "name": "search_documents_entity_type_entity_id_pk",
-          "columns": [
-            "entity_type",
-            "entity_id"
-          ]
+          "columns": ["entity_type", "entity_id"]
         }
       },
       "uniqueConstraints": {},
@@ -3359,12 +3270,8 @@
           "name": "blocked_slots_doctor_location_id_doctor_locations_id_fk",
           "tableFrom": "blocked_slots",
           "tableTo": "doctor_locations",
-          "columnsFrom": [
-            "doctor_location_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["doctor_location_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -3461,12 +3368,8 @@
           "name": "doctor_locations_location_id_practice_locations_id_fk",
           "tableFrom": "doctor_locations",
           "tableTo": "practice_locations",
-          "columnsFrom": [
-            "location_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["location_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -3647,12 +3550,8 @@
           "name": "schedule_breaks_weekly_schedule_id_weekly_schedules_id_fk",
           "tableFrom": "schedule_breaks",
           "tableTo": "weekly_schedules",
-          "columnsFrom": [
-            "weekly_schedule_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["weekly_schedule_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -3749,12 +3648,8 @@
           "name": "secretary_assignments_doctor_location_id_doctor_locations_id_fk",
           "tableFrom": "secretary_assignments",
           "tableTo": "doctor_locations",
-          "columnsFrom": [
-            "doctor_location_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["doctor_location_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -3842,12 +3737,8 @@
           "name": "weekly_schedules_doctor_location_id_doctor_locations_id_fk",
           "tableFrom": "weekly_schedules",
           "tableTo": "doctor_locations",
-          "columnsFrom": [
-            "doctor_location_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["doctor_location_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -4598,12 +4489,8 @@
           "name": "prescriptions_encounter_id_encounters_id_fk",
           "tableFrom": "prescriptions",
           "tableTo": "encounters",
-          "columnsFrom": [
-            "encounter_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["encounter_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -4721,12 +4608,8 @@
           "name": "support_access_grants_encounter_id_encounters_id_fk",
           "tableFrom": "support_access_grants",
           "tableTo": "encounters",
-          "columnsFrom": [
-            "encounter_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["encounter_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -4832,12 +4715,8 @@
           "name": "visit_notes_encounter_id_encounters_id_fk",
           "tableFrom": "visit_notes",
           "tableTo": "encounters",
-          "columnsFrom": [
-            "encounter_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["encounter_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -5097,12 +4976,8 @@
           "name": "billing_charges_subscription_id_provider_billing_config_id_fk",
           "tableFrom": "billing_charges",
           "tableTo": "provider_billing_config",
-          "columnsFrom": [
-            "subscription_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["subscription_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -5110,12 +4985,8 @@
           "name": "billing_charges_reverses_charge_id_billing_charges_id_fk",
           "tableFrom": "billing_charges",
           "tableTo": "billing_charges",
-          "columnsFrom": [
-            "reverses_charge_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["reverses_charge_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -5282,12 +5153,8 @@
           "name": "billing_policy_evaluations_charge_id_billing_charges_id_fk",
           "tableFrom": "billing_policy_evaluations",
           "tableTo": "billing_charges",
-          "columnsFrom": [
-            "charge_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["charge_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -5497,12 +5364,8 @@
           "name": "facility_tiers_tier_id_listing_tiers_id_fk",
           "tableFrom": "facility_tiers",
           "tableTo": "listing_tiers",
-          "columnsFrom": [
-            "tier_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["tier_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -5704,12 +5567,8 @@
           "name": "provider_billing_config_tier_id_listing_tiers_id_fk",
           "tableFrom": "provider_billing_config",
           "tableTo": "listing_tiers",
-          "columnsFrom": [
-            "tier_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["tier_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -5945,12 +5804,8 @@
           "name": "subscription_payments_subscription_id_subscriptions_id_fk",
           "tableFrom": "subscription_payments",
           "tableTo": "subscriptions",
-          "columnsFrom": [
-            "subscription_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["subscription_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -6199,12 +6054,8 @@
           "name": "tier_payments_tier_id_listing_tiers_id_fk",
           "tableFrom": "tier_payments",
           "tableTo": "listing_tiers",
-          "columnsFrom": [
-            "tier_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["tier_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -6309,12 +6160,8 @@
           "name": "tier_prices_tier_id_listing_tiers_id_fk",
           "tableFrom": "tier_prices",
           "tableTo": "listing_tiers",
-          "columnsFrom": [
-            "tier_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["tier_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -6411,12 +6258,8 @@
           "name": "device_tokens_user_id_user_id_fk",
           "tableFrom": "device_tokens",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -6692,12 +6535,8 @@
           "name": "user_channel_preferences_user_id_user_id_fk",
           "tableFrom": "user_channel_preferences",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }

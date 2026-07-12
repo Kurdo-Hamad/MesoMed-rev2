@@ -1,10 +1,7 @@
 import { z } from "zod";
 import { PAYMENT_KINDS, type PaymentKind } from "@mesomed/contracts/billing";
 import { COUNTRY_GATING_STATUSES, type CountryGatingStatus } from "@mesomed/contracts/directory";
-import {
-  NOTIFICATION_CHANNELS,
-  type NotificationChannel,
-} from "@mesomed/contracts/communication";
+import { NOTIFICATION_CHANNELS, type NotificationChannel } from "@mesomed/contracts/communication";
 
 /**
  * Config-over-code schemas (MM-PLAN-001 §3.9): configuration lives in
@@ -201,10 +198,7 @@ export const CHANNEL_KILL_SWITCH_CONFIG_KEY = "communication.channel_kill_switch
  * deploy (§3.9). A missing row or missing entry means the channel is
  * enabled; `true` refuses every send on that channel.
  */
-export const channelKillSwitchSchema = z.partialRecord(
-  z.enum(NOTIFICATION_CHANNELS),
-  z.boolean(),
-);
+export const channelKillSwitchSchema = z.partialRecord(z.enum(NOTIFICATION_CHANNELS), z.boolean());
 
 export type ChannelKillSwitch = z.infer<typeof channelKillSwitchSchema>;
 

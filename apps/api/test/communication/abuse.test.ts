@@ -62,7 +62,9 @@ describe("communication abuse guardrails", () => {
     });
 
     it("fires DESTINATION_NOT_ALLOWED for a non-allowlisted country", async () => {
-      await expect(assertDestinationAllowed(config, "+14155550100")).rejects.toBeInstanceOf(AppError);
+      await expect(assertDestinationAllowed(config, "+14155550100")).rejects.toBeInstanceOf(
+        AppError,
+      );
       await expect(assertDestinationAllowed(config, "+14155550100")).rejects.toMatchObject({
         code: "DESTINATION_NOT_ALLOWED",
       });
@@ -71,7 +73,9 @@ describe("communication abuse guardrails", () => {
 
   describe("daily channel budget", () => {
     it("passes sends under budget and does nothing for unbudgeted channels", async () => {
-      await expect(checkAndSpendBudget(db, config, "whatsapp", new Date())).resolves.toBeUndefined();
+      await expect(
+        checkAndSpendBudget(db, config, "whatsapp", new Date()),
+      ).resolves.toBeUndefined();
     });
 
     it("fires CHANNEL_BUDGET_EXCEEDED once the daily limit is crossed, and writes an alert", async () => {
@@ -152,7 +156,11 @@ describe("communication abuse guardrails", () => {
           channel: "whatsapp",
           destination,
           locale: "ckb",
-          paramsJson: JSON.stringify({ doctorName: "Dr. Test", dateTime: "tomorrow", locationName: "Clinic" }),
+          paramsJson: JSON.stringify({
+            doctorName: "Dr. Test",
+            dateTime: "tomorrow",
+            locationName: "Clinic",
+          }),
           dedupeKey: `velocity-e2e-test:${destination}:${i}`,
         });
       }

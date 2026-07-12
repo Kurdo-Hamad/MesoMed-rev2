@@ -50,7 +50,10 @@ export interface PlanNotificationInput {
  * patient with no contactable channel plans nothing — not an error, since
  * a guest profile mid-claim or a fully opted-out user is a normal state.
  */
-export async function planNotification(db: DbExecutor, input: PlanNotificationInput): Promise<void> {
+export async function planNotification(
+  db: DbExecutor,
+  input: PlanNotificationInput,
+): Promise<void> {
   const plan = await resolveDeliveryPlan(db, { patientProfileId: input.patientProfileId });
   if (plan.deliveries.length === 0) return;
 

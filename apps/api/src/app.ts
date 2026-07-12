@@ -136,12 +136,19 @@ function resolveAdapters(env: Env, overrides: BuildServerOverrides) {
   const sms =
     env.TWILIO_ACCOUNT_SID && env.TWILIO_AUTH_TOKEN && env.TWILIO_FROM
       ? createTwilioSmsAdapter(
-          { accountSid: env.TWILIO_ACCOUNT_SID, authToken: env.TWILIO_AUTH_TOKEN, from: env.TWILIO_FROM },
+          {
+            accountSid: env.TWILIO_ACCOUNT_SID,
+            authToken: env.TWILIO_AUTH_TOKEN,
+            from: env.TWILIO_FROM,
+          },
           OTP_MESSAGE_CATALOG,
         )
       : { notify: createMockNotifyChannel("sms"), otp: createMockOtpChannel("sms") };
 
-  const otpChannels: OtpChannels = overrides.otpChannels ?? { whatsapp: whatsapp.otp, sms: sms.otp };
+  const otpChannels: OtpChannels = overrides.otpChannels ?? {
+    whatsapp: whatsapp.otp,
+    sms: sms.otp,
+  };
   const notifyChannels = overrides.notifyChannels ?? { whatsapp: whatsapp.notify, sms: sms.notify };
 
   const pushChannel: PushChannel =

@@ -2,7 +2,12 @@
  * Expo Push adapter (MM-PLAN-001 §5 Phase 7): real implementation behind
  * `PushChannel`. Vendor HTTP call isolated to this file (§3.8).
  */
-import { PushSendError, PushTokenInvalidError, type PushChannel, type PushMessage } from "./push.js";
+import {
+  PushSendError,
+  PushTokenInvalidError,
+  type PushChannel,
+  type PushMessage,
+} from "./push.js";
 
 export interface ExpoPushAdapterOptions {
   /** Expo access token (optional — required only for Expo push security). */

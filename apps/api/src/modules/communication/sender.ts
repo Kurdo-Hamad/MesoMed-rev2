@@ -11,15 +11,7 @@
  * itself has no value (ADR-0011 F-8).
  */
 import type { FastifyBaseLogger } from "fastify";
-import {
-  and,
-  deviceTokens,
-  eq,
-  inArray,
-  lte,
-  notificationLog,
-  type Db,
-} from "@mesomed/db";
+import { and, deviceTokens, eq, inArray, lte, notificationLog, type Db } from "@mesomed/db";
 import {
   PushTokenInvalidError,
   type EmailChannel,
@@ -184,13 +176,24 @@ export function createNotificationSender(options: NotificationSenderOptions): No
     if (nextAttempts >= maxAttempts) {
       await db
         .update(notificationLog)
-        .set({ status: "failed", attempts: nextAttempts, lastError: message, updatedAt: new Date() })
+        .set({
+          status: "failed",
+          attempts: nextAttempts,
+          lastError: message,
+          updatedAt: new Date(),
+        })
         .where(eq(notificationLog.id, row.id));
     } else {
       const nextAttemptAt = new Date(Date.now() + backoffSeconds * 1000 * nextAttempts);
       await db
         .update(notificationLog)
-        .set({ status: "pending", attempts: nextAttempts, nextAttemptAt, lastError: message, updatedAt: new Date() })
+        .set({
+          status: "pending",
+          attempts: nextAttempts,
+          nextAttemptAt,
+          lastError: message,
+          updatedAt: new Date(),
+        })
         .where(eq(notificationLog.id, row.id));
     }
   }
@@ -319,7 +322,10 @@ export function createNotificationSender(options: NotificationSenderOptions): No
           await assertChannelEnabled(config, "sms");
           await checkAndSpendBudget(db, config, "sms", now);
           await channels.sms.send({ to: destination, body });
-          await db.update(notificationLog).set({ channel: "sms" }).where(eq(notificationLog.id, row.id));
+          await db
+            .update(notificationLog)
+            .set({ channel: "sms" })
+            .where(eq(notificationLog.id, row.id));
           recordNotificationSend("sms", "sent");
         }
       } else if (channel === "sms") {
@@ -364,7 +370,12 @@ export function createNotificationSender(options: NotificationSenderOptions): No
       const due = await tx
         .select()
         .from(notificationLog)
-        .where(and(eq(notificationLog.status, "pending"), lte(notificationLog.nextAttemptAt, new Date())))
+        .where(
+          and(
+            eq(notificationLog.status, "pending"),
+            lte(notificationLog.nextAttemptAt, new Date()),
+          ),
+        )
         .orderBy(notificationLog.nextAttemptAt)
         .limit(PUMP_BATCH_SIZE)
         .for("update", { skipLocked: true });
@@ -372,7 +383,12 @@ export function createNotificationSender(options: NotificationSenderOptions): No
       await tx
         .update(notificationLog)
         .set({ nextAttemptAt: new Date(Date.now() + CLAIM_HOLD_MS) })
-        .where(inArray(notificationLog.id, due.map((r) => r.id)));
+        .where(
+          inArray(
+            notificationLog.id,
+            due.map((r) => r.id),
+          ),
+        );
       return due;
     });
   }

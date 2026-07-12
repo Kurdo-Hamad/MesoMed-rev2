@@ -12,7 +12,12 @@ interface CallOptions {
   user?: string;
 }
 
-async function trpc(app: FastifyInstance, kind: "query" | "mutation", input: unknown, options: CallOptions = {}) {
+async function trpc(
+  app: FastifyInstance,
+  kind: "query" | "mutation",
+  input: unknown,
+  options: CallOptions = {},
+) {
   const headers: Record<string, string> = { "content-type": "application/json" };
   if (options.roles !== undefined) headers["x-test-roles"] = options.roles;
   if (options.user !== undefined) headers["x-test-user"] = options.user;
@@ -44,7 +49,8 @@ describe("ai.triageSymptoms router (MM-PLAN-001 §5 Phase 7)", () => {
         const roles = Array.isArray(roleHeader) ? roleHeader[0] : roleHeader;
         if (roles === undefined) return null;
         const userHeader = req.headers["x-test-user"];
-        const userId = (Array.isArray(userHeader) ? userHeader[0] : userHeader) ?? "user-under-test";
+        const userId =
+          (Array.isArray(userHeader) ? userHeader[0] : userHeader) ?? "user-under-test";
         return { userId, roles: roles === "" ? [] : (roles.split(",") as Role[]) };
       },
     });
@@ -59,7 +65,11 @@ describe("ai.triageSymptoms router (MM-PLAN-001 §5 Phase 7)", () => {
   it("is public — no session required — and matches the output contract", async () => {
     const res = await trpc(app, "mutation", { text: "a mild persistent headache" });
     expect(res.statusCode).toBe(200);
-    const data = res.json().result.data as { redFlag: boolean; specialties: string[]; engine: string };
+    const data = res.json().result.data as {
+      redFlag: boolean;
+      specialties: string[];
+      engine: string;
+    };
     expect(typeof data.redFlag).toBe("boolean");
     expect(Array.isArray(data.specialties)).toBe(true);
     expect(["model", "keyword", "red_flag"]).toContain(data.engine);

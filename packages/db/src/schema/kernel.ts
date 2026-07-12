@@ -116,7 +116,9 @@ export const sendRateEvents = pgTable(
     key: text("key").notNull(),
     sentAt: timestamp("sent_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (table) => [index("send_rate_events_scope_key_sent_idx").on(table.scope, table.key, table.sentAt)],
+  (table) => [
+    index("send_rate_events_scope_key_sent_idx").on(table.scope, table.key, table.sentAt),
+  ],
 );
 
 /**

@@ -73,7 +73,10 @@ async function tryModel(
     });
     const parsed = parseTriageResponse(raw);
     if (!parsed) return null;
-    return { slugs: intersectWithWhitelist(parsed.specialties, whitelist), redFlag: parsed.red_flag };
+    return {
+      slugs: intersectWithWhitelist(parsed.specialties, whitelist),
+      redFlag: parsed.red_flag,
+    };
   } catch (error) {
     // Never log `error` verbatim: an AiGatewayError's own message never
     // carries symptom text (it's a transport failure description), but we

@@ -12,6 +12,9 @@ const notificationsSent = meter.createCounter("mesomed.notifications.sent", {
   description: "Notification send attempts by channel and outcome",
 });
 
-export function recordNotificationSend(channel: string, status: "sent" | "failed" | "denied"): void {
+export function recordNotificationSend(
+  channel: string,
+  status: "sent" | "failed" | "denied",
+): void {
   notificationsSent.add(1, { channel, status });
 }

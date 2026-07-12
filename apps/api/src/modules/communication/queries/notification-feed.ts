@@ -4,7 +4,11 @@
  * feed is safe for general ops tooling, not just support-access-gated code.
  */
 import { desc, notificationLog, type DbExecutor } from "@mesomed/db";
-import type { NotificationChannel, NotificationStatus, NotificationTemplate } from "@mesomed/contracts/communication";
+import type {
+  NotificationChannel,
+  NotificationStatus,
+  NotificationTemplate,
+} from "@mesomed/contracts/communication";
 
 export interface NotificationFeedEntry {
   id: string;

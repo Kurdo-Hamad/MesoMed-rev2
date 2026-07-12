@@ -144,9 +144,21 @@ describe("communication router (MM-PLAN-001 §5 Phase 7)", () => {
     await seedUser(app, owner.user);
     const token = "expo-token-router-test-unregister";
 
-    await trpc(app, "communication.registerDeviceToken", "mutation", { token, platform: "ios" }, owner);
+    await trpc(
+      app,
+      "communication.registerDeviceToken",
+      "mutation",
+      { token, platform: "ios" },
+      owner,
+    );
 
-    const res = await trpc(app, "communication.unregisterDeviceToken", "mutation", { token }, owner);
+    const res = await trpc(
+      app,
+      "communication.unregisterDeviceToken",
+      "mutation",
+      { token },
+      owner,
+    );
     expect(res.statusCode).toBe(200);
     expect(result(res)).toEqual({ unregistered: true });
 
@@ -168,7 +180,13 @@ describe("communication router (MM-PLAN-001 §5 Phase 7)", () => {
     await seedUser(app, attacker.user);
     const token = "expo-token-router-test-owned";
 
-    await trpc(app, "communication.registerDeviceToken", "mutation", { token, platform: "ios" }, owner);
+    await trpc(
+      app,
+      "communication.registerDeviceToken",
+      "mutation",
+      { token, platform: "ios" },
+      owner,
+    );
 
     const res = await trpc(
       app,
@@ -225,10 +243,16 @@ describe("communication router (MM-PLAN-001 §5 Phase 7)", () => {
       })
       .returning({ id: notificationLog.id });
 
-    const res = await trpc(app, "communication.listRecentNotifications", "query", { limit: 50 }, {
-      roles: "admin",
-      user: "router-test-feed-admin",
-    });
+    const res = await trpc(
+      app,
+      "communication.listRecentNotifications",
+      "query",
+      { limit: 50 },
+      {
+        roles: "admin",
+        user: "router-test-feed-admin",
+      },
+    );
     expect(res.statusCode).toBe(200);
     const rows = result<Array<Record<string, unknown>>>(res);
     const entry = rows.find((r) => r.id === row!.id);

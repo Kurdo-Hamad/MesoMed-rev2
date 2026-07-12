@@ -43,7 +43,10 @@ describe("checkRateLimit", () => {
     const staleTime = 10_000_000 + Math.random() * 1_000; // an isolated timeline
     const laterTime = staleTime + 3 * 60 * 60 * 1000; // 3h later — past the 2h staleness window
 
-    const staleKeys = Array.from({ length: 50 }, (_, i) => `test-evict-stale-${i}-${Math.random()}`);
+    const staleKeys = Array.from(
+      { length: 50 },
+      (_, i) => `test-evict-stale-${i}-${Math.random()}`,
+    );
     for (const key of staleKeys) checkRateLimit(key, opts, staleTime);
     const peakCount = _debugBucketCount();
 

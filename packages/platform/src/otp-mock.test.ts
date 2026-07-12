@@ -11,7 +11,12 @@ describe("createMockOtpChannel", () => {
 
   it("records sent messages for test inspection", async () => {
     const channel = createMockOtpChannel("whatsapp");
-    await channel.send({ to: "+9647701234567", code: "123456", locale: "ckb", expiresInMinutes: 5 });
+    await channel.send({
+      to: "+9647701234567",
+      code: "123456",
+      locale: "ckb",
+      expiresInMinutes: 5,
+    });
 
     expect(channel.sent).toEqual([
       { to: "+9647701234567", code: "123456", locale: "ckb", expiresInMinutes: 5 },

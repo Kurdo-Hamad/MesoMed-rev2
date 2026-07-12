@@ -433,7 +433,10 @@ describe("communication dispatch (MM-PLAN-001 §5 Phase 7)", () => {
       .where(
         and(
           eq(notificationLog.patientProfileId, patientProfileId),
-          eq(notificationLog.dedupeKey, `reminder:sms-preference-test:${patientProfileId}:whatsapp`),
+          eq(
+            notificationLog.dedupeKey,
+            `reminder:sms-preference-test:${patientProfileId}:whatsapp`,
+          ),
         ),
       );
     expect(row!.channel).toBe("whatsapp");
@@ -471,7 +474,11 @@ describe("communication dispatch (MM-PLAN-001 §5 Phase 7)", () => {
       channel: "whatsapp",
       destination: goodDestination,
       locale: "ckb",
-      paramsJson: JSON.stringify({ doctorName: "Dr. Good", dateTime: "tomorrow", locationName: "Clinic" }),
+      paramsJson: JSON.stringify({
+        doctorName: "Dr. Good",
+        dateTime: "tomorrow",
+        locationName: "Clinic",
+      }),
       dedupeKey: `poison-row-test:good:${goodDestination}`,
     });
     const [poisonRow] = await app.kernel.db
@@ -530,7 +537,10 @@ describe("communication dispatch (MM-PLAN-001 §5 Phase 7)", () => {
     const patientProfileId = patient!.id;
     const deadToken = `expo-token-dead-${patientProfileId}`;
 
-    await registerDeviceToken(app.kernel.db, clinic.patientUserId, { token: deadToken, platform: "ios" });
+    await registerDeviceToken(app.kernel.db, clinic.patientUserId, {
+      token: deadToken,
+      platform: "ios",
+    });
 
     await planNotification(app.kernel.db, {
       patientProfileId,
@@ -588,7 +598,10 @@ describe("communication dispatch (MM-PLAN-001 §5 Phase 7)", () => {
     const patientProfileId = patient!.id;
     const deadToken = `expo-token-dead-sms-cascade-${patientProfileId}`;
 
-    await registerDeviceToken(app.kernel.db, clinic.patientUserId, { token: deadToken, platform: "ios" });
+    await registerDeviceToken(app.kernel.db, clinic.patientUserId, {
+      token: deadToken,
+      platform: "ios",
+    });
 
     await planNotification(app.kernel.db, {
       patientProfileId,
@@ -604,7 +617,10 @@ describe("communication dispatch (MM-PLAN-001 §5 Phase 7)", () => {
       .where(
         and(
           eq(notificationLog.patientProfileId, patientProfileId),
-          eq(notificationLog.dedupeKey, `reminder:dead-push-sms-cascade-test:${patientProfileId}:push`),
+          eq(
+            notificationLog.dedupeKey,
+            `reminder:dead-push-sms-cascade-test:${patientProfileId}:push`,
+          ),
         ),
       );
     expect(row!.channel).toBe("push");
@@ -643,7 +659,10 @@ describe("communication dispatch (MM-PLAN-001 §5 Phase 7)", () => {
     const deadToken = `expo-token-dead-sms-denied-${patientProfileId}`;
 
     await setChannelPreferences(app.kernel.db, clinic.patientUserId, { smsEnabled: false });
-    await registerDeviceToken(app.kernel.db, clinic.patientUserId, { token: deadToken, platform: "ios" });
+    await registerDeviceToken(app.kernel.db, clinic.patientUserId, {
+      token: deadToken,
+      platform: "ios",
+    });
 
     await planNotification(app.kernel.db, {
       patientProfileId,
@@ -659,7 +678,10 @@ describe("communication dispatch (MM-PLAN-001 §5 Phase 7)", () => {
       .where(
         and(
           eq(notificationLog.patientProfileId, patientProfileId),
-          eq(notificationLog.dedupeKey, `reminder:dead-push-sms-denied-test:${patientProfileId}:push`),
+          eq(
+            notificationLog.dedupeKey,
+            `reminder:dead-push-sms-denied-test:${patientProfileId}:push`,
+          ),
         ),
       );
     expect(row!.channel).toBe("push");
