@@ -16,6 +16,7 @@
     "lint": "eslint .",
     "test": "vitest run",
     "seed": "tsx scripts/seed/index.ts",
+    "dev:embedded": "tsx scripts/dev-embedded.ts",
     "perf": "tsx scripts/perf/perf-validation.ts"
   },
   "dependencies": {
