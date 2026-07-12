@@ -26,6 +26,7 @@
     "vitest": "^4.1.10"
   },
   "dependencies": {
-    "zod": "^3.22.0"
+    "zod": "^3.22.0",
+    "@mesomed/contracts": "workspace:*"
   }
 }

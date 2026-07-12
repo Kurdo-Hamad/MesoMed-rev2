@@ -24,7 +24,8 @@
     "./billing": "./src/billing.ts",
     "./events/billing": "./src/events/billing.ts",
     "./communication": "./src/communication.ts",
-    "./ai": "./src/ai.ts"
+    "./ai": "./src/ai.ts",
+    "./phone": "./src/phone.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json",

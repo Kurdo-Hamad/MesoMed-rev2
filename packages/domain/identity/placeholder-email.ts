@@ -1,20 +1,7 @@
 /**
- * Identity module — placeholder emails for phone-keyed accounts (pure).
- *
- * Better Auth requires every user to have an email. Patients register with
- * phone + password (MM-DEC rev02 §2), so their user row carries a
- * deterministic placeholder derived from the normalized phone. The
- * `.invalid` TLD is reserved (RFC 2606) and can never route mail; the
- * EmailChannel must additionally refuse to send to these addresses.
+ * Moved to @mesomed/contracts/phone (Phase 8): clients construct the
+ * placeholder email at signup (Better Auth requires an email field), so
+ * the derivation is part of the wire contract. Re-exported here so
+ * server-side call sites and the existing test suite keep their path.
  */
-
-const PLACEHOLDER_DOMAIN = "phone.mesomed.invalid";
-
-/** Derive the placeholder email for a normalized (E.164) phone number. */
-export function placeholderEmailForPhone(normalizedPhone: string): string {
-  return `p${normalizedPhone.replace(/^\+/, "")}@${PLACEHOLDER_DOMAIN}`;
-}
-
-export function isPlaceholderEmail(email: string): boolean {
-  return email.endsWith(`@${PLACEHOLDER_DOMAIN}`);
-}
+export { isPlaceholderEmail, placeholderEmailForPhone } from "@mesomed/contracts/phone";
