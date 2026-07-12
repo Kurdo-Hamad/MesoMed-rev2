@@ -36,7 +36,11 @@ export default defineConfig({
       stdout: "pipe",
     },
     {
-      command: "pnpm --filter @mesomed/web build && pnpm --filter @mesomed/web start",
+      // rm .next first: the Next data cache persists across runs and would
+      // serve a PREVIOUS harness's responses (e.g. an already-visible
+      // doctor) into a fresh database's suite.
+      command:
+        "rm -rf apps/web/.next && pnpm --filter @mesomed/web build && pnpm --filter @mesomed/web start",
       cwd: repoRoot,
       url: "http://localhost:3000/en",
       timeout: 420_000,

@@ -13,11 +13,38 @@ import { trpc } from "../../../lib/trpc";
 type EntityFilter = "all" | "facility" | "doctor";
 
 export default function SearchPage() {
-  // useSearchParams requires a Suspense boundary on statically rendered pages.
+  const t = useTranslations("web.search");
+  // The heading renders in the static shell — the useSearchParams boundary
+  // must not delay the LCP heading.
   return (
-    <Suspense fallback={null}>
-      <SearchPageInner />
-    </Suspense>
+    <main className="mx-auto w-full max-w-4xl px-4 py-10">
+      <h1 className="text-title font-bold text-ink">{t("title")}</h1>
+      <Suspense
+        fallback={
+          <div aria-busy="true">
+            <div className="mt-5 flex gap-2">
+              <div className="h-9 w-28 animate-pulse rounded-md bg-neutral-100" />
+              <div className="h-9 w-28 animate-pulse rounded-md bg-neutral-100" />
+            </div>
+            {/* Real input in the shell: the placeholder text is the page's
+                largest paint — it must not wait for hydration (LCP). */}
+            <input
+              type="search"
+              disabled
+              placeholder={t("inputPlaceholder")}
+              className="mt-5 h-12 w-full rounded-md border border-line bg-canvas px-4 text-body shadow-card placeholder:text-neutral-400"
+            />
+            <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
+              <div className="h-40 animate-pulse rounded-lg bg-neutral-100" />
+              <div className="h-40 animate-pulse rounded-lg bg-neutral-100" />
+              <div className="h-40 animate-pulse rounded-lg bg-neutral-100" />
+            </div>
+          </div>
+        }
+      >
+        <SearchPageInner />
+      </Suspense>
+    </main>
   );
 }
 
@@ -32,8 +59,7 @@ function SearchPageInner() {
       : "rounded-md border border-line bg-canvas px-4 py-2 text-small font-medium text-neutral-600 transition-colors duration-fast hover:border-brand hover:text-ink";
 
   return (
-    <main className="mx-auto w-full max-w-4xl px-4 py-10">
-      <h1 className="text-title font-bold text-ink">{t("title")}</h1>
+    <>
       <div className="mt-5 flex gap-2" role="tablist">
         <button
           type="button"
@@ -63,7 +89,7 @@ function SearchPageInner() {
       ) : (
         <SymptomSearch />
       )}
-    </main>
+    </>
   );
 }
 

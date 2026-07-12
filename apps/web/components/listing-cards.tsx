@@ -139,9 +139,11 @@ export function CardSkeleton() {
   return (
     <div className="overflow-hidden rounded-lg border border-line bg-canvas shadow-card">
       <div className="aspect-[4/3] animate-pulse bg-neutral-100" />
-      <div className="flex flex-col gap-2 p-3">
-        <div className="h-4 w-3/4 animate-pulse rounded-sm bg-neutral-100" />
-        <div className="h-3 w-1/2 animate-pulse rounded-sm bg-neutral-100" />
+      {/* Line heights mirror the real card's text block — a shorter
+          skeleton shifts every following row when data lands (CLS). */}
+      <div className="flex flex-col gap-0.5 p-3">
+        <div className="h-6 w-3/4 animate-pulse rounded-sm bg-neutral-100" />
+        <div className="h-5 w-1/2 animate-pulse rounded-sm bg-neutral-100" />
       </div>
     </div>
   );

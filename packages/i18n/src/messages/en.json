@@ -364,6 +364,10 @@
       "specialtyFeaturingHint": "Featured specialties appear on the homepage.",
       "featured": "Featured",
       "feature": "Feature"
+    },
+    "metadata": {
+      "title": "MesoMed — Healthcare, made reachable",
+      "description": "Find doctors, hospitals, labs and pharmacies across Iraq and book appointments in minutes — no account required."
     }
   }
 }
