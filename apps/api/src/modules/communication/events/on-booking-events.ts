@@ -22,19 +22,19 @@ export const ON_BOOKING_BOOKED_HANDLER = "communication.plan-booking-confirmatio
 export const ON_BOOKING_RESCHEDULED_HANDLER = "communication.plan-reschedule-notice";
 export const ON_BOOKING_CANCELLED_HANDLER = "communication.plan-cancellation-notice";
 
-export const onBookingBooked: EventHandlerFn = async (envelope, tx) => {
+export const onBookingBooked: EventHandlerFn = async (envelope, tx, eventId) => {
   const { payload } = envelope as EventEnvelope<typeof bookingBookedV1>;
-  await planBookingNotification(tx, payload, "booking_confirmation");
+  await planBookingNotification(tx, payload, "booking_confirmation", eventId);
 };
 
-export const onBookingRescheduled: EventHandlerFn = async (envelope, tx) => {
+export const onBookingRescheduled: EventHandlerFn = async (envelope, tx, eventId) => {
   const { payload } = envelope as EventEnvelope<typeof bookingRescheduledV1>;
-  await planBookingNotification(tx, payload, "reschedule_notice");
+  await planBookingNotification(tx, payload, "reschedule_notice", eventId);
 };
 
-export const onBookingCancelled: EventHandlerFn = async (envelope, tx) => {
+export const onBookingCancelled: EventHandlerFn = async (envelope, tx, eventId) => {
   const { payload } = envelope as EventEnvelope<typeof bookingCancelledV1>;
-  await planBookingNotification(tx, payload, "cancellation_notice");
+  await planBookingNotification(tx, payload, "cancellation_notice", eventId);
 };
 
 async function planBookingNotification(
@@ -47,6 +47,7 @@ async function planBookingNotification(
     startsAt: string;
   },
   template: "booking_confirmation" | "reschedule_notice" | "cancellation_notice",
+  eventId: string,
 ): Promise<void> {
   const [doctorName, location] = await Promise.all([
     getDoctorDisplayName(tx, payload.doctorProfileId),
@@ -59,6 +60,10 @@ async function planBookingNotification(
     patientProfileId: payload.patientProfileId,
     appointmentId: payload.appointmentId,
     template,
+    // The triggering event's own id: stable across redeliveries of the
+    // SAME booked/rescheduled/cancelled event, distinct for a SECOND
+    // reschedule of the same appointment (a new event, ADR-0011 F-1).
+    occurrenceKey: eventId,
     buildParams: (locale) => ({
       doctorName: pickLocalizedName(doctorName, locale),
       dateTime,

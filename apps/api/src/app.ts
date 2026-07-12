@@ -195,6 +195,22 @@ function assertNoMockAdaptersInProduction(
 }
 
 /**
+ * Resolves `TRUST_PROXY` (ADR-0011 F-5) into the shape Fastify's own option
+ * accepts: unset/"false" → false (trust nothing, `req.ip` is the socket
+ * peer); "true" → true (trust every hop's X-Forwarded-For — only correct
+ * with no direct public access); anything else → a comma-separated
+ * IP/CIDR allowlist of the deployment's own proxy addresses.
+ */
+export function resolveTrustProxy(value: string | undefined): boolean | string[] {
+  if (!value || value === "false") return false;
+  if (value === "true") return true;
+  return value
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+}
+
+/**
  * Composition root (MM-PLAN-001 §3.8): constructs the real application —
  * no listening, no telemetry init, no process wiring — so tests exercise
  * the deployable app rather than a hand-wired copy (MM-QA-001 F-05).
@@ -217,6 +233,7 @@ export async function buildServer(
       transport: env.NODE_ENV === "development" ? { target: "pino-pretty" } : undefined,
       redact: { paths: REDACT_PATHS, censor: "[REDACTED]" },
     },
+    trustProxy: resolveTrustProxy(env.TRUST_PROXY),
   });
 
   Sentry.setupFastifyErrorHandler(app);
@@ -347,7 +364,7 @@ export async function buildServer(
   app.decorate("identity", identity);
 
   app.addHook("onClose", async () => {
-    notificationSender.stop();
+    await notificationSender.stop();
     await jobScheduler.stop();
     await dispatcher.stop();
     await close();

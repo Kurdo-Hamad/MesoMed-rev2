@@ -12,7 +12,7 @@ export interface NotificationFeedEntry {
   channel: NotificationChannel;
   status: NotificationStatus;
   attempts: number;
-  createdAt: Date;
+  createdAt: string;
 }
 
 export async function listRecentNotifications(
@@ -32,5 +32,8 @@ export async function listRecentNotifications(
     .from(notificationLog)
     .orderBy(desc(notificationLog.createdAt))
     .limit(limit);
-  return rows as NotificationFeedEntry[];
+  return rows.map((row) => ({
+    ...row,
+    createdAt: row.createdAt.toISOString(),
+  })) as NotificationFeedEntry[];
 }

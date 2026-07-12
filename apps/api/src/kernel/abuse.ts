@@ -123,9 +123,19 @@ export async function assertSendRate(
 
 /**
  * Velocity anomaly detection (MM-ARC-002 §6.6): a hook, never a gate — it
- * only ever writes an alert row when more than `threshold` sends to one
- * destination on one channel land inside the window. Callers invoke this
- * after a successful send; it never throws.
+ * only ever writes an alert row when more than `threshold` successful sends
+ * to one destination land inside the window. Callers invoke this after a
+ * successful send; it never throws.
+ *
+ * Self-contained: it records its own event and counts it, under the
+ * `"phone"` scope of `send_rate_events` — that scope is otherwise unused in
+ * production (per-IP/per-device sends use their own scopes; nothing calls
+ * `assertSendRate(..., "phone", ...)`), so this function is that scope's
+ * sole reader and writer. `key` is the destination (phone/email/push token)
+ * regardless of channel — "phone" here names the bucket, not a literal
+ * constraint on the key's shape. (ADR-0011 F-2: an earlier version only
+ * counted pre-existing "phone"-scope rows without ever writing any, so the
+ * count was always zero and the alert could never fire in production.)
  */
 export async function recordVelocity(
   db: Db,
@@ -136,6 +146,7 @@ export async function recordVelocity(
 ): Promise<void> {
   const policy = await resolveVelocityPolicy(config);
   const cutoff = new Date(now.getTime() - policy.windowSeconds * 1000);
+  await db.insert(sendRateEvents).values({ scope: "phone", key, sentAt: now });
   const [row] = await db
     .select({ count: sql<number>`count(*)::int` })
     .from(sendRateEvents)

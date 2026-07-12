@@ -46,6 +46,16 @@ export const registerDeviceTokenOutputSchema = z.object({
   deviceTokenId: z.string(),
 });
 
+/** ADR-0011 F-9: a device logging out should stop receiving push there. */
+export const unregisterDeviceTokenInputSchema = z.object({
+  token: z.string().min(1).max(4096),
+});
+
+export const unregisterDeviceTokenOutputSchema = z.object({
+  /** False when the token was already gone or never belonged to this caller — still a success (idempotent). */
+  unregistered: z.boolean(),
+});
+
 export const channelPreferencesSchema = z.object({
   pushEnabled: z.boolean(),
   whatsappEnabled: z.boolean(),
@@ -69,3 +79,24 @@ export const DEFAULT_CHANNEL_PREFERENCES: ChannelPreferences = {
 export const setChannelPreferencesInputSchema = channelPreferencesSchema.partial();
 
 export const setChannelPreferencesOutputSchema = channelPreferencesSchema;
+
+/**
+ * Ops-facing recent-deliveries feed (ADR-0011 F-14): status/channel/template
+ * only — deliberately excludes `destination`/`paramsJson` (PII), so this is
+ * safe as an admin-only read, distinct from the clinical-style
+ * support-grant-gated PII access pattern.
+ */
+export const listRecentNotificationsInputSchema = z.object({
+  limit: z.number().int().min(1).max(200).optional(),
+});
+
+export const notificationFeedEntrySchema = z.object({
+  id: z.string(),
+  template: z.enum(NOTIFICATION_TEMPLATES),
+  channel: z.enum(NOTIFICATION_CHANNELS),
+  status: z.enum(NOTIFICATION_STATUSES),
+  attempts: z.number().int(),
+  createdAt: z.iso.datetime(),
+});
+
+export const listRecentNotificationsOutputSchema = z.array(notificationFeedEntrySchema);

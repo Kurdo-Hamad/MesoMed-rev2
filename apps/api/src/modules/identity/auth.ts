@@ -17,6 +17,7 @@ import { phoneNumber } from "better-auth/plugins/phone-number";
 import { expo } from "@better-auth/expo";
 import { getIp } from "@better-auth/core/utils/ip";
 import { isPlaceholderEmail, normalizePhone } from "@mesomed/domain/identity";
+import { isLocale, type Locale } from "@mesomed/contracts/i18n";
 import type { Db } from "@mesomed/db";
 import type { OtpSendContext } from "./otp-sender.js";
 
@@ -37,6 +38,28 @@ export interface IdentityAuthOptions {
 export interface IdentityOtpOptions {
   expiresInSeconds?: number;
   allowedVerifyAttempts?: number;
+}
+
+/** Applies when `IdentityOtpOptions.expiresInSeconds` isn't overridden — the single source of truth `otp-sender.ts` mirrors for the message body (ADR-0011 F-13). */
+export const DEFAULT_OTP_EXPIRES_IN_SECONDS = 300;
+
+/**
+ * Best-effort `Accept-Language` → platform `Locale` match (ADR-0011 F-13):
+ * an OTP is sent before any account/preference row exists, so there's no
+ * stored locale to read yet — this is the only signal available at that
+ * point. Falls through to the caller's own default (ckb) when absent or
+ * unrecognized; "ku" (generic Kurdish macrolanguage tag) maps to this
+ * platform's "ckb" (Sorani) catalog.
+ */
+export function localeFromAcceptLanguage(header: string | null | undefined): Locale | undefined {
+  if (!header) return undefined;
+  for (const part of header.split(",")) {
+    const primary = part.split(";")[0]?.trim().toLowerCase().split("-")[0];
+    if (!primary) continue;
+    if (primary === "ku") return "ckb";
+    if (isLocale(primary)) return primary;
+  }
+  return undefined;
 }
 
 export type IdentityAuth = ReturnType<typeof createIdentityAuth>;
@@ -92,7 +115,7 @@ export function createIdentityAuth(options: IdentityAuthOptions) {
     plugins: [
       phoneNumber({
         otpLength: 6,
-        expiresIn: options.otp?.expiresInSeconds ?? 300,
+        expiresIn: options.otp?.expiresInSeconds ?? DEFAULT_OTP_EXPIRES_IN_SECONDS,
         allowedAttempts: options.otp?.allowedVerifyAttempts ?? 3,
         requireVerification: true,
         phoneNumberValidator: (phone) =>
@@ -103,7 +126,8 @@ export function createIdentityAuth(options: IdentityAuthOptions) {
           const request = ctx?.request;
           const ip = request ? (getIp(request, ctx.context.options) ?? undefined) : undefined;
           const deviceId = ctx?.headers?.get("x-device-id") ?? undefined;
-          await options.sendOtp({ phoneNumber: phone, code }, { ip, deviceId });
+          const locale = localeFromAcceptLanguage(ctx?.headers?.get("accept-language"));
+          await options.sendOtp({ phoneNumber: phone, code }, { ip, deviceId, locale });
         },
         async callbackOnVerification({ phoneNumber: phone, user }) {
           await options.onPhoneVerified({ userId: user.id, phoneNumber: phone });

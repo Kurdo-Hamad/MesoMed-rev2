@@ -11,9 +11,11 @@ describe("createMockOtpChannel", () => {
 
   it("records sent messages for test inspection", async () => {
     const channel = createMockOtpChannel("whatsapp");
-    await channel.send({ to: "+9647701234567", code: "123456", locale: "ckb" });
+    await channel.send({ to: "+9647701234567", code: "123456", locale: "ckb", expiresInMinutes: 5 });
 
-    expect(channel.sent).toEqual([{ to: "+9647701234567", code: "123456", locale: "ckb" }]);
+    expect(channel.sent).toEqual([
+      { to: "+9647701234567", code: "123456", locale: "ckb", expiresInMinutes: 5 },
+    ]);
   });
 
   it("throws OtpSendError when armed to fail, without recording the message", async () => {
@@ -21,7 +23,7 @@ describe("createMockOtpChannel", () => {
     channel.failing = true;
 
     await expect(
-      channel.send({ to: "+9647701234567", code: "123456", locale: "en" }),
+      channel.send({ to: "+9647701234567", code: "123456", locale: "en", expiresInMinutes: 5 }),
     ).rejects.toBeInstanceOf(OtpSendError);
     expect(channel.sent).toEqual([]);
   });
@@ -31,7 +33,7 @@ describe("createMockOtpChannel", () => {
     channel.failing = true;
 
     await expect(
-      channel.send({ to: "+9647701234567", code: "1", locale: "ar" }),
+      channel.send({ to: "+9647701234567", code: "1", locale: "ar", expiresInMinutes: 5 }),
     ).rejects.toMatchObject({
       channel: "sms",
     });
@@ -40,10 +42,12 @@ describe("createMockOtpChannel", () => {
   it("resumes sending when disarmed", async () => {
     const channel = createMockOtpChannel("whatsapp");
     channel.failing = true;
-    await expect(channel.send({ to: "+1", code: "1", locale: "en" })).rejects.toThrow();
+    await expect(
+      channel.send({ to: "+1", code: "1", locale: "en", expiresInMinutes: 5 }),
+    ).rejects.toThrow();
 
     channel.failing = false;
-    await channel.send({ to: "+9647701234567", code: "654321", locale: "en" });
+    await channel.send({ to: "+9647701234567", code: "654321", locale: "en", expiresInMinutes: 5 });
     expect(channel.sent).toHaveLength(1);
   });
 });

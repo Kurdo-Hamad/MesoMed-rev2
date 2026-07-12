@@ -11,7 +11,12 @@ import type { Env } from "../../env.js";
 import type { ConfigService } from "../../kernel/config.js";
 import type { OutboxEmitter } from "../../kernel/outbox.js";
 import type { SessionResolver } from "../../kernel/context.js";
-import { createIdentityAuth, type IdentityAuth, type IdentityOtpOptions } from "./auth.js";
+import {
+  createIdentityAuth,
+  DEFAULT_OTP_EXPIRES_IN_SECONDS,
+  type IdentityAuth,
+  type IdentityOtpOptions,
+} from "./auth.js";
 import { createOnPhoneVerified } from "./commands/on-phone-verified.js";
 import { createOtpSender, type OtpChannels } from "./otp-sender.js";
 import { createIdentitySessionResolver } from "./session-resolver.js";
@@ -39,6 +44,7 @@ export function createIdentityModule(deps: {
     config: deps.config,
     channels: deps.otpChannels,
     log: deps.log,
+    otpExpiresInSeconds: deps.otpOptions?.expiresInSeconds ?? DEFAULT_OTP_EXPIRES_IN_SECONDS,
   });
   const onPhoneVerified = createOnPhoneVerified({ db: deps.db, outbox: deps.outbox });
 

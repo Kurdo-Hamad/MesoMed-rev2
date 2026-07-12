@@ -15,6 +15,12 @@ export interface OtpMessage {
   to: string;
   code: string;
   locale: Locale;
+  /**
+   * Whole-minute rounding of the actual configured OTP expiry
+   * (ADR-0011 F-13) — the message body must state this, not a hardcoded
+   * figure that can silently drift from `IdentityOtpOptions.expiresInSeconds`.
+   */
+  expiresInMinutes: number;
 }
 
 export class OtpSendError extends Error {

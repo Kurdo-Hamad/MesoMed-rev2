@@ -11,6 +11,18 @@
  * PII posture). Freshness beyond this point (a token or address changing
  * between planning and the sender's actual delivery attempt) is bounded
  * by the sender's poll interval, not by a second re-read.
+ *
+ * `occurrenceKey` (ADR-0011 dedupe redesign) identifies WHICH occurrence of
+ * `template` this is — distinct from `appointmentId`/`patientProfileId`,
+ * which merely identify the aggregate the notification is about. Keying
+ * dedup on the aggregate alone (the original design) meant a second
+ * prescription, a second reschedule, or a second subscription-renewal
+ * cycle for the SAME aggregate silently planned nothing — `ON CONFLICT DO
+ * NOTHING` treated it as a redelivery of the first one. Callers pass the
+ * triggering domain event's id (stable across redeliveries of the SAME
+ * event, distinct for every NEW event) or, for the non-event-driven
+ * reminder cron, a natural key that changes when the underlying fact does
+ * (appointment id + its current start time).
  */
 import { notificationLog, type DbExecutor } from "@mesomed/db";
 import type { Locale } from "@mesomed/contracts/i18n";
@@ -22,6 +34,8 @@ export interface PlanNotificationInput {
   /** Cross-module reference (booking) — null for non-appointment templates. */
   appointmentId?: string | null;
   template: NotificationTemplate;
+  /** Uniquely identifies this notification OCCURRENCE — see module doc. */
+  occurrenceKey: string;
   /**
    * Builds the render params once the recipient's locale is known — a
    * trilingual display name (doctor/location) must be picked in the SAME
@@ -40,7 +54,6 @@ export async function planNotification(db: DbExecutor, input: PlanNotificationIn
   const plan = await resolveDeliveryPlan(db, { patientProfileId: input.patientProfileId });
   if (plan.deliveries.length === 0) return;
 
-  const aggregateKey = input.appointmentId ?? input.patientProfileId;
   const paramsJson = JSON.stringify(input.buildParams(plan.locale));
 
   for (const delivery of plan.deliveries) {
@@ -54,7 +67,7 @@ export async function planNotification(db: DbExecutor, input: PlanNotificationIn
         destination: delivery.destination,
         locale: plan.locale,
         paramsJson,
-        dedupeKey: `${input.template}:${aggregateKey}:${delivery.channel}`,
+        dedupeKey: `${input.template}:${input.occurrenceKey}:${delivery.channel}`,
       })
       .onConflictDoNothing({ target: notificationLog.dedupeKey });
   }

@@ -40,11 +40,19 @@ export async function planNextDayReminders(db: Db, now: Date): Promise<number> {
     const doctorName = await getDoctorDisplayName(db, location.doctorProfileId);
     if (!doctorName) continue;
 
-    const dateTime = formatAppointmentDateTime(appointment.startsAt.toISOString());
+    const startsAtIso = appointment.startsAt.toISOString();
+    const dateTime = formatAppointmentDateTime(startsAtIso);
     await planNotification(db, {
       patientProfileId: appointment.patientProfileId,
       appointmentId: appointment.appointmentId,
       template: "reminder",
+      // No triggering event exists here (a direct cron call, not an event
+      // subscriber) — appointment id + its CURRENT start time is the
+      // occurrence key instead (ADR-0011 F-1): a same-day double cron run
+      // sees the same startsAt and dedupes; a reschedule changes startsAt,
+      // so the moved appointment gets a fresh reminder for its new time
+      // instead of silently keeping (or losing) the stale one.
+      occurrenceKey: `${appointment.appointmentId}:${startsAtIso}`,
       buildParams: (locale) => ({
         doctorName: pickLocalizedName(doctorName, locale),
         dateTime,

@@ -8,7 +8,7 @@ import { z } from "zod";
 import { APIError } from "better-auth/api";
 
 import type { FastifyBaseLogger } from "fastify";
-import { DEFAULT_LOCALE } from "@mesomed/contracts/i18n";
+import { DEFAULT_LOCALE, type Locale } from "@mesomed/contracts/i18n";
 import { ErrorCode } from "@mesomed/contracts/errors";
 import { evaluateOtpSendLimit } from "@mesomed/domain/identity";
 import { and, eq, gt, otpSendAttempts, type Db } from "@mesomed/db";
@@ -20,6 +20,7 @@ import {
   assertDestinationAllowed,
   assertSendRate,
   checkAndSpendBudget,
+  recordVelocity,
 } from "../../kernel/abuse.js";
 import { recordNotificationSend } from "../../kernel/metrics.js";
 
@@ -43,6 +44,12 @@ export interface OtpSendContext {
   ip?: string;
   /** Client-supplied device identifier (per-device rate scope). */
   deviceId?: string;
+  /**
+   * Best-effort locale, resolved from `Accept-Language` before any account
+   * or preference row exists (ADR-0011 F-13). Falls back to the platform
+   * default when absent or unrecognized.
+   */
+  locale?: Locale;
 }
 
 export interface OtpSender {
@@ -73,6 +80,8 @@ export function createOtpSender(deps: {
   config: ConfigService;
   channels: OtpChannels;
   log: FastifyBaseLogger;
+  /** Must mirror `IdentityOtpOptions.expiresInSeconds` — see ADR-0011 F-13. */
+  otpExpiresInSeconds: number;
 }): OtpSender {
   return {
     async send({ phoneNumber, code }, context = {}) {
@@ -122,7 +131,12 @@ export function createOtpSender(deps: {
         throw error;
       }
 
-      const message = { to: phoneNumber, code, locale: DEFAULT_LOCALE };
+      const message = {
+        to: phoneNumber,
+        code,
+        locale: context.locale ?? DEFAULT_LOCALE,
+        expiresInMinutes: Math.round(deps.otpExpiresInSeconds / 60),
+      };
       let delivered: "whatsapp" | "sms";
 
       try {
@@ -154,6 +168,7 @@ export function createOtpSender(deps: {
 
       recordNotificationSend(delivered, "sent");
       await deps.db.insert(otpSendAttempts).values({ normalizedPhone: phoneNumber, sentAt: now });
+      await recordVelocity(deps.db, deps.config, delivered, phoneNumber, now);
     },
   };
 }

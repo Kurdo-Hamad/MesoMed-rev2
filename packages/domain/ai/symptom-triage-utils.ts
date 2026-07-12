@@ -14,6 +14,11 @@ export function sanitizeSymptomText(raw: string): string {
   return collapsed.slice(0, MAX_SYMPTOM_TEXT_CHARS);
 }
 
+/**
+ * "cant breathe" (apostrophe already stripped by `containsRedFlag` before
+ * matching, ADR-0011 F-17) plus phrasings that aren't apostrophe variants of
+ * the same contraction and so need their own entries.
+ */
 const ENGLISH_RED_FLAGS = [
   "chest pain",
   "suicid",
@@ -21,7 +26,13 @@ const ENGLISH_RED_FLAGS = [
   "stroke",
   "heart attack",
   "severe bleeding",
-  "can't breathe",
+  "cant breathe",
+  "cannot breathe",
+  "can not breathe",
+  "unable to breathe",
+  "trouble breathing",
+  "difficulty breathing",
+  "not breathing",
 ];
 
 const ARABIC_RED_FLAGS = [
@@ -31,13 +42,32 @@ const ARABIC_RED_FLAGS = [
   "سكتة دماغية",
   "نزيف حاد",
   "نوبة قلبية",
+  // ADR-0011 F-17: the English/Kurdish lists both cover breathing
+  // difficulty; Arabic didn't.
+  "صعوبة في التنفس",
+  "لا أستطيع التنفس",
 ];
 
+/**
+ * ADR-0011 F-17 (documented tech debt): this list is narrower than English
+ * (7 phrases) and Arabic (8 phrases) — it covers chest pain, suicidal
+ * ideation, and breathing difficulty, but not stroke/heart attack/overdose/
+ * severe bleeding. Left as-is rather than expanded in this pass: fabricating
+ * additional clinical Sorani Kurdish phrases without native-speaker/clinical
+ * translation review risks a WORSE outcome than the known gap — a
+ * plausible-looking but wrong phrase in a safety pre-screen gives false
+ * confidence that coverage exists. Tracked in ADR-0011's open items;
+ * closing it needs a reviewed translation, not an engineering guess.
+ */
 const KURDISH_RED_FLAGS = ["ئازاری سنگ", "خۆکوشتن", "هەناسەم تەنگ"];
 
 /** Deterministic trilingual emergency-keyword screen. Runs before any LLM call. */
 export function containsRedFlag(text: string): boolean {
-  const lower = text.toLowerCase();
+  // Apostrophe variants (straight ', curly ’) collapse to one form so a
+  // single keyword entry matches "can't breathe" / "can’t breathe" / "cant
+  // breathe" alike (ADR-0011 F-17) — an unmatched breathing-emergency phrase
+  // is a safety miss, not just a UX gap.
+  const lower = text.toLowerCase().replace(/['’]/g, "");
   if (ENGLISH_RED_FLAGS.some((k) => lower.includes(k))) return true;
   if (ARABIC_RED_FLAGS.some((k) => text.includes(k))) return true;
   if (KURDISH_RED_FLAGS.some((k) => text.includes(k))) return true;

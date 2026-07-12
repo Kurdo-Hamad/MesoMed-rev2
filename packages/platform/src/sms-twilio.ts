@@ -15,6 +15,8 @@ export interface TwilioSmsAdapterOptions {
   /** Twilio API base URL; override in tests only. */
   baseUrl?: string;
   fetchImpl?: typeof fetch;
+  /** Request timeout in ms — bounds a stalled vendor connection (ADR-0011 F-3). */
+  timeoutMs?: number;
 }
 
 export interface TwilioSmsAdapter {
@@ -23,6 +25,7 @@ export interface TwilioSmsAdapter {
 }
 
 const DEFAULT_BASE_URL = "https://api.twilio.com";
+const DEFAULT_TIMEOUT_MS = 10_000;
 
 async function sendSms(options: TwilioSmsAdapterOptions, to: string, body: string): Promise<void> {
   const baseUrl = options.baseUrl ?? DEFAULT_BASE_URL;
@@ -38,16 +41,24 @@ async function sendSms(options: TwilioSmsAdapterOptions, to: string, body: strin
         "content-type": "application/x-www-form-urlencoded",
       },
       body: params.toString(),
+      signal: AbortSignal.timeout(options.timeoutMs ?? DEFAULT_TIMEOUT_MS),
     },
   );
   if (!response.ok) {
-    // Never include the auth token in the error — only the destination and status.
-    throw new Error(`Twilio SMS API returned ${response.status} for ${to}`);
+    // Never include the auth token OR the destination in the error message
+    // (ADR-0011 F-6) — this string can end up in notification_log.last_error,
+    // a column with no crypto-shred scope; the row's own destination column
+    // already identifies the target.
+    throw new Error(`Twilio SMS API returned ${response.status}`);
   }
 }
 
 function renderOtpBody(message: OtpMessage, catalogText: string): string {
-  return catalogText.split("{code}").join(message.code).split("{minutes}").join("10");
+  return catalogText
+    .split("{code}")
+    .join(message.code)
+    .split("{minutes}")
+    .join(String(message.expiresInMinutes));
 }
 
 export function createTwilioSmsAdapter(

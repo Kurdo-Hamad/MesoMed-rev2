@@ -10,6 +10,8 @@ export interface ExpoPushAdapterOptions {
   /** Expo push API base URL; override in tests only. */
   baseUrl?: string;
   fetchImpl?: typeof fetch;
+  /** Request timeout in ms — bounds a stalled vendor connection (ADR-0011 F-3). */
+  timeoutMs?: number;
 }
 
 interface ExpoTicket {
@@ -19,6 +21,7 @@ interface ExpoTicket {
 }
 
 const DEFAULT_BASE_URL = "https://exp.host/--/api/v2/push/send";
+const DEFAULT_TIMEOUT_MS = 10_000;
 
 export function createExpoPushAdapter(options: ExpoPushAdapterOptions = {}): PushChannel {
   const baseUrl = options.baseUrl ?? DEFAULT_BASE_URL;
@@ -41,6 +44,7 @@ export function createExpoPushAdapter(options: ExpoPushAdapterOptions = {}): Pus
             body: message.body,
             data: message.data,
           }),
+          signal: AbortSignal.timeout(options.timeoutMs ?? DEFAULT_TIMEOUT_MS),
         });
       } catch (error) {
         throw new PushSendError("Expo push request failed", { cause: error });
@@ -54,7 +58,11 @@ export function createExpoPushAdapter(options: ExpoPushAdapterOptions = {}): Pus
       const ticket = payload.data;
       if (ticket?.status === "error") {
         if (ticket.details?.error === "DeviceNotRegistered") {
-          throw new PushTokenInvalidError(`Expo token no longer registered: ${message.token}`);
+          // Never include the token in the error message (ADR-0011 F-6) — it
+          // is itself a credential, and this string can end up in
+          // notification_log.last_error, a column with no crypto-shred
+          // scope; the row's own destination column already identifies it.
+          throw new PushTokenInvalidError("Expo token no longer registered");
         }
         throw new PushSendError(ticket.message ?? "Expo push ticket reported an error");
       }

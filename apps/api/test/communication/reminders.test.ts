@@ -95,4 +95,61 @@ describe("next-day appointment reminders (MM-PLAN-001 §5 Phase 7)", () => {
       .where(eq(notificationLog.appointmentId, appointment!.id));
     expect(rows).toHaveLength(0);
   });
+
+  it("re-plans a fresh reminder when the appointment is rescheduled to a new time (ADR-0011 F-1)", async () => {
+    const clinic = await seedClinic(app);
+    const now = new Date();
+    const { fromUtc } = baghdadTomorrowWindowUtc(now);
+    const originalStartsAt = new Date(fromUtc.getTime() + 3 * 60 * 60 * 1000);
+    const endsAt = new Date(originalStartsAt.getTime() + 30 * 60 * 1000);
+
+    const [patient] = await app.kernel.db
+      .select({ id: patientProfiles.id })
+      .from(patientProfiles)
+      .where(eq(patientProfiles.userId, clinic.patientUserId));
+
+    const [appointment] = await app.kernel.db
+      .insert(appointments)
+      .values({
+        doctorLocationId: clinic.doctorLocationId,
+        patientProfileId: patient!.id,
+        startsAt: originalStartsAt,
+        endsAt,
+        status: "booked",
+        bookedVia: "patient_account",
+      })
+      .returning({ id: appointments.id });
+
+    await planNextDayReminders(app.kernel.db, now);
+    const rowsAfterFirst = await app.kernel.db
+      .select()
+      .from(notificationLog)
+      .where(eq(notificationLog.appointmentId, appointment!.id));
+    expect(rowsAfterFirst).toHaveLength(1);
+
+    // The appointment moves to a new time still inside tomorrow's window —
+    // the old dedupe key (appointment id only) would have swallowed this as
+    // a "redelivery" of the first reminder; the fix keys on id + startsAt.
+    const movedStartsAt = new Date(originalStartsAt.getTime() + 60 * 60 * 1000);
+    await app.kernel.db
+      .update(appointments)
+      .set({ startsAt: movedStartsAt, endsAt: new Date(movedStartsAt.getTime() + 30 * 60 * 1000) })
+      .where(eq(appointments.id, appointment!.id));
+
+    await planNextDayReminders(app.kernel.db, now);
+    const rowsAfterReschedule = await app.kernel.db
+      .select()
+      .from(notificationLog)
+      .where(eq(notificationLog.appointmentId, appointment!.id));
+    expect(rowsAfterReschedule).toHaveLength(2);
+    expect(new Set(rowsAfterReschedule.map((r) => r.dedupeKey)).size).toBe(2);
+
+    // Running again at the same (moved) time is still idempotent.
+    await planNextDayReminders(app.kernel.db, now);
+    const rowsAfterRepeat = await app.kernel.db
+      .select()
+      .from(notificationLog)
+      .where(eq(notificationLog.appointmentId, appointment!.id));
+    expect(rowsAfterRepeat).toHaveLength(2);
+  });
 });

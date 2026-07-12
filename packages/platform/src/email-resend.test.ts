@@ -30,7 +30,7 @@ describe("createResendEmailAdapter", () => {
     });
   });
 
-  it("wraps a non-ok response as EmailSendError without leaking the API key", async () => {
+  it("wraps a non-ok response as EmailSendError without leaking the API key or the destination (ADR-0011 F-6)", async () => {
     const fetchImpl = vi.fn().mockResolvedValue(response(false, 422));
     const adapter = createResendEmailAdapter({
       apiKey: "re_super_secret",
@@ -46,6 +46,7 @@ describe("createResendEmailAdapter", () => {
     }
     expect(rejection).toBeInstanceOf(EmailSendError);
     expect(rejection?.message).not.toContain("re_super_secret");
+    expect(rejection?.message).not.toContain("patient@example.com");
   });
 
   it("wraps a network failure as EmailSendError", async () => {
@@ -54,6 +55,25 @@ describe("createResendEmailAdapter", () => {
       apiKey: "re_secret",
       from: "no-reply@mesomed.example",
       fetchImpl,
+    });
+
+    await expect(
+      adapter.send({ to: "patient@example.com", subject: "Hi", text: "Body" }),
+    ).rejects.toBeInstanceOf(EmailSendError);
+  });
+
+  it("aborts a stalled request after timeoutMs instead of hanging (ADR-0011 F-3)", async () => {
+    const fetchImpl = vi.fn(
+      (_url: string | URL | Request, init?: RequestInit) =>
+        new Promise<Response>((_resolve, reject) => {
+          init?.signal?.addEventListener("abort", () => reject(init.signal!.reason));
+        }),
+    );
+    const adapter = createResendEmailAdapter({
+      apiKey: "re_secret",
+      from: "no-reply@mesomed.example",
+      fetchImpl,
+      timeoutMs: 20,
     });
 
     await expect(

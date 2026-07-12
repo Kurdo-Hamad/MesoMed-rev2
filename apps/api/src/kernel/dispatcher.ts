@@ -127,7 +127,7 @@ export function createOutboxDispatcher(options: OutboxDispatcherOptions): Outbox
           // Claim already taken → this handler already ran for this event
           // id; re-delivery is a no-op (idempotent handler registry).
           if (claimed.length === 0) return;
-          await handler.fn(envelope, tx);
+          await handler.fn(envelope, tx, eventId);
         });
       }
       await db

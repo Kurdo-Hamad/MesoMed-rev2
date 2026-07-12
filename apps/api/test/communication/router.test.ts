@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { FastifyInstance } from "fastify";
-import { user } from "@mesomed/db";
+import { notificationLog, user } from "@mesomed/db";
 import { createTestDatabase, type TestDatabase } from "@mesomed/db/testing";
 import { buildBookingTestServer, result, trpc } from "../booking/helpers.js";
 
@@ -137,5 +137,103 @@ describe("communication router (MM-PLAN-001 §5 Phase 7)", () => {
       { roles: "patient", user: "router-test-invalid" },
     );
     expect(res.statusCode).toBe(400);
+  });
+
+  it("unregisters the caller's own device token on logout (ADR-0011 F-9)", async () => {
+    const owner = { roles: "patient", user: "router-test-unregister-owner" };
+    await seedUser(app, owner.user);
+    const token = "expo-token-router-test-unregister";
+
+    await trpc(app, "communication.registerDeviceToken", "mutation", { token, platform: "ios" }, owner);
+
+    const res = await trpc(app, "communication.unregisterDeviceToken", "mutation", { token }, owner);
+    expect(res.statusCode).toBe(200);
+    expect(result(res)).toEqual({ unregistered: true });
+
+    // Re-registering succeeds cleanly — the row is genuinely gone, not just marked.
+    const reRegister = await trpc(
+      app,
+      "communication.registerDeviceToken",
+      "mutation",
+      { token, platform: "android" },
+      owner,
+    );
+    expect(reRegister.statusCode).toBe(200);
+  });
+
+  it("does not unregister another caller's device token (own-row-only, layer b)", async () => {
+    const owner = { roles: "patient", user: "router-test-unregister-victim" };
+    const attacker = { roles: "patient", user: "router-test-unregister-attacker" };
+    await seedUser(app, owner.user);
+    await seedUser(app, attacker.user);
+    const token = "expo-token-router-test-owned";
+
+    await trpc(app, "communication.registerDeviceToken", "mutation", { token, platform: "ios" }, owner);
+
+    const res = await trpc(
+      app,
+      "communication.unregisterDeviceToken",
+      "mutation",
+      { token },
+      attacker,
+    );
+    expect(res.statusCode).toBe(200);
+    expect(result(res)).toEqual({ unregistered: false });
+
+    // The owner's token still exists — re-registering it just reassigns it,
+    // proving the row wasn't deleted (same invariant as the reassignment test above).
+    const stillOwned = await trpc(
+      app,
+      "communication.registerDeviceToken",
+      "mutation",
+      { token, platform: "ios" },
+      owner,
+    );
+    expect(stillOwned.statusCode).toBe(200);
+  });
+
+  it("silently succeeds unregistering a token that was never registered", async () => {
+    const res = await trpc(
+      app,
+      "communication.unregisterDeviceToken",
+      "mutation",
+      { token: "expo-token-router-test-never-existed" },
+      { roles: "patient", user: "router-test-unregister-nonexistent" },
+    );
+    expect(res.statusCode).toBe(200);
+    expect(result(res)).toEqual({ unregistered: false });
+  });
+
+  it("rejects a non-admin caller from the notifications feed, layer (a) role guard (ADR-0011 F-14)", async () => {
+    const res = await trpc(app, "communication.listRecentNotifications", "query", undefined, {
+      roles: "patient",
+      user: "router-test-feed-patient",
+    });
+    expect(res.statusCode).toBe(403);
+  });
+
+  it("lists recent notifications for an admin caller, excluding destination/paramsJson (ADR-0011 F-14)", async () => {
+    const [row] = await app.kernel.db
+      .insert(notificationLog)
+      .values({
+        template: "reminder",
+        channel: "whatsapp",
+        destination: "+9647701234567",
+        locale: "en",
+        paramsJson: JSON.stringify({ doctorName: "Dr. Feed" }),
+        dedupeKey: `router-test-feed:${Date.now()}:${Math.random()}`,
+      })
+      .returning({ id: notificationLog.id });
+
+    const res = await trpc(app, "communication.listRecentNotifications", "query", { limit: 50 }, {
+      roles: "admin",
+      user: "router-test-feed-admin",
+    });
+    expect(res.statusCode).toBe(200);
+    const rows = result<Array<Record<string, unknown>>>(res);
+    const entry = rows.find((r) => r.id === row!.id);
+    expect(entry).toMatchObject({ template: "reminder", channel: "whatsapp", status: "pending" });
+    expect(entry).not.toHaveProperty("destination");
+    expect(entry).not.toHaveProperty("paramsJson");
   });
 });

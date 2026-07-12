@@ -21,21 +21,21 @@ import { resolveLocale } from "../templates.js";
 export const ON_SUBSCRIPTION_ACTIVATED_HANDLER = "communication.plan-subscription-activated";
 export const ON_SUBSCRIPTION_EXPIRED_HANDLER = "communication.plan-subscription-expired";
 
-export const onSubscriptionActivated: EventHandlerFn = async (envelope, tx) => {
+export const onSubscriptionActivated: EventHandlerFn = async (envelope, tx, eventId) => {
   const { payload } = envelope as EventEnvelope<typeof subscriptionActivatedV1>;
-  await planProviderEmail(tx, payload.doctorProfileId, "subscription_activated", payload.subscriptionId);
+  await planProviderEmail(tx, payload.doctorProfileId, "subscription_activated", eventId);
 };
 
-export const onSubscriptionExpired: EventHandlerFn = async (envelope, tx) => {
+export const onSubscriptionExpired: EventHandlerFn = async (envelope, tx, eventId) => {
   const { payload } = envelope as EventEnvelope<typeof subscriptionExpiredV1>;
-  await planProviderEmail(tx, payload.doctorProfileId, "subscription_expired", payload.subscriptionId);
+  await planProviderEmail(tx, payload.doctorProfileId, "subscription_expired", eventId);
 };
 
 async function planProviderEmail(
   tx: DbTransaction,
   doctorProfileId: string,
   template: "subscription_activated" | "subscription_expired",
-  subscriptionId: string,
+  eventId: string,
 ): Promise<void> {
   const providerProfileId = await getIdentityProviderProfileIdForDoctorProfile(tx, doctorProfileId);
   if (!providerProfileId) return;
@@ -55,7 +55,11 @@ async function planProviderEmail(
       destination: contact.email,
       locale,
       paramsJson: JSON.stringify({}),
-      dedupeKey: `${template}:${subscriptionId}:email`,
+      // The triggering event's own id — see ADR-0011 F-1. The old key used
+      // `subscriptionId`, a stable per-doctor aggregate row: EVERY renewal
+      // (a fresh `subscription_activated.v1`) collided on the first one,
+      // and a second lapse never re-warned the provider.
+      dedupeKey: `${template}:${eventId}:email`,
     })
     .onConflictDoNothing({ target: notificationLog.dedupeKey });
 }

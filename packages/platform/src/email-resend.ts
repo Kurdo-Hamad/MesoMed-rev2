@@ -11,9 +11,12 @@ export interface ResendEmailAdapterOptions {
   /** Resend API base URL; override in tests only. */
   baseUrl?: string;
   fetchImpl?: typeof fetch;
+  /** Request timeout in ms — bounds a stalled vendor connection (ADR-0011 F-3). */
+  timeoutMs?: number;
 }
 
 const DEFAULT_BASE_URL = "https://api.resend.com";
+const DEFAULT_TIMEOUT_MS = 10_000;
 
 export function createResendEmailAdapter(options: ResendEmailAdapterOptions): EmailChannel {
   const baseUrl = options.baseUrl ?? DEFAULT_BASE_URL;
@@ -36,13 +39,17 @@ export function createResendEmailAdapter(options: ResendEmailAdapterOptions): Em
             text: message.text,
             html: message.html,
           }),
+          signal: AbortSignal.timeout(options.timeoutMs ?? DEFAULT_TIMEOUT_MS),
         });
       } catch (error) {
         throw new EmailSendError("Resend request failed", { cause: error });
       }
       if (!response.ok) {
-        // Never include the API key in the error — only the destination and status.
-        throw new EmailSendError(`Resend API returned ${response.status} for ${message.to}`);
+        // Never include the API key OR the destination in the error message
+        // (ADR-0011 F-6) — this string can end up in notification_log.last_error,
+        // a column with no crypto-shred scope; the row's own destination
+        // column already identifies the target.
+        throw new EmailSendError(`Resend API returned ${response.status}`);
       }
     },
   };

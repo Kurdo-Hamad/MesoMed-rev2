@@ -13,7 +13,7 @@ import { pickLocalizedName } from "../templates.js";
 
 export const ON_PRESCRIPTION_ISSUED_HANDLER = "communication.plan-prescription-notice";
 
-export const onPrescriptionIssued: EventHandlerFn = async (envelope, tx) => {
+export const onPrescriptionIssued: EventHandlerFn = async (envelope, tx, eventId) => {
   const { payload } = envelope as EventEnvelope<typeof prescriptionIssuedV1>;
   const doctorName = await getDoctorDisplayName(tx, payload.doctorProfileId);
   if (!doctorName) return;
@@ -22,6 +22,11 @@ export const onPrescriptionIssued: EventHandlerFn = async (envelope, tx) => {
     patientProfileId: payload.patientProfileId,
     appointmentId: null,
     template: "prescription_issued",
+    // The triggering event's own id — see ADR-0011 F-1. Without this, a
+    // patient's SECOND-ever prescription notice (any doctor, any time)
+    // silently planned nothing: the old key was patientProfileId-only, so
+    // every prescription for that patient collided on the first one.
+    occurrenceKey: eventId,
     buildParams: (locale) => ({ doctorName: pickLocalizedName(doctorName, locale) }),
   });
 };

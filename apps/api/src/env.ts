@@ -36,6 +36,17 @@ const envSchema = z.object({
   // only; sized for gateway retry storms, tuned down in tests.
   WEBHOOK_RATE_LIMIT_MAX: z.coerce.number().int().min(1).default(120),
   WEBHOOK_RATE_LIMIT_WINDOW_MS: z.coerce.number().int().min(1_000).default(60_000),
+  // Fastify `trustProxy` (ADR-0011 F-5): unset/"false" trusts nothing — every
+  // caller's `req.ip` is the socket peer. Behind a reverse proxy/load
+  // balancer (the expected production topology), leaving this false means
+  // every request shares the proxy's IP, collapsing per-IP guardrails
+  // (identity OTP send, AI triage rate limits) onto one shared bucket for
+  // ALL callers — an accidental denial-of-service, not just a missed limit.
+  // "true" trusts X-Forwarded-For unconditionally (only correct with NO
+  // direct public access to this process); a comma-separated IP/CIDR list
+  // trusts only those hops (the deployment's own proxy addresses) — the
+  // correct setting whenever direct access is also possible.
+  TRUST_PROXY: z.string().optional(),
   SENTRY_DSN: z.url().optional(),
   OTEL_EXPORTER_OTLP_ENDPOINT: z.url().optional(),
   // Better Auth (Phase 2): secret signs session tokens — required, no
