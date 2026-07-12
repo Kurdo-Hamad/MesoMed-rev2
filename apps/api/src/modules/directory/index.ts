@@ -3,8 +3,10 @@
  * root registers the module's event subscribers here; the router is created
  * separately because the root tRPC router composes it.
  */
+import type { CacheAdapter } from "../../kernel/cache.js";
 import type { HandlerRegistry } from "../../kernel/events.js";
 import type { OutboxEmitter } from "../../kernel/outbox.js";
+import { registerDirectoryCacheInvalidation } from "./cache.js";
 import {
   createOnProviderStatusChanged,
   ON_PROVIDER_STATUS_CHANGED_HANDLER,
@@ -23,7 +25,12 @@ import {
 export function registerDirectorySubscribers(deps: {
   events: HandlerRegistry;
   outbox: OutboxEmitter;
+  cache: CacheAdapter;
 }): void {
+  // ADR-0012: every directory write path ends in a directory event, so the
+  // read cache is busted from the same subscription seam the module already
+  // uses for its own state.
+  registerDirectoryCacheInvalidation(deps.events, deps.cache);
   deps.events.on(
     "identity.provider_status_changed.v1",
     ON_PROVIDER_STATUS_CHANGED_HANDLER,
