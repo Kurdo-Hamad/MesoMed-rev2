@@ -400,3 +400,30 @@ export async function resolveAiTriageRatePolicy(config: ConfigReader): Promise<A
     throw error;
   }
 }
+
+// ── Mobile API compatibility (Phase 8, MM-ARC-002 §1.3) ─────────────────
+
+export const MOBILE_COMPAT_CONFIG_KEY = "mobile.compat";
+
+/**
+ * Minimum supported mobile client version per convention #9 — a config
+ * row, not code. The kernel middleware compares the client's
+ * `x-app-version` against `minSupportedVersion` and answers the typed
+ * UPGRADE_REQUIRED below it. Absent config row = no minimum enforced
+ * (web clients send no version header and are never gated).
+ */
+export const mobileCompatSchema = z.object({
+  /** Semantic version "major.minor.patch". */
+  minSupportedVersion: z.string().regex(/^\d+\.\d+\.\d+$/),
+});
+
+export type MobileCompat = z.infer<typeof mobileCompatSchema>;
+
+export async function resolveMobileCompat(config: ConfigReader): Promise<MobileCompat | null> {
+  try {
+    return await config.get(mobileCompatSchema, MOBILE_COMPAT_CONFIG_KEY);
+  } catch (error) {
+    if ((error as { code?: string }).code === "NOT_FOUND") return null;
+    throw error;
+  }
+}

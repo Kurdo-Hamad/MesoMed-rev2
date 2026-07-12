@@ -1,0 +1,422 @@
+[
+  {
+    "path": "ai.triageSymptoms",
+    "type": "mutation"
+  },
+  {
+    "path": "billing.accrueSubscriptionFee",
+    "type": "mutation"
+  },
+  {
+    "path": "billing.expireSubscription",
+    "type": "mutation"
+  },
+  {
+    "path": "billing.facilityTierState",
+    "type": "query"
+  },
+  {
+    "path": "billing.listBillingRates",
+    "type": "query"
+  },
+  {
+    "path": "billing.listTiers",
+    "type": "query"
+  },
+  {
+    "path": "billing.myBillingConfig",
+    "type": "query"
+  },
+  {
+    "path": "billing.myCancellationPolicy",
+    "type": "query"
+  },
+  {
+    "path": "billing.myCharges",
+    "type": "query"
+  },
+  {
+    "path": "billing.mySubscription",
+    "type": "query"
+  },
+  {
+    "path": "billing.providerBillingConfig",
+    "type": "query"
+  },
+  {
+    "path": "billing.providerCharges",
+    "type": "query"
+  },
+  {
+    "path": "billing.recordSubscriptionPayment",
+    "type": "mutation"
+  },
+  {
+    "path": "billing.recordTierPayment",
+    "type": "mutation"
+  },
+  {
+    "path": "billing.refundCharge",
+    "type": "mutation"
+  },
+  {
+    "path": "billing.registerPaymentGateway",
+    "type": "mutation"
+  },
+  {
+    "path": "billing.setBillingRate",
+    "type": "mutation"
+  },
+  {
+    "path": "billing.setCancellationPolicy",
+    "type": "mutation"
+  },
+  {
+    "path": "billing.setPatientCollectionEnabled",
+    "type": "mutation"
+  },
+  {
+    "path": "billing.setPaymentRouting",
+    "type": "mutation"
+  },
+  {
+    "path": "billing.setProviderBillingModel",
+    "type": "mutation"
+  },
+  {
+    "path": "billing.setTierPrice",
+    "type": "mutation"
+  },
+  {
+    "path": "billing.settleCharge",
+    "type": "mutation"
+  },
+  {
+    "path": "billing.setTrialDefault",
+    "type": "mutation"
+  },
+  {
+    "path": "billing.upsertListingTier",
+    "type": "mutation"
+  },
+  {
+    "path": "billing.voidCharge",
+    "type": "mutation"
+  },
+  {
+    "path": "booking.cancel",
+    "type": "mutation"
+  },
+  {
+    "path": "booking.checkIn",
+    "type": "mutation"
+  },
+  {
+    "path": "booking.clinicDay",
+    "type": "query"
+  },
+  {
+    "path": "booking.complete",
+    "type": "mutation"
+  },
+  {
+    "path": "booking.confirm",
+    "type": "mutation"
+  },
+  {
+    "path": "booking.guestBook",
+    "type": "mutation"
+  },
+  {
+    "path": "booking.myAppointments",
+    "type": "query"
+  },
+  {
+    "path": "booking.noShow",
+    "type": "mutation"
+  },
+  {
+    "path": "booking.reschedule",
+    "type": "mutation"
+  },
+  {
+    "path": "booking.secretaryBook",
+    "type": "mutation"
+  },
+  {
+    "path": "booking.start",
+    "type": "mutation"
+  },
+  {
+    "path": "booking.weekAvailability",
+    "type": "query"
+  },
+  {
+    "path": "clinical.addReportedMedication",
+    "type": "mutation"
+  },
+  {
+    "path": "clinical.addVisitNote",
+    "type": "mutation"
+  },
+  {
+    "path": "clinical.amendPrescription",
+    "type": "mutation"
+  },
+  {
+    "path": "clinical.amendVisitNote",
+    "type": "mutation"
+  },
+  {
+    "path": "clinical.discontinuePrescription",
+    "type": "mutation"
+  },
+  {
+    "path": "clinical.doctorEncounters",
+    "type": "query"
+  },
+  {
+    "path": "clinical.encounterNotes",
+    "type": "query"
+  },
+  {
+    "path": "clinical.grantSupportAccess",
+    "type": "mutation"
+  },
+  {
+    "path": "clinical.issuePrescription",
+    "type": "mutation"
+  },
+  {
+    "path": "clinical.listSupportGrants",
+    "type": "query"
+  },
+  {
+    "path": "clinical.myClinicalRecord",
+    "type": "query"
+  },
+  {
+    "path": "clinical.myEncounters",
+    "type": "query"
+  },
+  {
+    "path": "clinical.patientClinicalHistory",
+    "type": "query"
+  },
+  {
+    "path": "clinical.removeReportedMedication",
+    "type": "mutation"
+  },
+  {
+    "path": "clinical.revokeSupportAccess",
+    "type": "mutation"
+  },
+  {
+    "path": "clinical.supportNotes",
+    "type": "query"
+  },
+  {
+    "path": "clinical.upsertMedicalProfile",
+    "type": "mutation"
+  },
+  {
+    "path": "communication.getChannelPreferences",
+    "type": "query"
+  },
+  {
+    "path": "communication.listRecentNotifications",
+    "type": "query"
+  },
+  {
+    "path": "communication.registerDeviceToken",
+    "type": "mutation"
+  },
+  {
+    "path": "communication.setChannelPreferences",
+    "type": "mutation"
+  },
+  {
+    "path": "communication.unregisterDeviceToken",
+    "type": "mutation"
+  },
+  {
+    "path": "directory.browseDoctors",
+    "type": "query"
+  },
+  {
+    "path": "directory.browseFacilities",
+    "type": "query"
+  },
+  {
+    "path": "directory.doctorDetail",
+    "type": "query"
+  },
+  {
+    "path": "directory.facilityDetail",
+    "type": "query"
+  },
+  {
+    "path": "directory.homepageFeed",
+    "type": "query"
+  },
+  {
+    "path": "directory.listCategories",
+    "type": "query"
+  },
+  {
+    "path": "directory.listCities",
+    "type": "query"
+  },
+  {
+    "path": "directory.listCountries",
+    "type": "query"
+  },
+  {
+    "path": "directory.listProcedures",
+    "type": "query"
+  },
+  {
+    "path": "directory.listSpecialties",
+    "type": "query"
+  },
+  {
+    "path": "directory.listSymptoms",
+    "type": "query"
+  },
+  {
+    "path": "directory.setCategorySectionTypes",
+    "type": "mutation"
+  },
+  {
+    "path": "directory.setCountryGating",
+    "type": "mutation"
+  },
+  {
+    "path": "directory.setSpecialtyFeatured",
+    "type": "mutation"
+  },
+  {
+    "path": "directory.setTaxonomyStatus",
+    "type": "mutation"
+  },
+  {
+    "path": "directory.upsertCategory",
+    "type": "mutation"
+  },
+  {
+    "path": "directory.upsertCity",
+    "type": "mutation"
+  },
+  {
+    "path": "directory.upsertCountry",
+    "type": "mutation"
+  },
+  {
+    "path": "directory.upsertDoctorProfile",
+    "type": "mutation"
+  },
+  {
+    "path": "directory.upsertFacility",
+    "type": "mutation"
+  },
+  {
+    "path": "directory.upsertProcedure",
+    "type": "mutation"
+  },
+  {
+    "path": "directory.upsertPromotion",
+    "type": "mutation"
+  },
+  {
+    "path": "directory.upsertSectionType",
+    "type": "mutation"
+  },
+  {
+    "path": "directory.upsertSpecialty",
+    "type": "mutation"
+  },
+  {
+    "path": "directory.upsertSymptom",
+    "type": "mutation"
+  },
+  {
+    "path": "health.check",
+    "type": "query"
+  },
+  {
+    "path": "identity.claimProfile",
+    "type": "mutation"
+  },
+  {
+    "path": "identity.completeProviderSignup",
+    "type": "mutation"
+  },
+  {
+    "path": "identity.listPendingProviders",
+    "type": "query"
+  },
+  {
+    "path": "identity.me",
+    "type": "query"
+  },
+  {
+    "path": "identity.myProviderStatus",
+    "type": "query"
+  },
+  {
+    "path": "identity.recoverProviderAccount",
+    "type": "mutation"
+  },
+  {
+    "path": "identity.revokeOtherSessions",
+    "type": "mutation"
+  },
+  {
+    "path": "identity.setProviderStatus",
+    "type": "mutation"
+  },
+  {
+    "path": "scheduling.assignSecretary",
+    "type": "mutation"
+  },
+  {
+    "path": "scheduling.blockSlot",
+    "type": "mutation"
+  },
+  {
+    "path": "scheduling.doctorLocations",
+    "type": "query"
+  },
+  {
+    "path": "scheduling.linkDoctorLocation",
+    "type": "mutation"
+  },
+  {
+    "path": "scheduling.myWorkplaces",
+    "type": "query"
+  },
+  {
+    "path": "scheduling.removeBlockedSlot",
+    "type": "mutation"
+  },
+  {
+    "path": "scheduling.setWeeklySchedule",
+    "type": "mutation"
+  },
+  {
+    "path": "scheduling.upsertLocation",
+    "type": "mutation"
+  },
+  {
+    "path": "search.listings",
+    "type": "query"
+  },
+  {
+    "path": "system.outboxStats",
+    "type": "query"
+  },
+  {
+    "path": "system.whoami",
+    "type": "query"
+  }
+]
