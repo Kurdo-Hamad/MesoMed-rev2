@@ -70,6 +70,9 @@ const APP_TO_TRPC = {
   [ErrorCode.DESTINATION_NOT_ALLOWED]: "FORBIDDEN",
   [ErrorCode.CHANNEL_BUDGET_EXCEEDED]: "TOO_MANY_REQUESTS",
   [ErrorCode.AI_QUOTA_EXCEEDED]: "TOO_MANY_REQUESTS",
+  // Phase 8 (mobile API compatibility): a client below the minimum
+  // supported version fails a stated precondition — upgrade and retry.
+  [ErrorCode.UPGRADE_REQUIRED]: "PRECONDITION_FAILED",
 } as const satisfies Record<ErrorCode, TRPCErrorCode>;
 
 const TRPC_TO_APP: Partial<Record<TRPCErrorCode, ErrorCode>> = {

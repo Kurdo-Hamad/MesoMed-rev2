@@ -39,6 +39,8 @@ export const ErrorCode = {
   DESTINATION_NOT_ALLOWED: "DESTINATION_NOT_ALLOWED",
   CHANNEL_BUDGET_EXCEEDED: "CHANNEL_BUDGET_EXCEEDED",
   AI_QUOTA_EXCEEDED: "AI_QUOTA_EXCEEDED",
+  // Phase 8 (mobile API compatibility policy) — additive only.
+  UPGRADE_REQUIRED: "UPGRADE_REQUIRED",
 } as const;
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];

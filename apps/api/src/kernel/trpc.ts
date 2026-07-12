@@ -1,4 +1,5 @@
 import { initTRPC } from "@trpc/server";
+import { assertAppVersionSupported } from "./app-version.js";
 import type { Context } from "./context.js";
 import { AppError, appErrorToTRPCError, toAppCode } from "./errors.js";
 
@@ -36,6 +37,17 @@ const appErrorMiddleware = t.middleware(async ({ next }) => {
   return result;
 });
 
+/**
+ * Mobile compatibility gate (MM-ARC-002 §1.3): rejects requests whose
+ * x-app-version is below the configured minimum with the typed
+ * UPGRADE_REQUIRED. Runs on every procedure, before authz — an outdated
+ * client is told to upgrade regardless of what it asked for.
+ */
+const appVersionMiddleware = t.middleware(async ({ ctx, next }) => {
+  await assertAppVersionSupported(ctx);
+  return next();
+});
+
 export const middleware = t.middleware;
 export const router = t.router;
-export const publicProcedure = t.procedure.use(appErrorMiddleware);
+export const publicProcedure = t.procedure.use(appErrorMiddleware).use(appVersionMiddleware);
