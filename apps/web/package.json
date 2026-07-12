@@ -18,6 +18,7 @@
     "@trpc/client": "^11.18.0",
     "@trpc/react-query": "^11.18.0",
     "next": "^16.2.10",
+    "next-intl": "^4.13.2",
     "react": "^19.2.7",
     "react-dom": "^19.2.7"
   },
@@ -25,9 +26,12 @@
     "@mesomed/api": "workspace:*",
     "@mesomed/eslint-config": "workspace:*",
     "@mesomed/typescript-config": "workspace:*",
+    "@tailwindcss/postcss": "^4.3.2",
     "@types/node": "^22.20.1",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
+    "postcss": "^8.5.16",
+    "tailwindcss": "^4.3.2",
     "typescript": "~6.0.3"
   }
 }

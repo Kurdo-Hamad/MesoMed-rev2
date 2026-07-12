@@ -6,6 +6,10 @@ allowBuilds:
   # Postgres 16 binaries for the no-Docker local test-DB fallback
   # (packages/db test harness); postinstall marks them executable.
   "@embedded-postgres/linux-x64": true
+  # Dev-only file watcher; prebuilt platform bindings ship as optional deps.
+  '@parcel/watcher': false
+  # Next.js compiler; prebuilt platform bindings ship as optional deps.
+  '@swc/core': false
   # Optional native accelerators of testcontainers' ssh2 dependency; the
   # pure-JS fallback is fine for a test harness.
   cpu-features: false

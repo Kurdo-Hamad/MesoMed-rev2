@@ -78,5 +78,33 @@
     "DESTINATION_NOT_ALLOWED": "Messages cannot be sent to this destination.",
     "CHANNEL_BUDGET_EXCEEDED": "The daily message limit for this channel has been reached. Please try again tomorrow.",
     "AI_QUOTA_EXCEEDED": "The symptom search is receiving too many requests. Please try again later."
+  },
+  "web": {
+    "brand": {
+      "name": "MesoMed",
+      "tagline": "Find and book trusted healthcare"
+    },
+    "nav": {
+      "home": "Home",
+      "directory": "Directory",
+      "search": "Search",
+      "signIn": "Sign in",
+      "menu": "Menu"
+    },
+    "localeSwitcher": {
+      "label": "Language",
+      "en": "English",
+      "ar": "العربية",
+      "ckb": "کوردی"
+    },
+    "footer": {
+      "rights": "All rights reserved.",
+      "tagline": "Healthcare, made reachable."
+    },
+    "common": {
+      "loading": "Loading…",
+      "error": "Something went wrong",
+      "retry": "Try again"
+    }
   }
 }
