@@ -4,7 +4,7 @@
  * this function — the event payload itself carries only the patient
  * profile id.
  */
-import { eq, patientProfiles, type DbExecutor } from "@mesomed/db";
+import { eq, inArray, patientProfiles, type DbExecutor } from "@mesomed/db";
 
 export interface PatientContact {
   userId: string | null;
@@ -28,4 +28,26 @@ export async function getPatientContact(
     .where(eq(patientProfiles.id, patientProfileId))
     .limit(1);
   return row ?? null;
+}
+
+/**
+ * Bulk variant for clinic-side day views (Phase 8): one round trip for a
+ * day's worth of appointments. Missing ids are simply absent from the map.
+ */
+export async function getPatientContacts(
+  db: DbExecutor,
+  patientProfileIds: readonly string[],
+): Promise<Map<string, PatientContact>> {
+  if (patientProfileIds.length === 0) return new Map();
+  const rows = await db
+    .select({
+      patientProfileId: patientProfiles.id,
+      userId: patientProfiles.userId,
+      normalizedPhone: patientProfiles.normalizedPhone,
+      fullName: patientProfiles.fullName,
+      email: patientProfiles.email,
+    })
+    .from(patientProfiles)
+    .where(inArray(patientProfiles.id, [...patientProfileIds]));
+  return new Map(rows.map(({ patientProfileId, ...contact }) => [patientProfileId, contact]));
 }

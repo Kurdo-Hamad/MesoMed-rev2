@@ -112,3 +112,32 @@ export const appointmentListItemSchema = z.object({
 export const myAppointmentsOutputSchema = z.object({
   appointments: z.array(appointmentListItemSchema),
 });
+
+// ── Clinic reads (Phase 8 dashboards) ──────────────────────────────────
+
+export const clinicDayInputSchema = z.object({
+  doctorLocationId: z.string().uuid(),
+  /** Any instant within the desired day (location timezone); defaults to now. */
+  anchor: z.iso.datetime().optional(),
+});
+
+export const clinicAppointmentItemSchema = z.object({
+  appointmentId: z.string(),
+  startsAt: z.string(),
+  endsAt: z.string(),
+  status: z.enum(APPOINTMENT_STATUSES),
+  bookedVia: z.enum(BOOKING_CHANNELS),
+  patientProfileId: z.string(),
+  /** Null when the patient profile has been removed (hard-delete precedent, ADR-0010). */
+  patientName: z.string().nullable(),
+  patientPhone: z.string().nullable(),
+  note: z.string().nullable(),
+});
+
+export const clinicDayOutputSchema = z.object({
+  doctorLocationId: z.string(),
+  timeZone: z.string(),
+  /** YYYY-MM-DD calendar date of the returned day in the location timezone. */
+  date: z.string(),
+  appointments: z.array(clinicAppointmentItemSchema),
+});

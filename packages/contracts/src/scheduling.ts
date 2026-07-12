@@ -114,3 +114,19 @@ export const doctorLocationItemSchema = z.object({
 export const listDoctorLocationsOutputSchema = z.object({
   locations: z.array(doctorLocationItemSchema),
 });
+
+// ── Clinic-side workplaces (Phase 8 dashboards) ────────────────────────
+
+/**
+ * A doctor-location the session works at: own practice rows for doctors,
+ * active assignments for secretaries. Admin uses directory browse instead.
+ */
+export const myWorkplaceItemSchema = doctorLocationItemSchema.extend({
+  doctorProfileId: z.string(),
+  /** How the session relates to this workplace. */
+  relation: z.enum(["owning_doctor", "assigned_secretary"]),
+});
+
+export const myWorkplacesOutputSchema = z.object({
+  workplaces: z.array(myWorkplaceItemSchema),
+});
