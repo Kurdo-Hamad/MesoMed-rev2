@@ -1,5 +1,5 @@
 import createMiddleware from "next-intl/middleware";
-import { NextRequest } from "next/server";
+import type { NextRequest } from "next/server";
 import { routing } from "./i18n/routing";
 
 const handleI18nRouting = createMiddleware(routing);
@@ -50,16 +50,27 @@ export default function proxy(request: NextRequest) {
   const nonce = NONCE_PATHS.test(request.nextUrl.pathname) ? btoa(crypto.randomUUID()) : null;
   const csp = buildCsp(nonce);
 
-  let response;
+  const response = handleI18nRouting(request);
   if (nonce) {
-    // The nonce travels on the request headers so Next stamps it onto the
-    // inline scripts of dynamically rendered pages.
+    // The nonce must travel on the REQUEST headers of the locale rewrite so
+    // Next stamps it onto the scripts of dynamically rendered pages. The
+    // i18n middleware builds the rewrite response itself, so the request-
+    // header override is applied to that response the way NextResponse.next
+    // encodes it: x-middleware-override-headers + x-middleware-request-*.
     const requestHeaders = new Headers(request.headers);
     requestHeaders.set("x-nonce", nonce);
     requestHeaders.set("content-security-policy", csp);
-    response = handleI18nRouting(new NextRequest(request, { headers: requestHeaders }));
-  } else {
-    response = handleI18nRouting(request);
+    const overridden = new Set(
+      (response.headers.get("x-middleware-override-headers") ?? "")
+        .split(",")
+        .map((name) => name.trim())
+        .filter(Boolean),
+    );
+    for (const [name, value] of requestHeaders) {
+      overridden.add(name);
+      response.headers.set(`x-middleware-request-${name}`, value);
+    }
+    response.headers.set("x-middleware-override-headers", [...overridden].join(","));
   }
   response.headers.set("content-security-policy", csp);
   return response;

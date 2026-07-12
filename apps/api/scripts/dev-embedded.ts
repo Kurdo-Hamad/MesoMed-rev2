@@ -10,6 +10,7 @@ import { createTestDatabase } from "@mesomed/db/testing";
 import { buildServer } from "../src/app.js";
 import { loadEnv } from "../src/env.js";
 import { seedDirectory } from "./seed/seed-directory.js";
+import { seedE2eFixtures } from "./seed/seed-e2e.js";
 
 async function main(): Promise<void> {
   const port = Number(process.env.PORT ?? 4000);
@@ -33,6 +34,16 @@ async function main(): Promise<void> {
   const { db, config, outbox, dispatcher } = app.kernel;
 
   await seedDirectory({ db, config, outbox, log: (message) => console.log(message) });
+  if (process.env.E2E_FIXTURES === "1") {
+    await seedE2eFixtures({
+      db,
+      config,
+      outbox,
+      identity: app.identity,
+      paymentGateways: app.paymentGateways,
+      log: (message) => console.log(message),
+    });
+  }
   console.log("Draining outbox into read models...");
   // Convergence, not speed (seed.test.ts precedent): generous on slow machines.
   const deadline = Date.now() + 240_000;

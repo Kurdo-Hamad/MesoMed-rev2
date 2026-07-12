@@ -75,6 +75,8 @@ declare module "fastify" {
   interface FastifyInstance {
     kernel: KernelServices;
     identity: IdentityModule;
+    /** Wired gateway adapters — exposed for the dev/e2e harness fixtures. */
+    paymentGateways: PaymentGatewayRegistry;
   }
 }
 
@@ -372,6 +374,7 @@ export async function buildServer(
 
   app.decorate("kernel", { db, pool, config, outbox, events, dispatcher, registry, cache });
   app.decorate("identity", identity);
+  app.decorate("paymentGateways", paymentGateways);
 
   app.addHook("onClose", async () => {
     await notificationSender.stop();
