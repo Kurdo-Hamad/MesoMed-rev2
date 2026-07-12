@@ -105,6 +105,25 @@
       "loading": "Loading…",
       "error": "Something went wrong",
       "retry": "Try again"
+    },
+    "home": {
+      "hero": {
+        "title": "Healthcare you can trust, one search away",
+        "subtitle": "Hospitals, clinics, labs and home nursing across Iraq — browse, compare and book.",
+        "searchPlaceholder": "Search doctors, hospitals, services…",
+        "searchButton": "Search",
+        "allCities": "All cities"
+      },
+      "categories": {
+        "heading": "Browse by category"
+      },
+      "feed": {
+        "heading": "Recommended for you",
+        "featured": "Featured",
+        "promoted": "Sponsored",
+        "empty": "No listings to show yet — check back soon.",
+        "viewDirectory": "View the full directory"
+      }
     }
   }
 }

@@ -1,19 +1,24 @@
 "use client";
 
-import { useTranslations } from "next-intl";
-import { trpc } from "../../lib/trpc";
+import { useState } from "react";
+import { CategoryGrid } from "../../components/home/category-grid";
+import { Hero } from "../../components/home/hero";
+import { RecommendedFeed } from "../../components/home/recommended-feed";
 
-/** Placeholder home — replaced by the homepage slice (hero, categories, feed). */
+/**
+ * Homepage (MM-PLAN-001 §5 Phase 8): hero + category cards + recommended
+ * feed. The shell is SSG/CDN-cacheable; data arrives through client tRPC
+ * queries served by the API's read cache (ADR-0012). City selection is
+ * shared between the hero and the feed.
+ */
 export default function HomePage() {
-  const t = useTranslations("hello");
-  const health = trpc.health.check.useQuery();
+  const [citySlug, setCitySlug] = useState<string | undefined>(undefined);
 
   return (
-    <main className="flex min-h-[60vh] flex-col items-center justify-center gap-2 px-4">
-      <h1 className="text-title font-bold text-brand">{t("title")}</h1>
-      <p className="text-body text-neutral-500">
-        {health.isLoading ? t("checking") : health.data ? t("subtitle") : t("unreachable")}
-      </p>
+    <main>
+      <Hero citySlug={citySlug} onCityChange={setCitySlug} />
+      <CategoryGrid />
+      <RecommendedFeed citySlug={citySlug} />
     </main>
   );
 }
