@@ -4,6 +4,7 @@ import { fastifyTRPCPlugin } from "@trpc/server/adapters/fastify";
 import { createEventRegistry } from "@mesomed/contracts/events";
 import { ErrorCode } from "@mesomed/contracts/errors";
 import { createTestDatabase, type TestDatabase } from "@mesomed/db/testing";
+import { createInMemoryCache } from "../src/kernel/cache.js";
 import { createConfigService } from "../src/kernel/config.js";
 import { anonymousSessionResolver, createContextFactory } from "../src/kernel/context.js";
 import { AppError } from "../src/kernel/errors.js";
@@ -57,6 +58,7 @@ describe("tRPC error contract", () => {
             db: tdb.db,
             config: createConfigService(tdb.db),
             outbox: createOutboxEmitter(registry),
+            cache: createInMemoryCache(),
           },
           sessionResolver: anonymousSessionResolver,
           defaultCountry: "IQ",

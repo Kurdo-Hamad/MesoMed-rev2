@@ -3,6 +3,7 @@ import type { CreateFastifyContextOptions } from "@trpc/server/adapters/fastify"
 import type { Role } from "@mesomed/contracts/roles";
 import { DEFAULT_LOCALE, isLocale, type Locale } from "@mesomed/contracts/i18n";
 import type { Db } from "@mesomed/db";
+import type { CacheAdapter } from "./cache.js";
 import type { ConfigService } from "./config.js";
 import type { OutboxEmitter } from "./outbox.js";
 
@@ -25,6 +26,7 @@ export interface KernelRequestServices {
   db: Db;
   config: ConfigService;
   outbox: OutboxEmitter;
+  cache: CacheAdapter;
 }
 
 /** Request-scoped context (MM-PLAN-001 §5 Phase 1): session, locale, country. */

@@ -12,6 +12,8 @@ import {
   and,
 } from "@mesomed/db";
 import { createTestDatabase, type TestDatabase } from "@mesomed/db/testing";
+import { DIRECTORY_CACHE_INVALIDATION_HANDLER } from "../../src/modules/directory/cache.js";
+import { INDEX_FACILITY_HANDLER } from "../../src/modules/search/events/index-documents.js";
 import { waitFor } from "../helpers.js";
 import {
   ADMIN,
@@ -139,12 +141,17 @@ describe("search read models", () => {
     expect(rowsAfter).toHaveLength(1);
     expect(rowsAfter[0]).toEqual(rowsBefore[0]);
 
-    // Exactly one idempotency claim per handler for this event.
+    // Exactly one idempotency claim per subscribed handler for this event —
+    // a pinned list, like the module event sets: extend it when a new
+    // subscriber legitimately joins `directory.facility_created.v1`.
     const claims = await db
       .select()
       .from(processedEvents)
       .where(eq(processedEvents.eventId, event!.id));
-    expect(claims).toHaveLength(1);
+    expect(claims.map((claim) => claim.handler).sort()).toEqual([
+      DIRECTORY_CACHE_INVALIDATION_HANDLER,
+      INDEX_FACILITY_HANDLER,
+    ]);
   });
 
   it("dead-letters a poisoned event without corrupting the read model", async () => {

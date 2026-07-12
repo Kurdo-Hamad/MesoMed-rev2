@@ -33,6 +33,7 @@ import type pg from "pg";
 import type { Env } from "./env.js";
 import { createContextFactory, type SessionResolver } from "./kernel/context.js";
 import { createConfigService, type ConfigService } from "./kernel/config.js";
+import { createInMemoryCache, type CacheAdapter } from "./kernel/cache.js";
 import { createOutboxDispatcher, type OutboxDispatcher } from "./kernel/dispatcher.js";
 import { createHandlerRegistry, type HandlerRegistry } from "./kernel/events.js";
 import { healthPayload, readinessPayload } from "./kernel/health.js";
@@ -67,6 +68,7 @@ export interface KernelServices {
   events: HandlerRegistry;
   dispatcher: OutboxDispatcher;
   registry: EventRegistry;
+  cache: CacheAdapter;
 }
 
 declare module "fastify" {
@@ -268,6 +270,7 @@ export async function buildServer(
   const events = overrides.eventHandlers ?? createHandlerRegistry();
   const outbox = createOutboxEmitter(registry);
   const config = createConfigService(db);
+  const cache = createInMemoryCache();
   const dispatcher = createOutboxDispatcher({
     connectionString: env.DATABASE_URL,
     db,
@@ -312,7 +315,7 @@ export async function buildServer(
   // its only creation path; billing accrues per-booking charges from
   // completed bookings and policy-evaluates cancellations/no-shows (Phase
   // 6b — patient collection dormant behind config).
-  registerDirectorySubscribers({ events, outbox });
+  registerDirectorySubscribers({ events, outbox, cache });
   registerSearchSubscribers(events);
   registerClinicalSubscribers({ events, outbox });
   registerBillingSubscribers({ events, outbox, config, gateways: paymentGateways });
@@ -360,14 +363,14 @@ export async function buildServer(
     trpcOptions: {
       router: createAppRouter(identity, { paymentGateways, ai: adapters.aiGateway }),
       createContext: createContextFactory({
-        services: { db, config, outbox },
+        services: { db, config, outbox, cache },
         sessionResolver: overrides.sessionResolver ?? identity.sessionResolver,
         defaultCountry: env.DEFAULT_COUNTRY,
       }),
     },
   });
 
-  app.decorate("kernel", { db, pool, config, outbox, events, dispatcher, registry });
+  app.decorate("kernel", { db, pool, config, outbox, events, dispatcher, registry, cache });
   app.decorate("identity", identity);
 
   app.addHook("onClose", async () => {

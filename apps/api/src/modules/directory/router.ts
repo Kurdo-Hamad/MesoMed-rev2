@@ -41,8 +41,15 @@ import {
 import { ErrorCode } from "@mesomed/contracts/errors";
 import { z } from "zod";
 import { roleProcedure } from "../../kernel/authz.js";
+import { cacheAside } from "../../kernel/cache.js";
 import { AppError } from "../../kernel/errors.js";
 import { publicProcedure, router } from "../../kernel/trpc.js";
+import {
+  HOMEPAGE_FEED_TTL_MS,
+  TAXONOMY_TTL_MS,
+  homepageFeedCacheKey,
+  taxonomyCacheKey,
+} from "./cache.js";
 import {
   setCategorySectionTypes,
   upsertCategory,
@@ -76,29 +83,59 @@ import { assertCountryActive } from "../../kernel/gating.js";
 export function createDirectoryRouter() {
   return router({
     // ── Public reads ───────────────────────────────────────────────────
+    // Taxonomy lists and the homepage feed are served cache-aside (ADR-0012):
+    // short TTL, busted by the module's own events. Taxonomy payloads are
+    // locale-independent (localized text is packed per row); the homepage
+    // feed is keyed by locale (its featured fill orders by localized name).
+    // Browse/detail stay uncached — unbounded filter/cursor key space over
+    // cheap indexed queries.
     listCountries: publicProcedure
       .output(listCountriesOutputSchema)
-      .query(({ ctx }) => listCountries(ctx.db, ctx.config)),
+      .query(({ ctx }) =>
+        cacheAside(ctx.cache, taxonomyCacheKey("countries"), TAXONOMY_TTL_MS, () =>
+          listCountries(ctx.db, ctx.config),
+        ),
+      ),
 
     listCities: publicProcedure
       .output(listCitiesOutputSchema)
-      .query(({ ctx }) => listCities(ctx.db)),
+      .query(({ ctx }) =>
+        cacheAside(ctx.cache, taxonomyCacheKey("cities"), TAXONOMY_TTL_MS, () =>
+          listCities(ctx.db),
+        ),
+      ),
 
     listCategories: publicProcedure
       .output(listCategoriesOutputSchema)
-      .query(({ ctx }) => listCategories(ctx.db)),
+      .query(({ ctx }) =>
+        cacheAside(ctx.cache, taxonomyCacheKey("categories"), TAXONOMY_TTL_MS, () =>
+          listCategories(ctx.db),
+        ),
+      ),
 
     listSpecialties: publicProcedure
       .output(listSpecialtiesOutputSchema)
-      .query(({ ctx }) => listSpecialties(ctx.db)),
+      .query(({ ctx }) =>
+        cacheAside(ctx.cache, taxonomyCacheKey("specialties"), TAXONOMY_TTL_MS, () =>
+          listSpecialties(ctx.db),
+        ),
+      ),
 
     listSymptoms: publicProcedure
       .output(listSymptomsOutputSchema)
-      .query(({ ctx }) => listSymptoms(ctx.db)),
+      .query(({ ctx }) =>
+        cacheAside(ctx.cache, taxonomyCacheKey("symptoms"), TAXONOMY_TTL_MS, () =>
+          listSymptoms(ctx.db),
+        ),
+      ),
 
     listProcedures: publicProcedure
       .output(listProceduresOutputSchema)
-      .query(({ ctx }) => listProcedures(ctx.db)),
+      .query(({ ctx }) =>
+        cacheAside(ctx.cache, taxonomyCacheKey("procedures"), TAXONOMY_TTL_MS, () =>
+          listProcedures(ctx.db),
+        ),
+      ),
 
     browseFacilities: publicProcedure
       .input(browseFacilitiesInputSchema)
@@ -141,7 +178,12 @@ export function createDirectoryRouter() {
       .output(homepageFeedOutputSchema)
       .query(async ({ ctx, input }) => {
         await assertCountryActive(ctx.config, ctx.country);
-        return getHomepageFeed(ctx.db, ctx.locale, input);
+        return cacheAside(
+          ctx.cache,
+          homepageFeedCacheKey(ctx.locale, input),
+          HOMEPAGE_FEED_TTL_MS,
+          () => getHomepageFeed(ctx.db, ctx.locale, input),
+        );
       }),
 
     // ── Admin commands (§3.6 layer a: admin only) ──────────────────────
