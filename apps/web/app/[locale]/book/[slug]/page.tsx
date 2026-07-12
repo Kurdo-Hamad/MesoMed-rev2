@@ -200,9 +200,9 @@ function WeekGrid({
                   {dayLabel.format(new Date(`${day.date}T12:00:00`))}
                 </p>
                 {!day.isOpen || day.isPast ? (
-                  <p className="py-4 text-center text-caption text-neutral-400">{t("closed")}</p>
+                  <p className="py-4 text-center text-caption text-neutral-500">{t("closed")}</p>
                 ) : day.slots.length === 0 ? (
-                  <p className="py-4 text-center text-caption text-neutral-400">—</p>
+                  <p className="py-4 text-center text-caption text-neutral-500">—</p>
                 ) : (
                   <ul className="flex flex-col gap-1">
                     {day.slots.map((daySlot) => (

@@ -1,37 +1,34 @@
-"use client";
-
-import { use } from "react";
-import { useLocale, useTranslations } from "next-intl";
+import { getTranslations } from "next-intl/server";
 import Image from "next/image";
 import { MapPin, UserRound } from "lucide-react";
 import type { Locale } from "@mesomed/i18n";
 import { Link } from "../../../../i18n/navigation";
 import { pickOptionalText, pickText } from "../../../../lib/localized";
 import { mediaUrl } from "../../../../lib/media";
-import { trpc } from "../../../../lib/trpc";
+import type { DoctorDetailOutput } from "@mesomed/contracts/directory";
+import { publicServerQuery } from "../../../../lib/server-api";
 
-export default function DoctorDetailPage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = use(params);
-  const t = useTranslations("web.doctor");
-  const locale = useLocale() as Locale;
-  const detail = trpc.directory.doctorDetail.useQuery({ slugOrId: slug });
+/**
+ * Public doctor detail — server-rendered (ADR-0012 layer 1: public,
+ * non-personalized, short-revalidate). The client-fetch version pushed
+ * LCP past the Lighthouse budget: the name/bio only painted after the
+ * JS + query waterfall; here they arrive in the document.
+ */
+export default async function DoctorDetailPage({
+  params,
+}: {
+  params: Promise<{ locale: Locale; slug: string }>;
+}) {
+  const { locale, slug } = await params;
+  const t = await getTranslations("web.doctor");
 
-  if (detail.isLoading) {
-    return (
-      <div className="mx-auto w-full max-w-4xl animate-pulse px-4 py-10">
-        <div className="flex gap-6">
-          <div className="h-36 w-36 rounded-lg bg-neutral-100" />
-          <div className="flex-1">
-            <div className="h-8 w-1/2 rounded-sm bg-neutral-100" />
-            <div className="mt-3 h-4 w-1/3 rounded-sm bg-neutral-100" />
-          </div>
-        </div>
-        <div className="mt-8 h-32 rounded-lg bg-neutral-100" />
-      </div>
-    );
-  }
+  const doctor = await publicServerQuery<DoctorDetailOutput>(
+    "directory.doctorDetail",
+    { slugOrId: slug },
+    { locale, revalidate: 300 },
+  );
 
-  if (detail.error || !detail.data) {
+  if (!doctor) {
     return (
       <main className="mx-auto w-full max-w-4xl px-4 py-20 text-center">
         <p className="text-subtitle text-neutral-500">{t("notFound")}</p>
@@ -39,7 +36,6 @@ export default function DoctorDetailPage({ params }: { params: Promise<{ slug: s
     );
   }
 
-  const doctor = detail.data;
   const specialty = pickOptionalText(doctor.specialtyName, locale);
   const city = pickOptionalText(doctor.cityName, locale);
   const bio = pickOptionalText(doctor.bio, locale);
@@ -72,7 +68,6 @@ export default function DoctorDetailPage({ params }: { params: Promise<{ slug: s
               {city}
             </p>
           )}
-          {/* Booking flow lands in the booking slice; the CTA routes there. */}
           <Link
             href={`/book/${doctor.slug}`}
             className="mt-4 inline-block rounded-md bg-brand px-6 py-2.5 text-body font-semibold text-white transition-colors duration-fast hover:bg-brand-strong"

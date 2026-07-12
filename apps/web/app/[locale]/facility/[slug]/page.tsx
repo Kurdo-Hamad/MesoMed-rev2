@@ -1,41 +1,39 @@
-"use client";
-
-import { use } from "react";
-import { useLocale, useTranslations } from "next-intl";
+import { getTranslations } from "next-intl/server";
 import Image from "next/image";
 import { Building2, Globe, Mail, MapPin, Phone } from "lucide-react";
 import type { Locale } from "@mesomed/i18n";
+import type { FacilityDetailOutput } from "@mesomed/contracts/directory";
 import { pickOptionalText, pickText } from "../../../../lib/localized";
 import { mediaUrl } from "../../../../lib/media";
-import { trpc } from "../../../../lib/trpc";
+import { publicServerQuery } from "../../../../lib/server-api";
 
-function DetailSkeleton() {
-  return (
-    <div className="mx-auto w-full max-w-6xl animate-pulse px-4 py-10">
-      <div className="aspect-[3/1] rounded-lg bg-neutral-100" />
-      <div className="mt-6 h-8 w-1/3 rounded-sm bg-neutral-100" />
-      <div className="mt-3 h-4 w-1/4 rounded-sm bg-neutral-100" />
-      <div className="mt-8 h-32 rounded-lg bg-neutral-100" />
-    </div>
+/**
+ * Public facility detail — server-rendered (ADR-0012 layer 1: public,
+ * non-personalized, short-revalidate). The client-fetch version pushed
+ * LCP past the Lighthouse budget: gallery and name only painted after
+ * the JS + query waterfall; here they arrive in the document.
+ */
+export default async function FacilityDetailPage({
+  params,
+}: {
+  params: Promise<{ locale: Locale; slug: string }>;
+}) {
+  const { locale, slug } = await params;
+  const t = await getTranslations("web.facility");
+
+  const facility = await publicServerQuery<FacilityDetailOutput>(
+    "directory.facilityDetail",
+    { slugOrId: slug },
+    { locale, revalidate: 300 },
   );
-}
 
-export default function FacilityDetailPage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = use(params);
-  const t = useTranslations("web.facility");
-  const locale = useLocale() as Locale;
-  const detail = trpc.directory.facilityDetail.useQuery({ slugOrId: slug });
-
-  if (detail.isLoading) return <DetailSkeleton />;
-  if (detail.error || !detail.data) {
+  if (!facility) {
     return (
       <main className="mx-auto w-full max-w-6xl px-4 py-20 text-center">
         <p className="text-subtitle text-neutral-500">{t("notFound")}</p>
       </main>
     );
   }
-
-  const facility = detail.data;
   const about = pickOptionalText(facility.about, locale);
   const whyChooseUs = pickOptionalText(facility.whyChooseUs, locale);
   const address = pickOptionalText(facility.address, locale);
@@ -158,16 +156,18 @@ function ContactRow({
   value: string;
   dir?: "ltr";
 }) {
+  // A <dl> may only group dt/dd inside a single <div> wrapper — deeper
+  // nesting breaks the definition-list accessibility contract.
   return (
-    <div className="flex items-start gap-2.5">
-      <Icon className="mt-0.5 h-4 w-4 shrink-0 text-brand" aria-hidden="true" />
-      <div className="min-w-0">
-        <dt className="text-caption text-neutral-500">{label}</dt>
-        {/* Phone/email/URL stay LTR inside RTL layouts. */}
-        <dd className="break-words text-ink" dir={dir}>
-          {value}
-        </dd>
-      </div>
+    <div className="flex flex-col gap-0.5">
+      <dt className="flex items-center gap-2.5 text-caption text-neutral-500">
+        <Icon className="h-4 w-4 shrink-0 text-brand" aria-hidden="true" />
+        {label}
+      </dt>
+      {/* Phone/email/URL stay LTR inside RTL layouts. */}
+      <dd className="break-words ps-7 text-ink" dir={dir}>
+        {value}
+      </dd>
     </div>
   );
 }

@@ -76,6 +76,8 @@ export const listCategoriesOutputSchema = z.object({
   categories: z.array(categoryListItemSchema),
 });
 
+export type ListCategoriesOutput = z.output<typeof listCategoriesOutputSchema>;
+
 export const specialtyListItemSchema = z.object({
   id: z.string(),
   key: z.string(),
@@ -215,6 +217,10 @@ export const doctorDetailOutputSchema = z.object({
   cityName: optionalLocalizedTextSchema,
   photoUrl: z.string().nullable(),
 });
+
+export type FacilityDetailOutput = z.output<typeof facilityDetailOutputSchema>;
+
+export type DoctorDetailOutput = z.output<typeof doctorDetailOutputSchema>;
 
 // ── Homepage feed ──────────────────────────────────────────────────────
 
