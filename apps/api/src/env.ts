@@ -36,6 +36,17 @@ const envSchema = z.object({
   // only; sized for gateway retry storms, tuned down in tests.
   WEBHOOK_RATE_LIMIT_MAX: z.coerce.number().int().min(1).default(120),
   WEBHOOK_RATE_LIMIT_WINDOW_MS: z.coerce.number().int().min(1_000).default(60_000),
+  // Fastify `trustProxy` (ADR-0011 F-5): unset/"false" trusts nothing — every
+  // caller's `req.ip` is the socket peer. Behind a reverse proxy/load
+  // balancer (the expected production topology), leaving this false means
+  // every request shares the proxy's IP, collapsing per-IP guardrails
+  // (identity OTP send, AI triage rate limits) onto one shared bucket for
+  // ALL callers — an accidental denial-of-service, not just a missed limit.
+  // "true" trusts X-Forwarded-For unconditionally (only correct with NO
+  // direct public access to this process); a comma-separated IP/CIDR list
+  // trusts only those hops (the deployment's own proxy addresses) — the
+  // correct setting whenever direct access is also possible.
+  TRUST_PROXY: z.string().optional(),
   SENTRY_DSN: z.url().optional(),
   OTEL_EXPORTER_OTLP_ENDPOINT: z.url().optional(),
   // Better Auth (Phase 2): secret signs session tokens — required, no
@@ -43,6 +54,27 @@ const envSchema = z.object({
   BETTER_AUTH_SECRET: z.string().min(32, "at least 32 characters"),
   // Public base URL of this API, used by Better Auth for callback/link URLs.
   BETTER_AUTH_URL: z.url().default("http://localhost:4000"),
+
+  // Phase 7 real-channel adapter credentials (all optional): the
+  // composition root wires the real adapter when its credentials are
+  // present and the mock otherwise — never partially, per channel.
+  WHATSAPP_ACCESS_TOKEN: z.string().optional(),
+  WHATSAPP_PHONE_NUMBER_ID: z.string().optional(),
+  WHATSAPP_GRAPH_BASE_URL: z.url().optional(),
+  TWILIO_ACCOUNT_SID: z.string().optional(),
+  TWILIO_AUTH_TOKEN: z.string().optional(),
+  TWILIO_FROM: z.string().optional(),
+  RESEND_API_KEY: z.string().optional(),
+  RESEND_FROM: z.string().optional(),
+  EXPO_PUSH_ACCESS_TOKEN: z.string().optional(),
+  ANTHROPIC_API_KEY: z.string().optional(),
+  AI_TRIAGE_MODEL: z.string().optional(),
+  // Next-day reminder cron (pg-boss schedule syntax).
+  REMINDER_CRON: z.string().default("0 6 * * *"),
+  // Notification sender tuning — mirrors the outbox dispatcher's own knobs.
+  NOTIFICATION_POLL_INTERVAL_MS: z.coerce.number().int().min(50).default(5_000),
+  NOTIFICATION_MAX_ATTEMPTS: z.coerce.number().int().min(1).default(5),
+  NOTIFICATION_RETRY_DELAY_S: z.coerce.number().int().min(0).default(60),
 });
 
 export type Env = z.infer<typeof envSchema>;

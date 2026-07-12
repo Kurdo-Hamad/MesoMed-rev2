@@ -34,6 +34,11 @@ export const ErrorCode = {
   BILLING_MODEL_NOT_CONFIGURED: "BILLING_MODEL_NOT_CONFIGURED",
   // Clinical extension (prescriptions, ADR-0010) — additive only.
   PRESCRIPTION_NOT_ACTIVE: "PRESCRIPTION_NOT_ACTIVE",
+  // Phase 7 (communication + AI) — additive only.
+  CHANNEL_DISABLED: "CHANNEL_DISABLED",
+  DESTINATION_NOT_ALLOWED: "DESTINATION_NOT_ALLOWED",
+  CHANNEL_BUDGET_EXCEEDED: "CHANNEL_BUDGET_EXCEEDED",
+  AI_QUOTA_EXCEEDED: "AI_QUOTA_EXCEEDED",
 } as const;
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];

@@ -282,69 +282,84 @@ describe("guest → account claim (MM-DEC rev02 §2, convention #7)", () => {
 });
 
 describe("claim atomicity — state and events commit or roll back together", () => {
-  it("a failed event write aborts the whole verification transaction", async () => {
-    const tdb = await createTestDatabase();
+  // Provisioning (embedded-PG initdb + start + migrations) is hoisted into
+  // beforeAll/afterAll rather than run inside the test body. Every other
+  // integration test in the suite provisions in a hook for the same reason:
+  // hooks run under vitest's 120s hookTimeout, whereas a test body is bound
+  // by the 30s testTimeout. Under full-suite CPU/disk contention, initdb
+  // (fork- and fsync-heavy) is the one step in this file that can plausibly
+  // approach 30s — the password/query steps are all sub-second — so leaving
+  // it in the body made this the file's lone timeout-flake risk. Moving it
+  // to setup removes that risk at the root instead of widening a number.
+  let tdb: TestDatabase;
+  let app: FastifyInstance;
+
+  beforeAll(async () => {
+    tdb = await createTestDatabase();
     // Registry with NO identity events: outbox.emit throws inside the
     // verification transaction, after the role insert and profile claim.
-    const app = await buildServer(testEnv(tdb.connectionString), {
+    app = await buildServer(testEnv(tdb.connectionString), {
       eventRegistry: createEventRegistry([]),
     });
     await app.ready();
-    try {
-      const phone = "+9647704000009";
-      await app.inject({
-        method: "POST",
-        url: "/api/auth/sign-up/email",
-        payload: {
-          name: "Rollback Case",
-          email: placeholderEmailForPhone(phone),
-          password: PASSWORD,
-          phoneNumber: phone,
-        },
-      });
-      // Read the OTP from Better Auth's verification store directly (the
-      // default mock channels are internal to the app instance).
-      await app.inject({
-        method: "POST",
-        url: "/api/auth/phone-number/send-otp",
-        payload: { phoneNumber: phone },
-      });
-      const { rows } = await tdb.pool.query<{ value: string }>(
-        `select value from verification where identifier = $1 order by created_at desc limit 1`,
-        [phone],
-      );
-      const code = rows[0]?.value.split(":")[0];
-      expect(code).toMatch(/^\d{6}$/);
+  });
 
-      const verify = await app.inject({
-        method: "POST",
-        url: "/api/auth/phone-number/verify",
-        payload: { phoneNumber: phone, code },
-      });
-      // The hook failed -> the endpoint fails.
-      expect(verify.statusCode).toBeGreaterThanOrEqual(400);
+  afterAll(async () => {
+    await app.close();
+    await tdb.close();
+  });
 
-      // NOTHING from the identity transaction survived: no role, no claim,
-      // no events — state and events are atomic (§3.2).
-      const { rows: roleRows } = await tdb.pool.query(
-        `select ur.* from user_roles ur join "user" u on u.id = ur.user_id
-         where u.phone_number = $1`,
-        [phone],
-      );
-      expect(roleRows).toHaveLength(0);
-      const profiles = await app.kernel.db
-        .select()
-        .from(patientProfiles)
-        .where(eq(patientProfiles.normalizedPhone, phone));
-      expect(profiles).toHaveLength(0);
-      const events = await app.kernel.db.select().from(domainEvents);
-      expect(events).toHaveLength(0);
-      // Sanity: the flow above does exercise the role-insert path normally.
-      const roles = await app.kernel.db.select().from(userRoles);
-      expect(roles).toHaveLength(0);
-    } finally {
-      await app.close();
-      await tdb.close();
-    }
+  it("a failed event write aborts the whole verification transaction", async () => {
+    const phone = "+9647704000009";
+    await app.inject({
+      method: "POST",
+      url: "/api/auth/sign-up/email",
+      payload: {
+        name: "Rollback Case",
+        email: placeholderEmailForPhone(phone),
+        password: PASSWORD,
+        phoneNumber: phone,
+      },
+    });
+    // Read the OTP from Better Auth's verification store directly (the
+    // default mock channels are internal to the app instance).
+    await app.inject({
+      method: "POST",
+      url: "/api/auth/phone-number/send-otp",
+      payload: { phoneNumber: phone },
+    });
+    const { rows } = await tdb.pool.query<{ value: string }>(
+      `select value from verification where identifier = $1 order by created_at desc limit 1`,
+      [phone],
+    );
+    const code = rows[0]?.value.split(":")[0];
+    expect(code).toMatch(/^\d{6}$/);
+
+    const verify = await app.inject({
+      method: "POST",
+      url: "/api/auth/phone-number/verify",
+      payload: { phoneNumber: phone, code },
+    });
+    // The hook failed -> the endpoint fails.
+    expect(verify.statusCode).toBeGreaterThanOrEqual(400);
+
+    // NOTHING from the identity transaction survived: no role, no claim,
+    // no events — state and events are atomic (§3.2).
+    const { rows: roleRows } = await tdb.pool.query(
+      `select ur.* from user_roles ur join "user" u on u.id = ur.user_id
+       where u.phone_number = $1`,
+      [phone],
+    );
+    expect(roleRows).toHaveLength(0);
+    const profiles = await app.kernel.db
+      .select()
+      .from(patientProfiles)
+      .where(eq(patientProfiles.normalizedPhone, phone));
+    expect(profiles).toHaveLength(0);
+    const events = await app.kernel.db.select().from(domainEvents);
+    expect(events).toHaveLength(0);
+    // Sanity: the flow above does exercise the role-insert path normally.
+    const roles = await app.kernel.db.select().from(userRoles);
+    expect(roles).toHaveLength(0);
   });
 });

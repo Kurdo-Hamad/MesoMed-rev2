@@ -46,6 +46,22 @@ describe("containsRedFlag (deterministic screen, all three languages)", () => {
     expect(containsRedFlag("ئازاری ددانم هەیە")).toBe(false);
     expect(containsRedFlag("طفح جلدي خفيف")).toBe(false);
   });
+
+  it("flags every common phrasing of breathing difficulty, not just the apostrophized form (ADR-0011 F-17)", () => {
+    expect(containsRedFlag("I can't breathe")).toBe(true);
+    expect(containsRedFlag("I cant breathe")).toBe(true); // no apostrophe typed
+    expect(containsRedFlag("I can’t breathe")).toBe(true); // curly apostrophe
+    expect(containsRedFlag("I cannot breathe")).toBe(true);
+    expect(containsRedFlag("I can not breathe at all")).toBe(true);
+    expect(containsRedFlag("unable to breathe since this morning")).toBe(true);
+    expect(containsRedFlag("having trouble breathing")).toBe(true);
+    expect(containsRedFlag("sudden difficulty breathing")).toBe(true);
+  });
+
+  it("flags Arabic breathing difficulty (previously missing, ADR-0011 F-17)", () => {
+    expect(containsRedFlag("أعاني من صعوبة في التنفس")).toBe(true);
+    expect(containsRedFlag("لا أستطيع التنفس منذ قليل")).toBe(true);
+  });
 });
 
 describe("delimitUserText (injection defense)", () => {

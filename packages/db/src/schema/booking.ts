@@ -56,6 +56,12 @@ export const appointments = pgTable(
       .where(sql`${table.status} in ('booked', 'confirmed', 'checked_in', 'in_progress')`),
     index("appointments_doctor_location_starts_idx").on(table.doctorLocationId, table.startsAt),
     index("appointments_patient_profile_idx").on(table.patientProfileId, table.startsAt),
+    /**
+     * Reminder-cron window scan (Phase 7): remindable appointments are
+     * selected by (status, starts_at) range — indexed, never a full scan
+     * (MM-PLAN-001 §5 Phase 7).
+     */
+    index("appointments_status_starts_idx").on(table.status, table.startsAt),
     check(
       "appointments_status_check",
       sql`${table.status} in ('booked', 'confirmed', 'checked_in', 'in_progress', 'completed', 'cancelled', 'no_show')`,

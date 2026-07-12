@@ -14,6 +14,57 @@
       "verifyBody": "افتح هذا الرابط للتحقق من بريدك الإلكتروني: {url}"
     }
   },
+  "communication": {
+    "booking_confirmation": {
+      "sms": "ميزوميد: تم تأكيد موعدك مع {doctorName} في {dateTime} في {locationName}.",
+      "pushTitle": "تم تأكيد الموعد",
+      "pushBody": "تم تأكيد موعدك مع {doctorName} في {dateTime} في {locationName}.",
+      "emailSubject": "تم تأكيد موعدك في ميزوميد",
+      "emailBody": "تم تأكيد موعدك مع {doctorName} في {dateTime} في {locationName}."
+    },
+    "reschedule_notice": {
+      "sms": "ميزوميد: تم نقل موعدك مع {doctorName} إلى {dateTime} في {locationName}.",
+      "pushTitle": "تم تغيير موعدك",
+      "pushBody": "تم نقل موعدك مع {doctorName} إلى {dateTime} في {locationName}.",
+      "emailSubject": "تم تغيير موعدك في ميزوميد",
+      "emailBody": "تم نقل موعدك مع {doctorName} إلى {dateTime} في {locationName}."
+    },
+    "cancellation_notice": {
+      "sms": "ميزوميد: تم إلغاء موعدك مع {doctorName} في {dateTime} في {locationName}.",
+      "pushTitle": "تم إلغاء الموعد",
+      "pushBody": "تم إلغاء موعدك مع {doctorName} في {dateTime} في {locationName}.",
+      "emailSubject": "تم إلغاء موعدك في ميزوميد",
+      "emailBody": "تم إلغاء موعدك مع {doctorName} في {dateTime} في {locationName}."
+    },
+    "reminder": {
+      "sms": "تذكير من ميزوميد: لديك موعد مع {doctorName} غدًا، {dateTime}، في {locationName}.",
+      "pushTitle": "تذكير بالموعد",
+      "pushBody": "لديك موعد مع {doctorName} غدًا، {dateTime}، في {locationName}.",
+      "emailSubject": "تذكير: موعدك غدًا في ميزوميد",
+      "emailBody": "لديك موعد مع {doctorName} غدًا، {dateTime}، في {locationName}."
+    },
+    "prescription_issued": {
+      "sms": "ميزوميد: أصدر لك {doctorName} وصفة طبية جديدة. افتح التطبيق لعرضها.",
+      "pushTitle": "وصفة طبية جديدة",
+      "pushBody": "أصدر لك {doctorName} وصفة طبية جديدة. افتح التطبيق لعرضها.",
+      "emailSubject": "لديك وصفة طبية جديدة في ميزوميد",
+      "emailBody": "أصدر لك {doctorName} وصفة طبية جديدة. افتح تطبيق ميزوميد لعرضها."
+    },
+    "subscription_activated": {
+      "sms": "ميزوميد: اشتراكك كمزوّد خدمة أصبح فعّالًا الآن.",
+      "pushTitle": "الاشتراك فعّال",
+      "pushBody": "اشتراكك في ميزوميد أصبح فعّالًا الآن.",
+      "emailSubject": "اشتراكك في ميزوميد فعّال",
+      "emailBody": "اشتراكك كمزوّد خدمة في ميزوميد أصبح فعّالًا الآن، وصفحتك ظاهرة للعموم."
+    },
+    "subscription_expired": {
+      "sms": "ميزوميد: انتهت صلاحية اشتراكك. جدّد الاشتراك لإبقاء صفحتك ظاهرة.",
+      "pushTitle": "انتهى الاشتراك",
+      "pushBody": "انتهت صلاحية اشتراكك في ميزوميد. جدّد الاشتراك لإبقاء صفحتك ظاهرة.",
+      "emailSubject": "انتهت صلاحية اشتراكك في ميزوميد",
+      "emailBody": "انتهت صلاحية اشتراكك في ميزوميد. جدّد الاشتراك لإبقاء صفحتك ظاهرة."
+    }
+  },
   "errors": {
     "CONFLICT": "يتعارض الطلب مع الحالة الحالية.",
     "RATE_LIMITED": "محاولات كثيرة جدًا. يرجى المحاولة لاحقًا.",
@@ -22,6 +73,10 @@
     "INVALID_STATUS_TRANSITION": "تغيير الحالة هذا غير مسموح به.",
     "PHONE_NOT_VERIFIED": "يرجى التحقق من رقم هاتفك أولًا.",
     "EMAIL_NOT_VERIFIED": "يرجى التحقق من بريدك الإلكتروني أولًا.",
-    "PRESCRIPTION_NOT_ACTIVE": "لا يمكن تعديل سوى النسخة الفعّالة من الوصفة الطبية."
+    "PRESCRIPTION_NOT_ACTIVE": "لا يمكن تعديل سوى النسخة الفعّالة من الوصفة الطبية.",
+    "CHANNEL_DISABLED": "قناة التواصل هذه معطّلة مؤقتًا.",
+    "DESTINATION_NOT_ALLOWED": "لا يمكن إرسال الرسائل إلى هذه الوجهة.",
+    "CHANNEL_BUDGET_EXCEEDED": "تم بلوغ الحد اليومي للرسائل على هذه القناة. يرجى المحاولة غدًا.",
+    "AI_QUOTA_EXCEEDED": "بحث الأعراض يستقبل طلبات كثيرة حاليًا. يرجى المحاولة لاحقًا."
   }
 }

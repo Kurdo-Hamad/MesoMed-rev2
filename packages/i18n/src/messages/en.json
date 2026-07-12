@@ -14,6 +14,57 @@
       "verifyBody": "Open this link to verify your email address: {url}"
     }
   },
+  "communication": {
+    "booking_confirmation": {
+      "sms": "MesoMed: Your appointment with {doctorName} is confirmed for {dateTime} at {locationName}.",
+      "pushTitle": "Appointment confirmed",
+      "pushBody": "Your appointment with {doctorName} is confirmed for {dateTime} at {locationName}.",
+      "emailSubject": "Your MesoMed appointment is confirmed",
+      "emailBody": "Your appointment with {doctorName} is confirmed for {dateTime} at {locationName}."
+    },
+    "reschedule_notice": {
+      "sms": "MesoMed: Your appointment with {doctorName} was moved to {dateTime} at {locationName}.",
+      "pushTitle": "Appointment rescheduled",
+      "pushBody": "Your appointment with {doctorName} was moved to {dateTime} at {locationName}.",
+      "emailSubject": "Your MesoMed appointment was rescheduled",
+      "emailBody": "Your appointment with {doctorName} was moved to {dateTime} at {locationName}."
+    },
+    "cancellation_notice": {
+      "sms": "MesoMed: Your appointment with {doctorName} on {dateTime} at {locationName} was cancelled.",
+      "pushTitle": "Appointment cancelled",
+      "pushBody": "Your appointment with {doctorName} on {dateTime} at {locationName} was cancelled.",
+      "emailSubject": "Your MesoMed appointment was cancelled",
+      "emailBody": "Your appointment with {doctorName} on {dateTime} at {locationName} was cancelled."
+    },
+    "reminder": {
+      "sms": "MesoMed reminder: You have an appointment with {doctorName} tomorrow, {dateTime}, at {locationName}.",
+      "pushTitle": "Appointment reminder",
+      "pushBody": "You have an appointment with {doctorName} tomorrow, {dateTime}, at {locationName}.",
+      "emailSubject": "Reminder: your MesoMed appointment tomorrow",
+      "emailBody": "You have an appointment with {doctorName} tomorrow, {dateTime}, at {locationName}."
+    },
+    "prescription_issued": {
+      "sms": "MesoMed: {doctorName} issued you a new prescription. Open the app to view it.",
+      "pushTitle": "New prescription",
+      "pushBody": "{doctorName} issued you a new prescription. Open the app to view it.",
+      "emailSubject": "You have a new MesoMed prescription",
+      "emailBody": "{doctorName} issued you a new prescription. Open the MesoMed app to view it."
+    },
+    "subscription_activated": {
+      "sms": "MesoMed: Your provider subscription is now active.",
+      "pushTitle": "Subscription active",
+      "pushBody": "Your MesoMed provider subscription is now active.",
+      "emailSubject": "Your MesoMed subscription is active",
+      "emailBody": "Your MesoMed provider subscription is now active. Your listing is publicly visible."
+    },
+    "subscription_expired": {
+      "sms": "MesoMed: Your provider subscription has expired. Renew to keep your listing visible.",
+      "pushTitle": "Subscription expired",
+      "pushBody": "Your MesoMed provider subscription has expired. Renew to keep your listing visible.",
+      "emailSubject": "Your MesoMed subscription has expired",
+      "emailBody": "Your MesoMed provider subscription has expired. Renew to keep your listing visible."
+    }
+  },
   "errors": {
     "CONFLICT": "The request conflicts with the current state.",
     "RATE_LIMITED": "Too many attempts. Please try again later.",
@@ -22,6 +73,10 @@
     "INVALID_STATUS_TRANSITION": "This status change is not allowed.",
     "PHONE_NOT_VERIFIED": "Please verify your phone number first.",
     "EMAIL_NOT_VERIFIED": "Please verify your email first.",
-    "PRESCRIPTION_NOT_ACTIVE": "Only the active version of a prescription can be changed."
+    "PRESCRIPTION_NOT_ACTIVE": "Only the active version of a prescription can be changed.",
+    "CHANNEL_DISABLED": "This communication channel is temporarily disabled.",
+    "DESTINATION_NOT_ALLOWED": "Messages cannot be sent to this destination.",
+    "CHANNEL_BUDGET_EXCEEDED": "The daily message limit for this channel has been reached. Please try again tomorrow.",
+    "AI_QUOTA_EXCEEDED": "The symptom search is receiving too many requests. Please try again later."
   }
 }

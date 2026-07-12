@@ -22,7 +22,9 @@
     "./clinical": "./src/clinical.ts",
     "./events/clinical": "./src/events/clinical.ts",
     "./billing": "./src/billing.ts",
-    "./events/billing": "./src/events/billing.ts"
+    "./events/billing": "./src/events/billing.ts",
+    "./communication": "./src/communication.ts",
+    "./ai": "./src/ai.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json",

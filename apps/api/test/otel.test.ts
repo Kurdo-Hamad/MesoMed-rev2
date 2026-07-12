@@ -66,6 +66,19 @@ beforeAll(async () => {
       DATABASE_URL: tdb.connectionString,
       BETTER_AUTH_SECRET: "test-secret-test-secret-test-secret-0000",
       OTEL_EXPORTER_OTLP_ENDPOINT: `http://127.0.0.1:${COLLECTOR_PORT}`,
+      // This test's NODE_ENV=production boots the real artifact to prove
+      // OTel export, not to exercise adapter selection — supply (fake)
+      // credentials for every channel so the mock-production guardrail
+      // (ADR-0011) doesn't block the boot it's testing.
+      WHATSAPP_ACCESS_TOKEN: "fake-whatsapp-token",
+      WHATSAPP_PHONE_NUMBER_ID: "fake-phone-number-id",
+      TWILIO_ACCOUNT_SID: "fake-account-sid",
+      TWILIO_AUTH_TOKEN: "fake-auth-token",
+      TWILIO_FROM: "+10000000000",
+      RESEND_API_KEY: "fake-resend-key",
+      RESEND_FROM: "noreply@example.test",
+      EXPO_PUSH_ACCESS_TOKEN: "fake-expo-token",
+      ANTHROPIC_API_KEY: "fake-anthropic-key",
     },
     stdio: ["ignore", "pipe", "pipe"],
   });

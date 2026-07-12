@@ -9,12 +9,25 @@ import { BOOKING_EVENTS } from "@mesomed/contracts/events/booking";
 import { CLINICAL_EVENTS } from "@mesomed/contracts/events/clinical";
 import { BILLING_EVENTS } from "@mesomed/contracts/events/billing";
 import { createDb, type Db } from "@mesomed/db";
+import { locales } from "@mesomed/i18n";
 import {
+  createAnthropicAiGateway,
+  createExpoPushAdapter,
   createManualPaymentGateway,
+  createMetaWhatsAppAdapter,
+  createMockAiGateway,
   createMockEmailChannel,
+  createMockNotifyChannel,
   createMockOtpChannel,
+  createMockPushChannel,
+  createResendEmailAdapter,
+  createTwilioSmsAdapter,
+  isMockAdapter,
   MANUAL_GATEWAY_ID,
+  type AiGateway,
   type EmailChannel,
+  type NotifyChannel,
+  type PushChannel,
 } from "@mesomed/platform";
 import type pg from "pg";
 import type { Env } from "./env.js";
@@ -23,11 +36,20 @@ import { createConfigService, type ConfigService } from "./kernel/config.js";
 import { createOutboxDispatcher, type OutboxDispatcher } from "./kernel/dispatcher.js";
 import { createHandlerRegistry, type HandlerRegistry } from "./kernel/events.js";
 import { healthPayload, readinessPayload } from "./kernel/health.js";
+import { createJobScheduler, type JobScheduler } from "./kernel/jobs.js";
 import { createOutboxEmitter, type OutboxEmitter } from "./kernel/outbox.js";
+import { REDACT_PATHS } from "./kernel/redaction.js";
 import { registerPaymentWebhookRoutes } from "./modules/billing/webhook.js";
 import { registerBillingSubscribers } from "./modules/billing/index.js";
 import type { PaymentGatewayRegistry } from "./modules/billing/shared.js";
 import { registerClinicalSubscribers } from "./modules/clinical/index.js";
+import { registerCommunicationSubscribers } from "./modules/communication/index.js";
+import { planNextDayReminders } from "./modules/communication/reminders.js";
+import {
+  createNotificationSender,
+  type NotificationChannels,
+  type NotificationSender,
+} from "./modules/communication/sender.js";
 import { registerDirectorySubscribers } from "./modules/directory/index.js";
 import { createIdentityModule, type IdentityModule } from "./modules/identity/index.js";
 import { registerAuthRoutes } from "./modules/identity/routes.js";
@@ -64,9 +86,9 @@ export interface BuildServerOverrides {
   sessionResolver?: SessionResolver;
   eventRegistry?: EventRegistry;
   eventHandlers?: HandlerRegistry;
-  /** OTP transports (mock by default through Phase 2 — MM-DEC rev02 §8). */
+  /** OTP transports (mock by default through Phase 2 — MM-DEC rev02 §8; real Meta/Twilio when configured). */
   otpChannels?: OtpChannels;
-  /** Email transport (mock by default through Phase 2; Resend in Phase 7). */
+  /** Email transport (mock by default through Phase 2; real Resend when configured). */
   emailChannel?: EmailChannel;
   /** OTP expiry/attempt tuning — tests shrink these to exercise the limits. */
   otpOptions?: IdentityOtpOptions;
@@ -77,6 +99,122 @@ export interface BuildServerOverrides {
    * webhook signature/idempotency paths.
    */
   paymentGateways?: PaymentGatewayRegistry;
+  /** Triage model gateway (mock by default; real Anthropic when configured). */
+  aiGateway?: AiGateway;
+  /** Communication whatsapp/sms transports (mock by default; real Meta/Twilio when configured). */
+  notifyChannels?: { whatsapp: NotifyChannel; sms: NotifyChannel };
+  /** Communication push transport (mock by default; real Expo when configured). */
+  pushChannel?: PushChannel;
+}
+
+const OTP_MESSAGE_CATALOG: Record<string, string> = {
+  en: locales.en.identity.otp.message,
+  ar: locales.ar.identity.otp.message,
+  ckb: locales.ckb.identity.otp.message,
+};
+
+/**
+ * Real-vs-mock adapter resolution (§3.8): each channel is wired to its
+ * real vendor adapter only when ITS OWN credentials are present in the
+ * environment — never a partial/best-effort mix. Everything else falls
+ * back to the mock. No I/O happens here (adapter construction is lazy;
+ * the first network call is the caller's first `.send()`/`.generate()`).
+ */
+function resolveAdapters(env: Env, overrides: BuildServerOverrides) {
+  const whatsapp =
+    env.WHATSAPP_ACCESS_TOKEN && env.WHATSAPP_PHONE_NUMBER_ID
+      ? createMetaWhatsAppAdapter(
+          {
+            accessToken: env.WHATSAPP_ACCESS_TOKEN,
+            phoneNumberId: env.WHATSAPP_PHONE_NUMBER_ID,
+            baseUrl: env.WHATSAPP_GRAPH_BASE_URL,
+          },
+          OTP_MESSAGE_CATALOG,
+        )
+      : { notify: createMockNotifyChannel("whatsapp"), otp: createMockOtpChannel("whatsapp") };
+
+  const sms =
+    env.TWILIO_ACCOUNT_SID && env.TWILIO_AUTH_TOKEN && env.TWILIO_FROM
+      ? createTwilioSmsAdapter(
+          {
+            accountSid: env.TWILIO_ACCOUNT_SID,
+            authToken: env.TWILIO_AUTH_TOKEN,
+            from: env.TWILIO_FROM,
+          },
+          OTP_MESSAGE_CATALOG,
+        )
+      : { notify: createMockNotifyChannel("sms"), otp: createMockOtpChannel("sms") };
+
+  const otpChannels: OtpChannels = overrides.otpChannels ?? {
+    whatsapp: whatsapp.otp,
+    sms: sms.otp,
+  };
+  const notifyChannels = overrides.notifyChannels ?? { whatsapp: whatsapp.notify, sms: sms.notify };
+
+  const pushChannel: PushChannel =
+    overrides.pushChannel ??
+    (env.EXPO_PUSH_ACCESS_TOKEN
+      ? createExpoPushAdapter({ accessToken: env.EXPO_PUSH_ACCESS_TOKEN })
+      : createMockPushChannel());
+
+  const emailChannel: EmailChannel =
+    overrides.emailChannel ??
+    (env.RESEND_API_KEY && env.RESEND_FROM
+      ? createResendEmailAdapter({ apiKey: env.RESEND_API_KEY, from: env.RESEND_FROM })
+      : createMockEmailChannel());
+
+  const aiGateway: AiGateway =
+    overrides.aiGateway ??
+    (env.ANTHROPIC_API_KEY
+      ? createAnthropicAiGateway({ apiKey: env.ANTHROPIC_API_KEY, model: env.AI_TRIAGE_MODEL })
+      : createMockAiGateway());
+
+  return { otpChannels, notifyChannels, pushChannel, emailChannel, aiGateway };
+}
+
+/**
+ * Mock→real production guardrail (MM-ARC-002 Document 12): a mock adapter
+ * silently "delivering" in production is worse than a boot failure — no
+ * OTP reaches a patient, no charge notice reaches a provider, but nothing
+ * looks broken. Runs before any I/O (Fastify app creation, DB connection).
+ */
+function assertNoMockAdaptersInProduction(
+  env: Env,
+  adapters: ReturnType<typeof resolveAdapters>,
+): void {
+  if (env.NODE_ENV !== "production") return;
+  const named: Array<[string, unknown]> = [
+    ["identity OTP whatsapp channel", adapters.otpChannels.whatsapp],
+    ["identity OTP sms channel", adapters.otpChannels.sms],
+    ["email channel", adapters.emailChannel],
+    ["communication whatsapp channel", adapters.notifyChannels.whatsapp],
+    ["communication sms channel", adapters.notifyChannels.sms],
+    ["communication push channel", adapters.pushChannel],
+    ["AI triage gateway", adapters.aiGateway],
+  ];
+  const mock = named.find(([, adapter]) => isMockAdapter(adapter));
+  if (mock) {
+    throw new Error(
+      `Refusing to boot in production with a mock adapter wired: ${mock[0]}. ` +
+        "Set its credentials in the environment (see .env.example).",
+    );
+  }
+}
+
+/**
+ * Resolves `TRUST_PROXY` (ADR-0011 F-5) into the shape Fastify's own option
+ * accepts: unset/"false" → false (trust nothing, `req.ip` is the socket
+ * peer); "true" → true (trust every hop's X-Forwarded-For — only correct
+ * with no direct public access); anything else → a comma-separated
+ * IP/CIDR allowlist of the deployment's own proxy addresses.
+ */
+export function resolveTrustProxy(value: string | undefined): boolean | string[] {
+  if (!value || value === "false") return false;
+  if (value === "true") return true;
+  return value
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter(Boolean);
 }
 
 /**
@@ -91,11 +229,18 @@ export async function buildServer(
   env: Env,
   overrides: BuildServerOverrides = {},
 ): Promise<FastifyInstance> {
+  // Adapter resolution + the production guardrail run before any I/O —
+  // before the Fastify app itself, the DB pool, or the outbox/scheduler.
+  const adapters = resolveAdapters(env, overrides);
+  assertNoMockAdaptersInProduction(env, adapters);
+
   const app = Fastify({
     logger: {
       level: env.LOG_LEVEL,
       transport: env.NODE_ENV === "development" ? { target: "pino-pretty" } : undefined,
+      redact: { paths: REDACT_PATHS, censor: "[REDACTED]" },
     },
+    trustProxy: resolveTrustProxy(env.TRUST_PROXY),
   });
 
   Sentry.setupFastifyErrorHandler(app);
@@ -141,11 +286,8 @@ export async function buildServer(
     outbox,
     log: app.log,
     env,
-    otpChannels: overrides.otpChannels ?? {
-      whatsapp: createMockOtpChannel("whatsapp"),
-      sms: createMockOtpChannel("sms"),
-    },
-    emailChannel: overrides.emailChannel ?? createMockEmailChannel(),
+    otpChannels: adapters.otpChannels,
+    emailChannel: adapters.emailChannel,
     otpOptions: overrides.otpOptions,
   });
   registerAuthRoutes(app, identity.auth);
@@ -174,6 +316,38 @@ export async function buildServer(
   registerSearchSubscribers(events);
   registerClinicalSubscribers({ events, outbox });
   registerBillingSubscribers({ events, outbox, config, gateways: paymentGateways });
+  registerCommunicationSubscribers({ events });
+
+  // Notification sender (§5 Phase 7): polls notification_log for due rows
+  // and delivers via the resolved (real-or-mock) channels above.
+  const notificationChannels: NotificationChannels = {
+    whatsapp: adapters.notifyChannels.whatsapp,
+    sms: adapters.notifyChannels.sms,
+    push: adapters.pushChannel,
+    email: adapters.emailChannel,
+  };
+  const notificationSender: NotificationSender = createNotificationSender({
+    db,
+    config,
+    log: app.log,
+    channels: notificationChannels,
+    pollIntervalMs: env.NOTIFICATION_POLL_INTERVAL_MS,
+    maxAttempts: env.NOTIFICATION_MAX_ATTEMPTS,
+    backoffSeconds: env.NOTIFICATION_RETRY_DELAY_S,
+  });
+  notificationSender.start();
+
+  // Next-day reminder cron: a second, separate pg-boss instance (its own
+  // `schedule: true` opt-in — see kernel/jobs.ts) from the outbox
+  // dispatcher's queue instance.
+  const jobScheduler: JobScheduler = createJobScheduler({
+    connectionString: env.DATABASE_URL,
+    log: app.log,
+  });
+  await jobScheduler.start();
+  await jobScheduler.schedule("communication-reminders", env.REMINDER_CRON, async () => {
+    await planNextDayReminders(db, new Date());
+  });
 
   app.get("/health", async () => healthPayload());
   app.get("/ready", async (_req, reply) => {
@@ -184,7 +358,7 @@ export async function buildServer(
   await app.register(fastifyTRPCPlugin, {
     prefix: "/trpc",
     trpcOptions: {
-      router: createAppRouter(identity, { paymentGateways }),
+      router: createAppRouter(identity, { paymentGateways, ai: adapters.aiGateway }),
       createContext: createContextFactory({
         services: { db, config, outbox },
         sessionResolver: overrides.sessionResolver ?? identity.sessionResolver,
@@ -197,6 +371,8 @@ export async function buildServer(
   app.decorate("identity", identity);
 
   app.addHook("onClose", async () => {
+    await notificationSender.stop();
+    await jobScheduler.stop();
     await dispatcher.stop();
     await close();
   });

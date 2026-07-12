@@ -1,10 +1,13 @@
+import type { AiGateway } from "@mesomed/platform";
 import { healthResponseSchema } from "@mesomed/contracts/health";
 import { healthPayload } from "../kernel/health.js";
 import { publicProcedure, router } from "../kernel/trpc.js";
+import { createAiRouter } from "../modules/ai/router.js";
 import { createBillingRouter } from "../modules/billing/router.js";
 import type { PaymentGatewayRegistry } from "../modules/billing/shared.js";
 import { createBookingRouter } from "../modules/booking/router.js";
 import { createClinicalRouter } from "../modules/clinical/router.js";
+import { createCommunicationRouter } from "../modules/communication/router.js";
 import { createGuestPatientProfile } from "../modules/identity/commands/create-guest-patient-profile.js";
 import { createDirectoryRouter } from "../modules/directory/router.js";
 import { createIdentityRouter } from "../modules/identity/router.js";
@@ -25,7 +28,7 @@ const healthRouter = router({
  */
 export function createAppRouter(
   identity: IdentityModule,
-  deps: { paymentGateways: PaymentGatewayRegistry },
+  deps: { paymentGateways: PaymentGatewayRegistry; ai: AiGateway },
 ) {
   return router({
     health: healthRouter,
@@ -38,6 +41,8 @@ export function createAppRouter(
     booking: createBookingRouter({ createGuestPatientProfile }),
     clinical: createClinicalRouter(),
     billing: createBillingRouter({ gateways: deps.paymentGateways }),
+    communication: createCommunicationRouter(),
+    ai: createAiRouter({ ai: deps.ai }),
     search: createSearchRouter(),
   });
 }

@@ -10,7 +10,9 @@ import {
   and,
   appointments,
   eq,
+  gte,
   inArray,
+  lt,
   sql,
   type APPOINTMENT_STATUSES,
   type DbExecutor,
@@ -62,4 +64,42 @@ export async function hasAppointmentForLocations(
     )
     .limit(1);
   return row !== undefined;
+}
+
+/** An upcoming, still-active appointment eligible for a next-day reminder. */
+export interface RemindableAppointment {
+  appointmentId: string;
+  doctorLocationId: string;
+  patientProfileId: string;
+  startsAt: Date;
+}
+
+/** Statuses a reminder should still fire for — a cancelled/completed booking gets none. */
+const REMINDABLE_STATUSES: readonly AppointmentStatus[] = ["booked", "confirmed"];
+
+/**
+ * Published for the Phase 7 communication reminder cron (§3.1): scans the
+ * indexed `(status, starts_at)` window rather than every appointment row
+ * — an unbounded per-row scan is forbidden for this job (MM-ARC-002 §6.6).
+ */
+export async function listRemindableAppointments(
+  db: DbExecutor,
+  fromUtc: Date,
+  toUtc: Date,
+): Promise<RemindableAppointment[]> {
+  return db
+    .select({
+      appointmentId: appointments.id,
+      doctorLocationId: appointments.doctorLocationId,
+      patientProfileId: appointments.patientProfileId,
+      startsAt: appointments.startsAt,
+    })
+    .from(appointments)
+    .where(
+      and(
+        inArray(appointments.status, [...REMINDABLE_STATUSES]),
+        gte(appointments.startsAt, fromUtc),
+        lt(appointments.startsAt, toUtc),
+      ),
+    );
 }
