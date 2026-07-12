@@ -124,6 +124,55 @@
         "empty": "No listings to show yet — check back soon.",
         "viewDirectory": "View the full directory"
       }
+    },
+    "directory": {
+      "title": "Healthcare directory",
+      "subtitle": "Browse hospitals, clinics and services by category, or find a doctor by specialty.",
+      "doctors": "Doctors",
+      "doctorsSubtitle": "Browse by specialty",
+      "city": "City",
+      "allCities": "All cities",
+      "specialty": "Specialty",
+      "allSpecialties": "All specialties",
+      "loadMore": "Show more",
+      "empty": "No listings found."
+    },
+    "facility": {
+      "about": "About",
+      "whyChooseUs": "Why choose us",
+      "contact": "Contact",
+      "address": "Address",
+      "phone": "Phone",
+      "email": "Email",
+      "website": "Website",
+      "notFound": "Facility not found"
+    },
+    "doctor": {
+      "bio": "About the doctor",
+      "book": "Book an appointment",
+      "notFound": "Doctor not found"
+    },
+    "search": {
+      "title": "Search",
+      "tabText": "Search",
+      "tabSymptoms": "By symptoms",
+      "inputPlaceholder": "Search doctors, hospitals, services…",
+      "symptomPlaceholder": "Describe your symptoms in your own words…",
+      "submit": "Search",
+      "analyze": "Find the right specialty",
+      "filterAll": "All",
+      "filterFacilities": "Facilities",
+      "filterDoctors": "Doctors",
+      "results": "Results",
+      "noResults": "Nothing found for your search.",
+      "triage": {
+        "disclaimer": "This tool suggests medical specialties only — it is not a diagnosis or medical advice.",
+        "redFlag": "Your description contains signs that may need urgent care. Please contact emergency services or go to the nearest emergency department now.",
+        "suggestions": "Suggested specialties",
+        "viewDoctors": "View doctors",
+        "rateLimited": "Too many requests — please try again in a moment.",
+        "noMatch": "We could not match your description to a specialty. Try adding more detail, or browse all doctors."
+      }
     }
   }
 }
