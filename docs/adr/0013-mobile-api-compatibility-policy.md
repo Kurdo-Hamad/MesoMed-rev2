@@ -2,8 +2,7 @@
 
 **Status:** Accepted
 **Phase:** 8 (obligation per MM-ARC-002 §1.3, restated in the Phase 8
-kickoff instruction; MM-ARC-002 itself is not on disk — the kickoff text is
-the authoritative statement).
+kickoff instruction, now committed at docs/governance/MM-ARC-002-Strategic-Architecture-Package.md).
 **Builds on:** ADR-0003 (kernel, config service, typed error codes),
 convention #3 (event contracts are forever — this ADR extends the same
 discipline to procedure contracts), convention #9 (config over code).

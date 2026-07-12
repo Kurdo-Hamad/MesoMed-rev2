@@ -2,8 +2,7 @@
 
 **Status:** Accepted
 **Phase:** 8 (Web App — required at phase start per MM-ARC-002 §1.8, restated
-in the Phase 8 kickoff instruction; MM-ARC-002 itself is not on disk — see
-MM-QA-002 — so the kickoff text is the authoritative statement).
+in the Phase 8 kickoff instruction, now committed at docs/governance/MM-ARC-002-Strategic-Architecture-Package.md).
 **Builds on:** ADR-0003 (kernel, config service, idempotent handler
 registry), ADR-0005 (directory read models, homepage feed), ADR-0008/0009
 (billing→directory event mirroring).
