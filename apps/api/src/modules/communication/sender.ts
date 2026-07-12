@@ -11,7 +11,7 @@
  * itself has no value (ADR-0011 F-8).
  */
 import type { FastifyBaseLogger } from "fastify";
-import { and, deviceTokens, eq, inArray, lte, notificationLog, type Db } from "@mesomed/db";
+import { and, deviceTokens, eq, inArray, lte, notificationLog, sql, type Db } from "@mesomed/db";
 import {
   PushTokenInvalidError,
   type EmailChannel,
@@ -184,13 +184,16 @@ export function createNotificationSender(options: NotificationSenderOptions): No
         })
         .where(eq(notificationLog.id, row.id));
     } else {
-      const nextAttemptAt = new Date(Date.now() + backoffSeconds * 1000 * nextAttempts);
+      // DB-clock arithmetic, deliberately not `new Date(Date.now() + …)`:
+      // every write to next_attempt_at must come from the SAME clock the
+      // due-scan in claimBatch compares against (see the comment there).
+      const backoffSecs = backoffSeconds * nextAttempts;
       await db
         .update(notificationLog)
         .set({
           status: "pending",
           attempts: nextAttempts,
-          nextAttemptAt,
+          nextAttemptAt: sql`now() + (${backoffSecs} * interval '1 second')`,
           lastError: message,
           updatedAt: new Date(),
         })
@@ -364,7 +367,22 @@ export function createNotificationSender(options: NotificationSenderOptions): No
     }
   }
 
-  /** Selects due rows and immediately pushes their claim window forward, so a concurrent pump skips them. */
+  /**
+   * Selects due rows and immediately pushes their claim window forward, so a
+   * concurrent pump skips them.
+   *
+   * Every comparison and write against `next_attempt_at` here (and in
+   * `markFailedOrRetry`) uses the DATABASE's clock (`now()`), never the Node
+   * process clock. Rows are inserted with `defaultNow()` — a DB-clock
+   * timestamp — so a due-scan against `new Date()` compared two different
+   * clocks: with the DB clock even a few ms ahead of the process clock
+   * (separate DB host/container, or an NTP step on the app host), a
+   * freshly-inserted row is silently "not yet due". In production that only
+   * delays a row by one poll tick; in tests that insert-then-immediately-pump
+   * it read as a lost row (the CI-only F-7 flake — the poison row was never
+   * claimed, so it stayed `pending` instead of reaching `failed`). One clock
+   * source removes the class outright.
+   */
   async function claimBatch(): Promise<NotificationRow[]> {
     return db.transaction(async (tx) => {
       const due = await tx
@@ -373,7 +391,7 @@ export function createNotificationSender(options: NotificationSenderOptions): No
         .where(
           and(
             eq(notificationLog.status, "pending"),
-            lte(notificationLog.nextAttemptAt, new Date()),
+            lte(notificationLog.nextAttemptAt, sql`now()`),
           ),
         )
         .orderBy(notificationLog.nextAttemptAt)
@@ -382,7 +400,7 @@ export function createNotificationSender(options: NotificationSenderOptions): No
       if (due.length === 0) return [];
       await tx
         .update(notificationLog)
-        .set({ nextAttemptAt: new Date(Date.now() + CLAIM_HOLD_MS) })
+        .set({ nextAttemptAt: sql`now() + (${CLAIM_HOLD_MS / 1000} * interval '1 second')` })
         .where(
           inArray(
             notificationLog.id,

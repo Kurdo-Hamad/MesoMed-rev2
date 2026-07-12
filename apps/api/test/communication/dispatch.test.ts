@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import type { FastifyInstance } from "fastify";
 import {
   createMockEmailChannel,
@@ -525,6 +525,51 @@ describe("communication dispatch (MM-PLAN-001 §5 Phase 7)", () => {
       // Leaves the table clean for the PII-scan test below, which parses
       // every row's paramsJson and would otherwise choke on this one.
       await app.kernel.db.delete(notificationLog).where(eq(notificationLog.id, poisonRow!.id));
+    }
+  });
+
+  it("claims a freshly-inserted row even when the process clock lags the database clock (CI F-7 flake)", async () => {
+    // Reproduces the CI-only F-7 failure mode: rows are stamped with the DB
+    // clock (defaultNow()), and the old due-scan compared them against the
+    // Node process clock — with the DB clock a few ms ahead (separate DB
+    // container, or an NTP step on the app host), an insert-then-pump test
+    // never claimed its own row. Simulated here by faking ONLY Date (real
+    // timers untouched) 5s behind the DB's clock; fails against the old
+    // `lte(nextAttemptAt, new Date())` scan, passes with the `now()` scan.
+    const destination = "+9647700000411";
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(Date.now() - 5_000);
+    try {
+      await app.kernel.db.insert(notificationLog).values({
+        template: "reminder",
+        channel: "whatsapp",
+        destination,
+        locale: "ckb",
+        paramsJson: JSON.stringify({
+          doctorName: "Dr. Skew",
+          dateTime: "tomorrow",
+          locationName: "Clinic",
+        }),
+        dedupeKey: `clock-skew-test:${destination}`,
+      });
+
+      const skewWhatsapp = createMockNotifyChannel("whatsapp");
+      const sender = createNotificationSender({
+        db: app.kernel.db,
+        config: app.kernel.config,
+        log: app.log,
+        channels: { whatsapp: skewWhatsapp, sms, push, email },
+      });
+      await sender.pump();
+
+      const [row] = await app.kernel.db
+        .select()
+        .from(notificationLog)
+        .where(eq(notificationLog.destination, destination));
+      expect(row!.status).toBe("sent");
+      expect(skewWhatsapp.sent.some((m) => m.to === destination)).toBe(true);
+    } finally {
+      vi.useRealTimers();
     }
   });
 

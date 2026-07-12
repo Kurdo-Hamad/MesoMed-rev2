@@ -482,32 +482,64 @@ explicitly rather than left an undocumented gap.
   for the post-fix test count (superseding the original 489/489 baseline
   above, which predates the remediation pass's ~30 new/changed tests).
 
-**Note on test timing (F-11 flake, root-caused not just widened):** a
-full-suite run intermittently failed F-11's `dispatch.test.ts` case
-("retries persisting the sent status after a transient DB failure") with
-`sentWriteAttempts === 0` — not a partial count, a total miss. Root cause:
+**Note on test timing (`dispatch.test.ts` flakes — two distinct root
+causes, both root-caused, neither widened):** this file flaked twice with
+different symptoms, and they were NOT the same defect. An earlier
+attribution of the second to the first was disproven by CI evidence and is
+corrected here.
+
+_Root cause 1 — uncontrolled background sender (local F-11 flake)._
 `buildServer` (app.ts) unconditionally starts its own background
 `NotificationSender` at the production default 5s poll interval, against
-the real db and its own internally-wired mock channels; `dispatch.test.ts`
-additionally builds and drives its _own_ instrumented sender against the
-same row via `.pump()`. Under an unloaded run the manual `pump()` call
-(issued within milliseconds of the row appearing) always wins that race;
-under full-suite contention the event loop can stall long enough for the
-background poller's 5s tick to land first and silently mark the row
-`sent` via a different db wrapper and different mocks than the test held
-references to, before the test's own `claimBatch()` query ever runs — so
-the test's write-count assertion sees zero attempts, not three. This is
-the same environment-contention class as the Phase 3 outbox-drain timing
-note (`docs/adr/0007-phase5-clinical.md`), but the fix here is a root
-cause fix, not a widened timeout: no test in this codebase relies on the
-composition root's auto-started poller actually delivering anything, so
-`apps/api/test/helpers.ts`'s `testEnv()` now pushes
-`NOTIFICATION_POLL_INTERVAL_MS` out to an hour, well past any single test
-file's lifetime — the auto-poller can no longer tick during a test run at
-all, eliminating the race rather than narrowing its window. If a similar
-"total miss" flake resurfaces elsewhere, check for another uncontrolled
-background actor sharing the test database before assuming it's the same
-class of fix.
+the real db and its own internally-wired mock channels. Every test in
+`dispatch.test.ts` also builds and drives its _own_ instrumented sender
+over the same shared `notification_log`. Because `claimBatch` selects
+`FOR UPDATE SKIP LOCKED`, under contention the background poller and the
+test's `pump()` race for — and can split — the very rows under assertion,
+each processing them with its own `maxAttempts`/mocks. F-11 ("retries
+persisting the sent status after a transient DB failure") flaked locally
+this way with `sentWriteAttempts === 0`: the background poller marked the
+row `sent` before the test's own `claimBatch()` ran. Reproduced
+deterministically: with the poller forced to 50ms under CPU load the full
+file failed on every one of six runs (varying which assertion tripped);
+with the poller disabled it passed six of six under identical load. Fix:
+`apps/api/test/helpers.ts`'s `testEnv()` pushes
+`NOTIFICATION_POLL_INTERVAL_MS` out to an hour — no test relies on the
+auto-poller, so it can no longer tick during a test run at all.
+
+_Root cause 2 — mixed clock sources in the due-scan (CI F-7 flake)._ After
+the poller fix was already in the tree, CI (which provisions the database
+as a `postgres:16` service container via `TEST_DATABASE_URL`, unlike the
+local embedded-PG-on-the-same-host harness) still failed F-7 ("a single
+malformed row doesn't block the rest of the batch") with the poison row
+`pending` — and, decisively, with the GOOD row's `sent` assertion passing.
+One `pump()` claimed the row inserted first but not the row inserted
+milliseconds later, which a batch-size overflow cannot produce (measured:
+2 due rows against a batch limit of 50) and the disabled poller cannot
+produce. The mechanism: rows are stamped `next_attempt_at = defaultNow()`
+— the DATABASE's clock — but `claimBatch` compared them against the NODE
+process clock (`new Date()`), and `markFailedOrRetry` wrote retry backoff
+from the Node clock too. With the DB clock a few ms ahead of the app
+host's clock (separate container, or an NTP step between the insert and
+the claim), a freshly-inserted row is "not yet due" at claim time. In
+production this only delays a row by one 5s poll tick — harmless; in an
+insert-then-immediately-pump test it reads as a lost row. Fix: every
+write and comparison of `next_attempt_at` (`claimBatch`'s due-scan and
+hold-window write, `markFailedOrRetry`'s backoff) now uses the database's
+own `now()` — one clock source, class eliminated rather than narrowed.
+Proven by a regression test ("claims a freshly-inserted row even when the
+process clock lags the database clock") that fakes only `Date` 5s behind
+the DB clock: it fails against the old `new Date()` due-scan with the
+exact CI symptom (`pending`, never claimed) and passes with the `now()`
+scan.
+
+Both are the same environment-sensitivity class as the Phase 3
+outbox-drain timing note (`docs/adr/0007-phase5-clinical.md`), and both
+are root-cause fixes, not widened timeouts. If a similar flake resurfaces
+(a row asserted `pending`/`sent`/`failed` that mysteriously holds the
+opposite state), check — in this order — for an uncontrolled background
+actor sharing the test database, then for a wall-clock comparison that
+mixes the DB's clock with the process's.
 
 **Note on test timing (`claim.test.ts` 30s flake, root-caused not just
 widened):** a prior session recorded an intermittent 30s-timeout flake in
