@@ -71,3 +71,42 @@ jobs:
 
       - name: Build API image
         run: docker build -f apps/api/Dockerfile .
+
+  e2e:
+    # Phase 8 gate: the Playwright suite drives the production web build
+    # against the dev-embedded API harness (real composition root, seeded
+    # DB + E2E fixtures). Runs as its own job so unit CI stays fast.
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: pnpm --filter @mesomed/web exec playwright install --with-deps chromium
+
+      - name: E2E suite
+        run: pnpm --filter @mesomed/web e2e

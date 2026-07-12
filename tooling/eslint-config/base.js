@@ -33,6 +33,9 @@ export const base = tseslint.config(
           devDependencies: [
             "**/test/**",
             "**/*.test.ts",
+            // Playwright e2e suite (Phase 8) — dev-only by construction.
+            "**/e2e/**",
+            "**/*.spec.ts",
             "**/*.config.{js,ts,mjs,cjs}",
             "**/eslint.config.js",
             // Test harnesses shipped as package entrypoints (e.g.
