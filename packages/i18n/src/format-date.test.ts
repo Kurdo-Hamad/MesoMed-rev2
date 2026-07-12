@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatLocalizedDate, formatNumericDate } from "./format-date.js";
+import { formatLocalizedDate, formatNumericDate } from "./index.js";
 
 // 2026-01-21: month 1 would render as a localized month name via
 // Intl.DateTimeFormat's "long"/"short" styles, and both ar and ckb would
