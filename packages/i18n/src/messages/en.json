@@ -369,5 +369,11 @@
       "title": "MesoMed — Healthcare, made reachable",
       "description": "Find doctors, hospitals, labs and pharmacies across Iraq and book appointments in minutes — no account required."
     }
+  },
+  "mobile": {
+    "upgradeRequired": {
+      "title": "Update required",
+      "body": "This version of the MesoMed app is no longer supported. Please update from your app store to continue."
+    }
   }
 }
