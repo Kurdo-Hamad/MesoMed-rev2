@@ -96,6 +96,7 @@ Before introducing a new dependency, abstraction, pattern, service, or module:
 **Don't assume. Don't hide confusion. Surface tradeoffs.**
 
 Before implementing:
+
 - State your assumptions explicitly. If uncertain, ask.
 - If multiple interpretations exist, present them - don't pick silently.
 - If a simpler approach exists, say so. Push back when warranted.
@@ -118,6 +119,7 @@ Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, sim
 **Touch only what you must. Clean up only your own mess.**
 
 When editing existing code:
+
 - Don't "improve" adjacent code, comments, or formatting.
 - Don't refactor things that aren't broken.
 - Match existing style, even if you'd do it differently.
@@ -126,6 +128,7 @@ When editing existing code:
 Exception: fix adjacent code only when it directly prevents the requested change from compiling, testing, or functioning correctly — and say so in the summary.
 
 When your changes create orphans:
+
 - Remove imports/variables/functions that YOUR changes made unused.
 - Don't remove pre-existing dead code unless asked.
 
@@ -136,11 +139,13 @@ The test: Every changed line should trace directly to the user's request.
 **Define success criteria. Loop until verified.**
 
 Transform tasks into verifiable goals:
+
 - "Add validation" → "Write tests for invalid inputs, then make them pass"
 - "Fix the bug" → "Write a test that reproduces it, then make it pass"
 - "Refactor X" → "Ensure tests pass before and after"
 
 For multi-step tasks, state a brief plan:
+
 ```
 1. [Step] → verify: [check]
 2. [Step] → verify: [check]
@@ -156,6 +161,7 @@ If a blocking ambiguity affects correctness — a business rule, an invariant, a
 Never declare a task complete because the implementation appears correct.
 
 Complete means:
+
 - Relevant tests pass.
 - Build succeeds.
 - Lint and type checks pass (where applicable).
