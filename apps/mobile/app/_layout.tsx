@@ -4,9 +4,12 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { httpBatchLink } from "@trpc/client";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import { ComingSoonScreen } from "../components/coming-soon-screen";
 import { UpgradeRequiredScreen } from "../components/upgrade-required-screen";
+import { LOCALE_HEADER } from "../lib/api-headers";
 import { APP_VERSION_HEADER, getAppVersion } from "../lib/app-version";
-import { LocaleProvider } from "../lib/locale";
+import { useCountryComingSoon } from "../lib/country-coming-soon";
+import { getCurrentLocale, LocaleProvider } from "../lib/locale";
 import { createQueryClient } from "../lib/query-client";
 import { trpc } from "../lib/trpc";
 import { useUpgradeRequired } from "../lib/upgrade-required";
@@ -17,14 +20,22 @@ const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:4000";
 
 function AppContent() {
   const upgradeRequired = useUpgradeRequired();
+  const countryComingSoon = useCountryComingSoon();
 
   return (
     <>
       <StatusBar style="auto" />
       {upgradeRequired ? (
         <UpgradeRequiredScreen />
+      ) : countryComingSoon ? (
+        <ComingSoonScreen />
       ) : (
-        <Stack screenOptions={{ headerShown: false }} />
+        // The (tabs) group renders its own header-less Tabs bar; every
+        // other route (directory/doctor/facility detail) keeps the Stack's
+        // default header for its title + back button.
+        <Stack>
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        </Stack>
       )}
     </>
   );
@@ -37,7 +48,10 @@ export default function RootLayout() {
       links: [
         httpBatchLink({
           url: `${API_URL}/trpc`,
-          headers: () => ({ [APP_VERSION_HEADER]: getAppVersion() }),
+          headers: () => ({
+            [APP_VERSION_HEADER]: getAppVersion(),
+            [LOCALE_HEADER]: getCurrentLocale(),
+          }),
         }),
       ],
     }),

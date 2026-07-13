@@ -374,6 +374,10 @@
     "upgradeRequired": {
       "title": "Update required",
       "body": "This version of the MesoMed app is no longer supported. Please update from your app store to continue."
+    },
+    "comingSoon": {
+      "title": "Coming soon",
+      "body": "MesoMed isn't available in your country yet. We're working on it — check back soon."
     }
   }
 }

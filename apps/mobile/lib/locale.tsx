@@ -19,6 +19,14 @@ export function useLocale(): LocaleContextValue {
   return useContext(LocaleContext);
 }
 
+// The tRPC httpBatchLink's `headers()` callback (lib/trpc-client.ts) runs
+// outside React — it reads this module-level value rather than a hook.
+let currentLocale: Locale = defaultLocale;
+
+export function getCurrentLocale(): Locale {
+  return currentLocale;
+}
+
 async function applyRtlAndReload(locale: Locale): Promise<void> {
   I18nManager.allowRTL(true);
   I18nManager.forceRTL(isRtl(locale));
@@ -34,6 +42,7 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
   const [locale, setLocale] = useState<Locale>(defaultLocale);
 
   useEffect(() => {
+    currentLocale = locale;
     if (needsRtlReload(locale, I18nManager.isRTL)) {
       void applyRtlAndReload(locale);
     }
