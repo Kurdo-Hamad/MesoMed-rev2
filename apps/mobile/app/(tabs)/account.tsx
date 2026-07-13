@@ -1,22 +1,66 @@
-import { Pressable, ScrollView, Text, View } from "react-native";
-import { UserRound } from "lucide-react-native";
-import { Link } from "expo-router";
+import { useEffect, useRef } from "react";
+import { I18nManager, Pressable, ScrollView, Text, View } from "react-native";
+import {
+  CalendarDays,
+  ChevronLeft,
+  ChevronRight,
+  HeartPulse,
+  Stethoscope,
+  UserRound,
+} from "lucide-react-native";
+import { Link, type Href } from "expo-router";
 import { useTranslations } from "use-intl";
 import { colors } from "@mesomed/ui-tokens";
 import { authClient } from "../../lib/auth-client";
+import { devicePlatform, getPushToken } from "../../lib/push";
+import { trpc } from "../../lib/trpc";
 
 /**
  * Account tab: session surface for MM-DEC rev02 §4 — the persisted session
  * restores on relaunch (Better Auth Expo plugin + secure store, proven in
  * test/auth-persistence.test.ts), the user stays signed in until they sign
- * out here. The patient dashboard content itself lands in Slice 5; this
- * screen is the auth anchor (sign-in/sign-up entry when signed out,
- * identity + sign-out when signed in).
+ * out here. Signed in, it anchors the patient dashboard (appointments,
+ * health record, visit history) and registers this device for push
+ * (MM-DEC §6: push becomes the primary channel once a token exists).
  */
 export default function AccountScreen() {
   const t = useTranslations("mobile.account");
   const tAuth = useTranslations("web.auth");
+  const tDash = useTranslations("web.dashboard");
   const session = authClient.useSession();
+
+  const register = trpc.communication.registerDeviceToken.useMutation();
+  const unregister = trpc.communication.unregisterDeviceToken.useMutation();
+  const registeredRef = useRef(false);
+
+  useEffect(() => {
+    // Once per app run, after sign-in: push registration is best-effort —
+    // a denied permission or missing push infra just means WhatsApp/SMS
+    // stay the delivery channels server-side (MM-DEC §6).
+    if (!session.data || registeredRef.current) return;
+    registeredRef.current = true;
+    void (async () => {
+      const platform = devicePlatform();
+      const token = await getPushToken();
+      if (platform && token) register.mutate({ token, platform });
+    })();
+    // register is a stable mutation handle; session.data flips on sign-in.
+  }, [session.data, register]);
+
+  async function signOut() {
+    // A device signing out should stop receiving push here (ADR-0011 F-9);
+    // unregister is idempotent and never blocks the sign-out itself.
+    const token = await getPushToken();
+    if (token) {
+      try {
+        await unregister.mutateAsync({ token });
+      } catch {
+        // Session may already be gone — sign-out proceeds regardless.
+      }
+    }
+    registeredRef.current = false;
+    await authClient.signOut();
+  }
 
   if (session.isPending) {
     return (
@@ -73,12 +117,58 @@ export default function AccountScreen() {
         </View>
       </View>
 
+      <View className="mt-6 gap-3">
+        <DashboardLink
+          href="/dashboard/appointments"
+          icon={<CalendarDays size={22} color={colors.brand} />}
+          label={tDash("navAppointments")}
+        />
+        <DashboardLink
+          href="/dashboard/health"
+          icon={<HeartPulse size={22} color={colors.brand} />}
+          label={tDash("navHealth")}
+        />
+        <DashboardLink
+          href="/dashboard/encounters"
+          icon={<Stethoscope size={22} color={colors.brand} />}
+          label={tDash("navEncounters")}
+        />
+      </View>
+
       <Pressable
-        onPress={() => void authClient.signOut()}
+        onPress={() => void signOut()}
         className="mt-6 self-start rounded-md border border-line bg-canvas px-6 py-2.5"
       >
         <Text className="text-small font-medium text-ink">{tAuth("signOut")}</Text>
       </Pressable>
     </ScrollView>
+  );
+}
+
+function DashboardLink({
+  href,
+  icon,
+  label,
+}: {
+  href: Href;
+  icon: React.ReactNode;
+  label: string;
+}) {
+  return (
+    <Link href={href} asChild>
+      <Pressable className="flex-row items-center gap-4 rounded-lg border border-line bg-canvas p-4 shadow-card">
+        <View className="h-10 w-10 items-center justify-center rounded-md bg-brand-soft">
+          {icon}
+        </View>
+        <Text className="flex-1 text-body font-semibold text-ink">{label}</Text>
+        {/* Directional affordance, not text: pick the glyph by native
+            layout direction (I18nManager flips the row automatically). */}
+        {I18nManager.isRTL ? (
+          <ChevronLeft size={18} color={colors.muted} />
+        ) : (
+          <ChevronRight size={18} color={colors.muted} />
+        )}
+      </Pressable>
+    </Link>
   );
 }
