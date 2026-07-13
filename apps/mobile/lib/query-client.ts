@@ -1,8 +1,10 @@
 import { MutationCache, QueryCache, QueryClient } from "@tanstack/react-query";
+import { isCountryComingSoonError, setCountryComingSoon } from "./country-coming-soon";
 import { isUpgradeRequiredError, setUpgradeRequired } from "./upgrade-required";
 
 function handleError(error: unknown): void {
   if (isUpgradeRequiredError(error)) setUpgradeRequired(true);
+  if (isCountryComingSoonError(error)) setCountryComingSoon(true);
 }
 
 /** One QueryClient for the app: any query or mutation hitting the
