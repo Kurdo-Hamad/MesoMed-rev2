@@ -1,3 +1,12 @@
+# Metro's resolver assumes npm/yarn-style flat node_modules (vendored deps
+# like expo-router's react-helmet-async reference transitive packages —
+# react-fast-compare, invariant, whatwg-fetch — without declaring them).
+# pnpm 11 moved this setting here from .npmrc's node-linker key, which is
+# now silently ignored; verified empirically in Phase 9a Slice 0 (ADR-0018)
+# that isolated linking (pnpm's default) breaks `expo export` for both web
+# and native bundles on this exact failure mode, and hoisted fixes it with
+# no regression to the rest of the workspace gate.
+nodeLinker: hoisted
 packages:
   - "apps/*"
   - "packages/*"

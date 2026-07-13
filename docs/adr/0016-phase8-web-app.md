@@ -96,16 +96,21 @@ recordSubscriptionPayment` is admin-API only; the e2e drives it
    DoD per the phase instruction (the pin freezes path + kind).
 8. **Lighthouse "agentic browsing"** is a Lighthouse-13 category that
    postdates the plan; reported (all ≥90) but treated as informational.
-9. **RTL sign-off and production deploy are HALTED for the owner** per
-   the gate — ar/ckb screenshots of every page are in
-   docs/rtl-review/phase8/; the deployment configuration and manual-step
-   checklist are in docs/deploy/phase8-production-deployment.md. Neither
-   is self-certified or executed autonomously.
-10. **RTL screenshot regeneration for the numeric-date fix is a carry-in**
-    — the screenshots in docs/rtl-review/phase8/ still show the pre-fix
-    dates (e.g. ckb's English month-name fallback, ar's `yyyy/mm/dd`
-    order); this dev environment has no working headless-browser renderer
-    to recapture them (missing system libraries, no sudo). Recapturing
-    every ar/ckb page with a date is a follow-up, blocked on browser
-    availability, before RTL sign-off can consider this fix visually
-    verified.
+9. ~~**RTL sign-off and production deploy are HALTED for the owner**~~ —
+   **RTL sign-off resolved 2026-07-13** (Phase 9a Slice 0, ADR-0018): the
+   owner reviewed docs/rtl-review/phase8/ and approved the set as-is.
+   Production deploy remains halted — docs/deploy/phase8-production-deployment.md's
+   manual-step checklist is unaffected by this note and is still not
+   self-certified or executed autonomously.
+10. **RTL screenshot regeneration for the numeric-date fix — deferred, not
+    resolved.** The screenshots in docs/rtl-review/phase8/ still show the
+    pre-fix dates (e.g. ckb's English month-name fallback, ar's
+    `yyyy/mm/dd` order). The owner's 2026-07-13 sign-off (item 9) is an
+    explicit decision that this gap is non-blocking for now: regeneration
+    is deferred until a broader Kurdish date-formatting effort lands,
+    not scoped to Phase 9a. Separately, Phase 9a Slice 0 found a working
+    no-sudo headless-browser path for this WSL environment (extract the
+    missing shared libraries from `apt-get download`'d `.deb`s onto
+    `LD_LIBRARY_PATH`, no system install) — recorded in ADR-0018 in case
+    a future regeneration needs it; the original "no working renderer"
+    blocker no longer applies, only the owner's deferral does.
