@@ -88,7 +88,7 @@ export default function BookScreen() {
   }
 
   if (book.data) {
-    return <Confirmation result={book.data} />;
+    return <Confirmation result={book.data} phone={book.variables?.patient.phone ?? ""} />;
   }
 
   return (
@@ -424,7 +424,7 @@ function PatientForm({
   );
 }
 
-function Confirmation({ result }: { result: { startsAt: string } }) {
+function Confirmation({ result, phone }: { result: { startsAt: string }; phone: string }) {
   const t = useTranslations("web.book");
   const { locale } = useLocale();
   const when = new Date(result.startsAt);
@@ -442,11 +442,16 @@ function Confirmation({ result }: { result: { startsAt: string } }) {
       <Text className="mt-1 text-body text-neutral-500">{t("confirmationNote")}</Text>
 
       {/* Optional account offer (MM-DEC §2) — after booking, never before.
-          Its CTA links to /auth/sign-up, which lands in Slice 4; only the
-          skip-to-home path is wired for now. */}
+          The phone rides along so sign-up pre-fills the number the guest
+          profile is keyed on (the OTP claim then attaches the booking). */}
       <View className="mt-10 w-full rounded-lg border border-line bg-surface p-6">
         <Text className="text-body text-neutral-700">{t("accountOffer")}</Text>
-        <Link href="/" className="mt-4 self-center text-small font-medium text-neutral-500">
+        <Link href={{ pathname: "/auth/sign-up", params: { phone } }} asChild>
+          <Pressable className="mt-4 self-center rounded-md bg-brand px-6 py-2.5">
+            <Text className="text-body font-semibold text-white">{t("accountOfferCta")}</Text>
+          </Pressable>
+        </Link>
+        <Link href="/" className="mt-3 self-center text-small font-medium text-neutral-500">
           {t("accountOfferSkip")}
         </Link>
       </View>

@@ -4,7 +4,10 @@
  * (cookie capture, persistence, sign-out clearing) with an in-memory
  * store; the app instance in `auth-client.ts` injects expo-secure-store.
  */
-import { createAuthClient } from "better-auth/client";
+// The react entrypoint adds useSession for the account/auth screens; every
+// plain method (signIn, getSession, signOut) is identical to better-auth/client,
+// so the node-side persistence test keeps exercising the same code path.
+import { createAuthClient } from "better-auth/react";
 import { phoneNumberClient } from "better-auth/client/plugins";
 import { expoClient } from "@better-auth/expo/client";
 

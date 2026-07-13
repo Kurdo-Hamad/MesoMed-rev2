@@ -1,6 +1,6 @@
-import { Image, ScrollView, Text, View } from "react-native";
+import { Image, Pressable, ScrollView, Text, View } from "react-native";
 import { MapPin, UserRound } from "lucide-react-native";
-import { Stack, useLocalSearchParams } from "expo-router";
+import { Link, Stack, useLocalSearchParams } from "expo-router";
 import { useTranslations } from "use-intl";
 import { colors } from "@mesomed/ui-tokens";
 import { useLocale } from "../../lib/locale";
@@ -65,8 +65,11 @@ export default function DoctorDetailScreen() {
               <Text className="text-body text-neutral-500">{city}</Text>
             </View>
           )}
-          {/* Book button lands in Slice 3 alongside the /book/[slug] route
-              itself (MM-DEC §1/§2 guest booking flow). */}
+          <Link href={`/book/${doctor.data.slug}`} asChild>
+            <Pressable className="mt-3 self-start rounded-md bg-brand px-6 py-2.5">
+              <Text className="text-body font-semibold text-white">{t("book")}</Text>
+            </Pressable>
+          </Link>
         </View>
       </View>
 

@@ -2,6 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createMockOtpChannel } from "@mesomed/platform";
 import { placeholderEmailForPhone } from "@mesomed/domain/identity";
 import { createTestDatabase, type TestDatabase } from "@mesomed/db/testing";
+import { eq, patientProfiles } from "@mesomed/db";
 import { buildServer } from "@mesomed/api/app";
 import { loadEnv } from "@mesomed/api/env";
 import { createMobileAuthClient, type AuthClientStorage } from "../lib/create-auth-client.js";
@@ -112,5 +113,47 @@ describe("mobile session persistence (Better Auth Expo plugin + secure store)", 
     const relaunched = createMobileAuthClient({ baseURL, storage });
     const session = await relaunched.getSession();
     expect(session.data).toBeNull();
+  });
+
+  it("claims a pre-existing guest profile through the real client sign-up flow (MM-DEC §2)", async () => {
+    // The exact call sequence app/auth/sign-up.tsx performs: signUp.email
+    // with the phone-derived placeholder email, sendOtp, verify. Server-side
+    // claim mechanics are proven in apps/api/test/identity/claim.test.ts;
+    // this proves the MOBILE client's flow triggers them.
+    // Direct row insert stands in for a guest booking's profile creation
+    // (the identity command's own behavior is covered in the api suite;
+    // the claim path reads this row by normalized phone).
+    const guestPhone = "+9647709000002";
+    const { db } = app.kernel;
+    await db
+      .insert(patientProfiles)
+      .values({ normalizedPhone: guestPhone, fullName: "Mobile Guest" });
+
+    const storage = memoryStorage();
+    const client = createMobileAuthClient({ baseURL, storage });
+    const signUp = await client.signUp.email({
+      name: "Mobile Registered",
+      email: placeholderEmailForPhone(guestPhone),
+      password: PASSWORD,
+      phoneNumber: guestPhone,
+    } as Parameters<typeof client.signUp.email>[0]);
+    expect(signUp.error).toBeNull();
+    await client.phoneNumber.sendOtp({ phoneNumber: guestPhone });
+    const verify = await client.phoneNumber.verify({
+      phoneNumber: guestPhone,
+      code: whatsapp.sent.at(-1)?.code ?? "",
+    });
+    expect(verify.error).toBeNull();
+
+    // Same profile row, now owned by the new user — no duplicate created.
+    const [profile] = await db
+      .select({ userId: patientProfiles.userId, fullName: patientProfiles.fullName })
+      .from(patientProfiles)
+      .where(eq(patientProfiles.normalizedPhone, guestPhone));
+    expect(profile?.userId).toBeTruthy();
+    expect(profile?.fullName).toBe("Mobile Guest");
+
+    const session = await client.getSession();
+    expect(session.data?.user.phoneNumber).toBe(guestPhone);
   });
 });
