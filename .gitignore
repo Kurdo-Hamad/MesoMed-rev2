@@ -25,3 +25,4 @@ apps/mobile/expo-env.d.ts
 # Playwright artifacts
 apps/web/test-results/
 apps/web/playwright-report/
+*:Zone.Identifier
