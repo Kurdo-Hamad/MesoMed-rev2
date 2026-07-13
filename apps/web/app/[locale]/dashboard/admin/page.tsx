@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent, type ReactNode } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import type { Locale } from "@mesomed/i18n";
+import { formatLocalizedDate, pinLtr, type Locale } from "@mesomed/i18n";
 import { FilterSelect } from "../../../../components/filter-select";
 import { pickText } from "../../../../lib/localized";
 import { trpc } from "../../../../lib/trpc";
@@ -79,7 +79,8 @@ function ProviderQueue() {
     },
   });
 
-  const dateLabel = new Intl.DateTimeFormat(locale, { dateStyle: "medium" });
+  const dateLabel = (value: string) =>
+    formatLocalizedDate(new Date(value), locale, { dateStyle: "medium" });
 
   return (
     <Card>
@@ -103,8 +104,8 @@ function ProviderQueue() {
                       {provider.email ?? provider.phone}
                     </span>
                   </p>
-                  <p className="text-caption text-neutral-400">
-                    {dateLabel.format(new Date(provider.createdAt))}
+                  <p className="text-caption text-neutral-400" dir="ltr">
+                    {dateLabel(provider.createdAt)}
                   </p>
                 </div>
                 <div className="flex gap-2">
@@ -200,7 +201,8 @@ function TierPayments() {
     onSuccess: () => void utils.billing.facilityTierState.invalidate(),
   });
 
-  const dateLabel = new Intl.DateTimeFormat(locale, { dateStyle: "medium" });
+  const dateLabel = (value: string) =>
+    formatLocalizedDate(new Date(value), locale, { dateStyle: "medium" });
 
   function submit(event: FormEvent) {
     event.preventDefault();
@@ -249,7 +251,7 @@ function TierPayments() {
             {tierState.data.tierExpiresAt && (
               <span className="ms-2 text-small text-neutral-500">
                 {t("tierExpires", {
-                  date: dateLabel.format(new Date(tierState.data.tierExpiresAt)),
+                  date: pinLtr(dateLabel(tierState.data.tierExpiresAt)),
                 })}
               </span>
             )}
@@ -258,8 +260,11 @@ function TierPayments() {
             <ul className="mt-2 flex flex-col gap-1">
               {tierState.data.payments.slice(0, 5).map((payment) => (
                 <li key={payment.tierPaymentId} className="text-caption text-neutral-500">
-                  {payment.tierKey} · {dateLabel.format(new Date(payment.periodStart))} →{" "}
-                  {dateLabel.format(new Date(payment.periodEnd))} ·{" "}
+                  {payment.tierKey} ·{" "}
+                  <span dir="ltr">
+                    {dateLabel(payment.periodStart)} → {dateLabel(payment.periodEnd)}
+                  </span>{" "}
+                  ·{" "}
                   <span dir="ltr">
                     {payment.amount} {payment.currency}
                   </span>
@@ -347,7 +352,8 @@ function SupportGrants() {
     onSuccess: () => void utils.clinical.listSupportGrants.invalidate(),
   });
 
-  const stamp = new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" });
+  const stamp = (value: string) =>
+    formatLocalizedDate(new Date(value), locale, { dateStyle: "medium", timeStyle: "short" });
 
   function submit(event: FormEvent) {
     event.preventDefault();
@@ -427,8 +433,7 @@ function SupportGrants() {
                     {entry.encounterId}
                   </p>
                   <p className="text-caption text-neutral-500">
-                    {entry.reason} ·{" "}
-                    {t("grantExpires", { date: stamp.format(new Date(entry.expiresAt)) })}
+                    {entry.reason} · {t("grantExpires", { date: pinLtr(stamp(entry.expiresAt)) })}
                   </p>
                 </div>
                 {active ? (

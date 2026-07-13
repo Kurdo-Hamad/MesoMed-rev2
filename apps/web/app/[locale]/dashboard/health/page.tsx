@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import type { Locale } from "@mesomed/i18n";
+import { formatLocalizedDate, type Locale } from "@mesomed/i18n";
 import { BLOOD_TYPES, MEDICATION_SOURCES } from "@mesomed/contracts/clinical";
 import { trpc } from "../../../../lib/trpc";
 
@@ -339,7 +339,8 @@ function Prescriptions({
 }) {
   const t = useTranslations("web.dashboard");
   const locale = useLocale() as Locale;
-  const dateLabel = new Intl.DateTimeFormat(locale, { dateStyle: "medium" });
+  const dateLabel = (value: string) =>
+    formatLocalizedDate(new Date(value), locale, { dateStyle: "medium" });
 
   return (
     <section className="mt-6 rounded-lg border border-line bg-surface p-5">
@@ -373,8 +374,8 @@ function Prescriptions({
                 {latest.instructions && (
                   <p className="mt-1 text-small text-neutral-500">{latest.instructions}</p>
                 )}
-                <p className="mt-1 text-caption text-neutral-400">
-                  {dateLabel.format(new Date(latest.issuedAt))}
+                <p className="mt-1 text-caption text-neutral-400" dir="ltr">
+                  {dateLabel(latest.issuedAt)}
                 </p>
               </li>
             );

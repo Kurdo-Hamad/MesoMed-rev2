@@ -3,7 +3,7 @@
 import { useMemo, useState, type FormEvent } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import type { Locale } from "@mesomed/i18n";
+import { formatLocalizedDate, type Locale } from "@mesomed/i18n";
 import { normalizePhone } from "@mesomed/contracts/phone";
 import type { AppointmentStatus } from "@mesomed/contracts/booking";
 import { FilterSelect } from "../../../../components/filter-select";
@@ -140,9 +140,10 @@ function DayQueue({
     [locale, day.data],
   );
   const dateLabel = day.data
-    ? new Intl.DateTimeFormat(locale, { dateStyle: "full", timeZone: day.data.timeZone }).format(
-        new Date(`${day.data.date}T12:00:00`),
-      )
+    ? formatLocalizedDate(new Date(`${day.data.date}T12:00:00`), locale, {
+        dateStyle: "full",
+        timeZone: day.data.timeZone,
+      })
     : "";
 
   const actions = relation === "owning_doctor" ? DOCTOR_ACTIONS : SECRETARY_ACTIONS;
@@ -150,7 +151,9 @@ function DayQueue({
   return (
     <section className="mt-6">
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-heading font-bold text-ink">{dateLabel}</h2>
+        <h2 className="text-heading font-bold text-ink" dir="ltr">
+          {dateLabel}
+        </h2>
         <div className="flex gap-1">
           {/* Chevrons are directional controls, not text: flip via rtl: classes. */}
           <button
@@ -277,14 +280,15 @@ function WalkInForm({ doctorLocationId }: { doctorLocationId: string }) {
   const slotLabel = useMemo(
     () =>
       availability.data
-        ? new Intl.DateTimeFormat(locale, {
-            weekday: "short",
-            day: "numeric",
-            month: "short",
-            hour: "2-digit",
-            minute: "2-digit",
-            timeZone: availability.data.timeZone,
-          })
+        ? (date: Date) =>
+            formatLocalizedDate(date, locale, {
+              weekday: "short",
+              day: "numeric",
+              month: "short",
+              hour: "2-digit",
+              minute: "2-digit",
+              timeZone: availability.data!.timeZone,
+            })
         : null,
     [locale, availability.data],
   );
@@ -352,8 +356,8 @@ function WalkInForm({ doctorLocationId }: { doctorLocationId: string }) {
             >
               <option value="">—</option>
               {slots.map((option) => (
-                <option key={option.startsAt} value={option.startsAt}>
-                  {slotLabel?.format(new Date(option.startsAt))}
+                <option key={option.startsAt} value={option.startsAt} dir="ltr">
+                  {slotLabel?.(new Date(option.startsAt))}
                 </option>
               ))}
             </select>

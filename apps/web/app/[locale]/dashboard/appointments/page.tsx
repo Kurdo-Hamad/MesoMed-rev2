@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import type { Locale } from "@mesomed/i18n";
+import { formatLocalizedDate, type Locale } from "@mesomed/i18n";
 import { Link } from "../../../../i18n/navigation";
 import { trpc } from "../../../../lib/trpc";
 
@@ -56,7 +56,8 @@ export default function PatientAppointmentsPage() {
   }
 
   const rows = appointments.data?.appointments ?? [];
-  const dateLabel = new Intl.DateTimeFormat(locale, { dateStyle: "full", timeStyle: "short" });
+  const dateLabel = (value: string) =>
+    formatLocalizedDate(new Date(value), locale, { dateStyle: "full", timeStyle: "short" });
 
   return (
     <main className="py-8">
@@ -88,8 +89,8 @@ export default function PatientAppointmentsPage() {
               }`}
             >
               <div>
-                <p className="text-body font-semibold text-ink">
-                  {dateLabel.format(new Date(appointment.startsAt))}
+                <p className="text-body font-semibold text-ink" dir="ltr">
+                  {dateLabel(appointment.startsAt)}
                 </p>
                 <p className="mt-0.5 text-small text-neutral-500">
                   {t(`status_${appointment.status}`)}
