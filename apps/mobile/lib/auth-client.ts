@@ -1,6 +1,6 @@
 import * as SecureStore from "expo-secure-store";
 import Constants from "expo-constants";
-import { createMobileAuthClient } from "./create-auth-client.js";
+import { createMobileAuthClient } from "./create-auth-client";
 
 const baseURL =
   (Constants.expoConfig?.extra?.apiUrl as string | undefined) ?? "http://localhost:4000";

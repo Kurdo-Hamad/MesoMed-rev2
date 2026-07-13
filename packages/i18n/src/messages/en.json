@@ -378,6 +378,10 @@
     "comingSoon": {
       "title": "Coming soon",
       "body": "MesoMed isn't available in your country yet. We're working on it — check back soon."
+    },
+    "account": {
+      "title": "My account",
+      "signedOutBody": "Sign in to see your appointments, medical records and prescriptions in one place."
     }
   }
 }

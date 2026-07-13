@@ -8,6 +8,7 @@ import { ComingSoonScreen } from "../components/coming-soon-screen";
 import { UpgradeRequiredScreen } from "../components/upgrade-required-screen";
 import { LOCALE_HEADER } from "../lib/api-headers";
 import { APP_VERSION_HEADER, getAppVersion } from "../lib/app-version";
+import { authClient } from "../lib/auth-client";
 import { useCountryComingSoon } from "../lib/country-coming-soon";
 import { getCurrentLocale, LocaleProvider } from "../lib/locale";
 import { createQueryClient } from "../lib/query-client";
@@ -51,6 +52,10 @@ export default function RootLayout() {
           headers: () => ({
             [APP_VERSION_HEADER]: getAppVersion(),
             [LOCALE_HEADER]: getCurrentLocale(),
+            // Native fetch has no cookie jar — the Better Auth Expo plugin
+            // persists the session cookie in the secure store and hands it
+            // back here so authenticated tRPC reads carry the session.
+            Cookie: authClient.getCookie(),
           }),
         }),
       ],
