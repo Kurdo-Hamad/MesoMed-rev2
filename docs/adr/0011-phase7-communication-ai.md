@@ -563,6 +563,22 @@ structural consistency fix, not a widened number. Validated by three
 consecutive fully-uncached (`--force`) serialized full-suite runs, all
 green (see the run log below).
 
+**Note on `otel.test.ts` (CI EADDRINUSE flake, root-caused):** CI run
+29212913871 failed only in this file: the mock OTLP collector listened on
+a hardcoded port (43118) that another process on the runner already held.
+The `EADDRINUSE` error surfaced as an uncaught `'error'` event (the
+`listen` callback never fired), `beforeAll` hung to the 60s hook timeout,
+and `afterAll` then threw a `TypeError` because `api` was never assigned —
+masking the real failure. Fix at the root: the collector now binds to an
+ephemeral port (`listen(0)`) and the OS-assigned port is read back from
+`collector.address().port` and passed to the spawned artifact via
+`OTEL_EXPORTER_OTLP_ENDPOINT`, eliminating the collision class rather than
+picking a "less popular" fixed port. `afterAll` is now defensive against
+partial setup (guards on `api`/`collector`/`tdb`) so a genuine setup
+failure reports itself instead of a teardown `TypeError`. Validated by
+three consecutive fully-uncached (`--force`) serialized full-suite runs,
+all green (54 files / 516 tests each).
+
 ## Deviations / notes
 
 - **AI model tier** (decision 6): Claude Haiku default, not Sonnet —

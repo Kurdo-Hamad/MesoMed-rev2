@@ -15,13 +15,12 @@ import { createTestDatabase, type TestDatabase } from "@mesomed/db/testing";
  * against a mock OTLP collector and fails if no span reaches /v1/traces.
  */
 const API_PORT = 43117;
-const COLLECTOR_PORT = 43118;
 const apiDir = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 const traceBodies: Buffer[] = [];
-let tdb: TestDatabase;
-let collector: http.Server;
-let api: ChildProcessByStdio<null, Readable, Readable>;
+let tdb: TestDatabase | undefined;
+let collector: http.Server | undefined;
+let api: ChildProcessByStdio<null, Readable, Readable> | undefined;
 let apiOutput = "";
 let apiExited: Promise<number | null>;
 
@@ -54,7 +53,14 @@ beforeAll(async () => {
       res.end("{}");
     });
   });
-  await new Promise<void>((resolve) => collector.listen(COLLECTOR_PORT, resolve));
+  // Ephemeral port (0), not a hardcoded one: CI run 29212913871 failed with
+  // EADDRINUSE on a fixed collector port already held by another process on
+  // the runner — beforeAll hung to the hook timeout and afterAll threw
+  // because `api` was never assigned. Binding to 0 and reading back the
+  // OS-assigned port removes the collision entirely.
+  const server = collector;
+  await new Promise<void>((resolve) => server.listen(0, resolve));
+  const collectorPort = (server.address() as { port: number }).port;
 
   api = spawn(process.execPath, [path.join(apiDir, "dist", "main.js")], {
     cwd: apiDir,
@@ -65,7 +71,7 @@ beforeAll(async () => {
       PORT: String(API_PORT),
       DATABASE_URL: tdb.connectionString,
       BETTER_AUTH_SECRET: "test-secret-test-secret-test-secret-0000",
-      OTEL_EXPORTER_OTLP_ENDPOINT: `http://127.0.0.1:${COLLECTOR_PORT}`,
+      OTEL_EXPORTER_OTLP_ENDPOINT: `http://127.0.0.1:${collectorPort}`,
       // This test's NODE_ENV=production boots the real artifact to prove
       // OTel export, not to exercise adapter selection — supply (fake)
       // credentials for every channel so the mock-production guardrail
@@ -82,21 +88,31 @@ beforeAll(async () => {
     },
     stdio: ["ignore", "pipe", "pipe"],
   });
-  api.stdout.on("data", (chunk: Buffer) => (apiOutput += chunk.toString()));
-  api.stderr.on("data", (chunk: Buffer) => (apiOutput += chunk.toString()));
-  apiExited = new Promise((resolve) => api.on("exit", (code) => resolve(code)));
+  const proc = api;
+  proc.stdout.on("data", (chunk: Buffer) => (apiOutput += chunk.toString()));
+  proc.stderr.on("data", (chunk: Buffer) => (apiOutput += chunk.toString()));
+  apiExited = new Promise((resolve) => proc.on("exit", (code) => resolve(code)));
 
   await waitForHealth();
 }, 60_000);
 
 afterAll(async () => {
-  if (api.exitCode === null) api.kill("SIGKILL");
-  await new Promise<void>((resolve) => collector.close(() => resolve()));
-  await tdb.close();
+  // Defensive: beforeAll can fail partway through (e.g. the EADDRINUSE flake
+  // this guarded against), leaving later fields unassigned — teardown must
+  // not throw on top of an already-failed setup.
+  if (api && api.exitCode === null) api.kill("SIGKILL");
+  if (collector) {
+    const srv = collector;
+    await new Promise<void>((resolve) => srv.close(() => resolve()));
+  }
+  if (tdb) await tdb.close();
 });
 
 describe("opentelemetry export", () => {
   it("exports real trace spans to the collector and shuts down cleanly", async () => {
+    if (!api) throw new Error("beforeAll did not assign the api process");
+    const proc = api;
+
     for (let i = 0; i < 3; i++) {
       const res = await fetch(`http://127.0.0.1:${API_PORT}/trpc/health.check`);
       expect(res.status).toBe(200);
@@ -113,10 +129,10 @@ describe("opentelemetry export", () => {
       for (let attempt = 0; attempt < 150 && traceBodies.length === 0; attempt++) {
         await new Promise((resolve) => setTimeout(resolve, 100));
       }
-      api.kill("SIGKILL");
+      proc.kill("SIGKILL");
       await apiExited;
     } else {
-      api.kill("SIGTERM");
+      proc.kill("SIGTERM");
       const exitCode = await apiExited;
       expect(exitCode).toBe(0);
     }
