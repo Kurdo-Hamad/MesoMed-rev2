@@ -1,5 +1,6 @@
 import { spawn, type ChildProcessByStdio } from "node:child_process";
 import http from "node:http";
+import type { AddressInfo } from "node:net";
 import type { Readable } from "node:stream";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -15,7 +16,6 @@ import { createTestDatabase, type TestDatabase } from "@mesomed/db/testing";
  * against a mock OTLP collector and fails if no span reaches /v1/traces.
  */
 const API_PORT = 43117;
-const COLLECTOR_PORT = 43118;
 const apiDir = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 const traceBodies: Buffer[] = [];
@@ -54,7 +54,13 @@ beforeAll(async () => {
       res.end("{}");
     });
   });
-  await new Promise<void>((resolve) => collector.listen(COLLECTOR_PORT, resolve));
+  // Ephemeral port: CI run 29212913871 hit EADDRINUSE binding a hardcoded
+  // collector port that was already held, which left beforeAll hanging to
+  // the hook timeout and afterAll throwing on api.exitCode (api was never
+  // assigned). listen(0) lets the OS pick a free port so the collision
+  // can't recur.
+  await new Promise<void>((resolve) => collector.listen(0, resolve));
+  const collectorPort = (collector.address() as AddressInfo).port;
 
   api = spawn(process.execPath, [path.join(apiDir, "dist", "main.js")], {
     cwd: apiDir,
@@ -65,7 +71,7 @@ beforeAll(async () => {
       PORT: String(API_PORT),
       DATABASE_URL: tdb.connectionString,
       BETTER_AUTH_SECRET: "test-secret-test-secret-test-secret-0000",
-      OTEL_EXPORTER_OTLP_ENDPOINT: `http://127.0.0.1:${COLLECTOR_PORT}`,
+      OTEL_EXPORTER_OTLP_ENDPOINT: `http://127.0.0.1:${collectorPort}`,
       // This test's NODE_ENV=production boots the real artifact to prove
       // OTel export, not to exercise adapter selection — supply (fake)
       // credentials for every channel so the mock-production guardrail
@@ -90,9 +96,12 @@ beforeAll(async () => {
 }, 60_000);
 
 afterAll(async () => {
-  if (api.exitCode === null) api.kill("SIGKILL");
-  await new Promise<void>((resolve) => collector.close(() => resolve()));
-  await tdb.close();
+  // Guarded per-resource: a beforeAll failure can leave any of these
+  // unassigned, and an unguarded teardown throws a TypeError that masks
+  // the real setup error (the original symptom of CI run 29212913871).
+  if (api && api.exitCode === null) api.kill("SIGKILL");
+  if (collector) await new Promise<void>((resolve) => collector.close(() => resolve()));
+  if (tdb) await tdb.close();
 });
 
 describe("opentelemetry export", () => {
