@@ -3,8 +3,8 @@ import { base } from "@mesomed/eslint-config";
 export default [
   ...base,
   {
-    // Metro loads its config via require(), so this file must stay CommonJS.
-    files: ["metro.config.js"],
+    // Metro/Babel/Tailwind all load these via require(), so they must stay CommonJS.
+    files: ["metro.config.js", "babel.config.cjs", "tailwind.config.js"],
     languageOptions: {
       sourceType: "commonjs",
       globals: {
