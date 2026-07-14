@@ -152,3 +152,31 @@ owner prefers fewer PRs they merge cleanly into one slice.
    interop) is flagged "pre-Phase-9b hygiene" in the audit. Not
    touched by this slice; owner decision whether the `corepack enable`
    fix lands as its own commit before Slice 2.
+
+## 8. Owner decisions — 2026-07-14 (Slice 1 review; answers §7)
+
+1. **Walk-in booking: OUT of 9b** — deferred to its own future slice.
+   The ADR-0019-stub vs kickoff divergence is resolved by deferring,
+   not expanding; the deferral is to be recorded in closing ADR-0020.
+   Former Slice 5 is dropped.
+2. **`myAppointments.cancellable`: separate slice**, never bundled
+   into Slice 2 — its own branch → PR → CI-green → merge, sequenced at
+   implementer discretion after the queue slices.
+3. **Doctor encounter composers: not built in 9b.** Before assuming
+   out-of-scope, the existing phase-5/ADR-0010 clinical API is to be
+   inventoried read-only (does a doctor-facing note/prescription
+   composer surface already exist, thin-client- and pin-safe per
+   ADR-0013?) and reported — no build. Anything needing new tRPC is
+   out of 9b.
+4. **F-04: fix immediately, before Slice 2**, as its own documented
+   commit — not bundled into any slice.
+5. **New decision (record in ADR-0020, do NOT build in 9b):** a
+   "delay/bump late patient" queue capability (doctor chooses
+   no-show / reschedule / delay) is confirmed as future scope after
+   9b — it needs a new appointment state plus new API, both forbidden
+   this phase. The existing no-show and reschedule stay in 9b; a new
+   "delay" action does not.
+
+**Approved order:** F-04 fix (own commit) → Slice 2 (`allowedActions`)
+→ Slice 3 (read-only queue + pin commit) → Slice 4 (actions + pin
+commit) → `cancellable` slice (separate) → closing ADR-0020.
