@@ -23,6 +23,12 @@ context, and the liveness/readiness split (see `docs/adr/0003`). Phase 2
 ## Prerequisites
 
 - Node 22 (`.nvmrc`), pnpm 11 (`corepack enable` or `npm i -g pnpm@11`)
+  - **WSL with Windows interop:** run `corepack enable` from the active
+    node bin (e.g. the nvm version bin) so a Linux `pnpm` shim sits ahead
+    of `/mnt/c/...` on `PATH`. Without it, turbo re-resolves bare `pnpm`
+    per package task and spawns the _Windows_ npm-global shim through the
+    interop boundary — an extra failure layer in every local gate run
+    (MM-QA-003 F-04; remediation note in ADR-0018).
 - Postgres 16 for running the API locally (`DATABASE_URL`, see
   `apps/api/.env.example`; apply migrations with
   `pnpm --filter @mesomed/db db:migrate`). **Tests need no setup**: the test

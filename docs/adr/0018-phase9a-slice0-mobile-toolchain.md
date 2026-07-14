@@ -93,6 +93,32 @@ regenerated, per the deferral decision above.
   slice, since it was not needed to satisfy the (deferred) RTL regeneration
   item.
 
+## Amendment — 2026-07-14: MM-QA-003 F-04 remediation (gate tasks spawned the Windows pnpm shim)
+
+MM-QA-003 F-04 found a toolchain blind spot this ADR did not examine: the
+nvm node bin (`~/.nvm/versions/node/v24.16.0/bin`) carried no pnpm shim,
+so bare `pnpm` resolved through the WSL interop `PATH` to the **Windows**
+npm-global shim (`/mnt/c/Users/Lenovo/AppData/Roaming/npm/pnpm`). The
+documented `corepack pnpm` covered only the top-level invocation — turbo
+re-resolves `pnpm` from `PATH` for every package task, so every local
+gate run spawned its tasks across the Windows interop boundary (a
+plausible vector for the ADR-0019 deviation-#6 unattributed task-level
+`exited (1)`; version skew was ruled out, both shims were pnpm 11.10.0).
+
+**Remediation (2026-07-14):** `corepack enable` run in the nvm node bin.
+`which pnpm` under the documented gate `PATH` now resolves to the Linux
+shim (`~/.nvm/versions/node/v24.16.0/bin/pnpm`, 11.10.0, matching the
+`packageManager` pin); corepack also installs `pnpx`/`yarn` shims as a
+side effect (unused, harmless). Verified by a forced uncached serialized
+full-suite run under the new resolution, all tasks green (log
+`/tmp/f04-forced-gate-run.log`). This is an **environment** fix — nothing
+in the repo tree enforces it, so every WSL clone setup must run
+`corepack enable` once after installing node (README Prerequisites now
+says so). CI was never affected (Linux runners, `pnpm/action-setup`).
+Per MM-QA-003 F-04's disposition, any recurrence of F-03-class
+task-level exit-1 noise after this fix invalidates the interop-spawn
+hypothesis and must be root-caused afresh.
+
 ## Scope note
 
 This ADR covers Slice 0 only (the toolchain gate for the rest of Phase 9a).
