@@ -3,7 +3,7 @@
 |             |                                                                                                                                                                                                             |
 | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Date**    | 2026-07-14                                                                                                                                                                                                  |
-| **Status**  | Design note (Slice 1 deliverable — no code). Every recommendation below awaits owner approval; nothing is built before the §11 decisions are ruled.                                                         |
+| **Status**  | Design note (Slice 1 deliverable — no code). **Owner rulings recorded 2026-07-14** — D1–D5, D7 and the events question are RULED FINAL (§11). D4a and D6 were not addressed in the ruling and remain open.  |
 | **Scope**   | Phase 9c: the "delay/bump late patient" capability deferred by owner decision in MM-DES-001 §8 / ADR-0020. New procedures, a new appointment state, new events and enum widening are authorized this phase. |
 | **Sources** | ADR-0006 (state machine, double-booking invariant, events, two-layer authz), ADR-0013 (pin discipline), ADR-0020 (deferral + release-cut note), code cited by file:line at `main` @ `fd701ed`.              |
 
@@ -24,7 +24,14 @@ keys for all new copy with the F-10 guardrail green; pin changes only via
 `UPDATE_FROZEN_SURFACE=1` in their own commits with byte-identical priors
 verified.
 
-## 1. Representation — RECOMMENDED: a new `delayed` status
+## 1. Representation — RULED (2026-07-14): a new `delayed` status
+
+> **D1 — RULED FINAL (2026-07-14):** the owner adopts recommendation (A)
+> — a real `delayed` status, with exactly the edges listed below:
+> `confirmed`/`checked_in` → `delayed`; `delayed` →
+> `checked_in`/`no_show`/`cancelled`; and `delayed` → `confirmed`
+> reserved for the reschedule status reset (§4.4). Delay never touches
+> `starts_at`.
 
 **Recommendation (A): add `delayed` to `APPOINTMENT_STATUSES` and the
 transition map.** New edges in
@@ -156,6 +163,11 @@ honest model.
 
 ## 3. Queue order & re-entry — no persisted positions, no reordering writes
 
+> **D3 — RULED FINAL (2026-07-14):** `recall → checked_in`, CLINIC_SIDE,
+> no persisted queue positions. The recalled patient remains visible in
+> the queue; the doctor freely chooses the next patient. Grouping
+> delayed rows at the bottom of the list is presentation-only.
+
 **Recommendation: there is no queue-position column and no reordering.**
 `delay`/`recall` write exactly one row (the delayed appointment's
 `status`/`status_changed_at`) — the "never silently moves other
@@ -215,8 +227,9 @@ precedent, ADR-0020) if a screen wants "delayed 40 min ago".
    delayed at 19:55 either gets recalled before the doctor leaves or is
    no-showed / rescheduled / cancelled — all four resolutions remain
    offered on the row.
-4. **Reschedule from `delayed` — RECOMMENDED: allow, with a status
-   reset.** Reschedule is one of the owner's three explicit options and
+4. **Reschedule from `delayed` — RULED FINAL (2026-07-14, D4): allowed,
+   status resets to `confirmed`, as recommended.** Reschedule is one of
+   the owner's three explicit options and
    must remain available _after_ delay was chosen first ("can't stay —
    book me Thursday"). `RESCHEDULABLE_STATUSES` (`transitions.ts:36-39`)
    gains `delayed`, and the status-preservation rule (ADR-0006 §7,
@@ -242,6 +255,11 @@ precedent, ADR-0020) if a screen wants "delayed 40 min ago".
    currently a non-issue (no shipped binaries) and where the knob lives.
 
 ## 5. Events
+
+> **RULED FINAL (2026-07-14):** emit `booking.delayed.v1` on delay. No
+> subscriber this phase. Owner intent recorded: the future consumer is a
+> notification system (push, rendered in the user's selected app
+> language) — future slices, out of 9c scope (§12).
 
 - **New contract: `booking.delayed.v1`** —
   `defineEvent("booking", "delayed", 1, appointmentSnapshotSchema)`
@@ -283,6 +301,9 @@ precedent, ADR-0020) if a screen wants "delayed 40 min ago".
   exactly the statuses they parse today.
 
 ## 6. Authorization
+
+> **D2 — RULED FINAL (2026-07-14):** delay and recall are CLINIC_SIDE
+> only (secretary/doctor/admin). Patients get neither action.
 
 | Action   | Layer a (`roleProcedure`) | Layer b (edge `actors`) |
 | -------- | ------------------------- | ----------------------- |
@@ -336,11 +357,20 @@ mutation-list coverage for both new mutations
   web onto `allowedActions` (delete both maps, render server truth, wire
   all eight mutations) — it is the ADR-0020 "natural follow-up when a
   slice next touches that page", independently gateable.
+
+> **D5 — RULED FINAL (2026-07-14), overriding the recommendation
+> above:** web + mobile are built TOGETHER. Web is REQUIRED, not
+> optional — it gets the full delay/recall UI this phase (in Slice 3,
+> per the D7 ruling in §10), not catalog keys only. Rationale: doctors
+> work primarily on web/PC; patients on mobile; a simultaneous ship
+> enables a single marketing launch and a web-first patient acquisition
+> funnel.
+
 - **i18n keys (en/ar/ckb, all in the server slice — see §8 for why):**
   `status_delayed` in the mobile clinic and patient-appointments
   namespaces and `web.dashboard`; `action_delay`/`action_recall` in the
-  mobile clinic namespace (plus `web.dashboard` only if Slice 4 is ruled
-  in). Machine translations flagged for the existing deferred
+  mobile clinic namespace plus `web.dashboard` (required — the D5 ruling
+  puts the full web UI in Slice 3). Machine translations flagged for the existing deferred
   native-speaker human gate — not self-certified.
 
 ## 8. Pin impact — exact ledger (ADR-0013 / ADR-0020 release-cut note)
@@ -414,7 +444,12 @@ release cut, not this phase.
 - **Contracts/pins:** schema-surface regen diffs reviewed per §8; F-10
   i18n guardrail green.
 
-## 10. Proposed slice boundaries (each independently gateable)
+## 10. Slice boundaries (each independently gateable)
+
+> **D7 — RULED FINAL (2026-07-14): revised slice plan.** The list below
+> is the ruled plan. The originally drafted "optional web Slice 4" is
+> **superseded** — web work moves into Slice 3 as required (per D5), and
+> Slice 4 becomes the ADR-0021 closeout.
 
 - **Slice 1 (this document):** design note, own PR, then STOP for owner
   approval. ✅ No code.
@@ -429,27 +464,40 @@ release cut, not this phase.
   per §9. Final commit in the PR: schema-pin regeneration #1
   (`UPDATE_FROZEN_SURFACE=1`, own commit, nine-entry enum-only diff
   verified).
-- **Slice 3 — mobile consumption:** delay/recall buttons + delayed
-  section on `/clinic`, patient-appointments delayed rendering,
-  `MOBILE_CONSUMED` +2 with pin regeneration #2 (own commit),
-  client-driven per-flow tests incl. a layer-b denial through the real
-  session harness.
-- **Slice 4 (optional — owner decision D5):** web clinic migration onto
-  `allowedActions` (delete the hardcoded maps, wire all eight mutations,
-  delay/recall included for free).
-- **Close:** ADR-0021 (decisions, deviations, pin ledger, ADR-0006 dated
-  amendment note for the reschedule-status exception + machine
-  extension), then STOP.
+- **Slice 3 — mobile consumption and full web delay/recall UI,
+  together (per D5/D7 rulings):** mobile delay/recall buttons + delayed
+  section on `/clinic`, patient-appointments delayed rendering, the full
+  web delay/recall UI on the dashboard clinic page, `MOBILE_CONSUMED` +2
+  with pin regeneration #2 (own commit), client-driven per-flow tests
+  incl. a layer-b denial through the real session harness.
+- **Slice 4 — close: ADR-0021** (decisions, deviations, pin ledger,
+  ADR-0006 dated amendment note for the reschedule-status exception +
+  machine extension), then STOP. _(The drafted "optional web Slice 4" is
+  superseded — web work is required and lives in Slice 3.)_
 
-## 11. Decisions requested (blocking Slices 2+)
+## 11. Decisions — owner rulings of 2026-07-14 recorded as FINAL
 
-| #   | Decision                      | Recommendation                                                                                                                                                                |
-| --- | ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| D1  | Representation                | New `delayed` status (§1 A), not a deferral field                                                                                                                             |
-| D2  | Delay sources                 | `confirmed` and `checked_in` (parity with `noShow`; enables re-delay)                                                                                                         |
-| D3  | Re-entry                      | `recall → checked_in`, CLINIC_SIDE; no queue positions, no re-entry event                                                                                                     |
-| D4  | Reschedule from `delayed`     | Allow, status resets to `confirmed` (ADR-0006 amendment note)                                                                                                                 |
-| D4a | …and for `patient_owner` too? | Yes — reschedule is already ANY_PARTY from booked/confirmed; keeping the patient's existing verb on their own late appointment is consistent (they still cannot delay/recall) |
-| D5  | Web surface this phase        | Catalog keys only; full web migration as optional Slice 4                                                                                                                     |
-| D6  | Never-arrives sweep           | Manual `no_show` only; no cron                                                                                                                                                |
-| D7  | Slice boundaries              | §10 as proposed                                                                                                                                                               |
+| #   | Decision                      | Recommendation                                                                                                                                                                | Ruling (2026-07-14)                                                                                                                                                                                                                                                                                                                                                 |
+| --- | ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| D1  | Representation                | New `delayed` status (§1 A), not a deferral field                                                                                                                             | **RULED** — real `delayed` status per recommendation. Edges as specified: `confirmed`/`checked_in` → `delayed`; `delayed` → `checked_in`/`no_show`/`cancelled`; `delayed → confirmed` reserved for the reschedule reset. Delay never touches `starts_at` (§1)                                                                                                       |
+| D2  | Delay sources                 | `confirmed` and `checked_in` (parity with `noShow`; enables re-delay)                                                                                                         | **RULED** — sources `confirmed` + `checked_in`, fixed by the D1 edge set. The owner's D2 ruling additionally fixes actors: delay + recall are CLINIC_SIDE only (secretary/doctor/admin); patients get neither action (§6)                                                                                                                                           |
+| D3  | Re-entry                      | `recall → checked_in`, CLINIC_SIDE; no queue positions, no re-entry event                                                                                                     | **RULED** — `recall → checked_in`, CLINIC_SIDE, no persisted queue positions. Recalled patient remains visible in the queue; the doctor freely chooses the next patient. Delayed rows grouped at the bottom of the list is presentation-only (§3)                                                                                                                   |
+| D4  | Reschedule from `delayed`     | Allow, status resets to `confirmed` (ADR-0006 amendment note)                                                                                                                 | **RULED** — allowed, resets to `confirmed` (§4.4)                                                                                                                                                                                                                                                                                                                   |
+| D4a | …and for `patient_owner` too? | Yes — reschedule is already ANY_PARTY from booked/confirmed; keeping the patient's existing verb on their own late appointment is consistent (they still cannot delay/recall) | **OPEN** — not addressed in the 2026-07-14 ruling                                                                                                                                                                                                                                                                                                                   |
+| D5  | Web surface this phase        | Catalog keys only; full web migration as optional Slice 4                                                                                                                     | **RULED, recommendation overridden** — web + mobile built TOGETHER; web is REQUIRED, not optional (full delay/recall UI). Rationale: doctors work primarily on web/PC; patients on mobile; simultaneous ship enables a single marketing launch and a web-first patient acquisition funnel (§7)                                                                      |
+| D6  | Never-arrives sweep           | Manual `no_show` only; no cron                                                                                                                                                | **OPEN** — not addressed in the 2026-07-14 ruling                                                                                                                                                                                                                                                                                                                   |
+| D7  | Slice boundaries              | §10 as proposed                                                                                                                                                               | **RULED, revised** — Slice 2 = server vertical (domain edges via `APPOINTMENT_ACTION_EDGES` refactor, contracts, migration 0009, API, enum widening, en/ar/ckb keys, frozen-surface regen #1); Slice 3 = mobile consumption and full web delay/recall UI, together (+regen #2); Slice 4 = ADR-0021 closeout. The drafted "optional web Slice 4" is superseded (§10) |
+| EV  | Events                        | Emit `booking.delayed.v1` on delay; no recall event; no subscriber this phase (§5)                                                                                            | **RULED** — emit `booking.delayed.v1` on delay. No subscriber this phase. Owner intent recorded: future consumer is a notification system (push, in the user's selected app language) — future slices, out of 9c scope (§5, §12)                                                                                                                                    |
+
+## 12. Deferred / backlog — owner-required future work (out of 9c scope)
+
+Recorded 2026-07-14 by owner ruling. These are **required future work**,
+not optional ideas; neither belongs to any 9c slice.
+
+1. **Notification system:** mobile push + a web bell-icon notification
+   center. Notifications are both pushed AND persisted (readable later);
+   rendered in the user's selected language. A shared persistence
+   foundation likely precedes both platform slices. First planned
+   consumer of `booking.delayed.v1` (§5).
+2. **Patient-initiated delay/reschedule/cancel requests** with a
+   secretary approval workflow.
