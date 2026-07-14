@@ -127,6 +127,17 @@ router-schema-surface.test.ts` + `frozen-schema-surface.json`)
    token lands via the Phase 7 API against mock adapters; real Expo
    push delivery is part of the device-verification human gate.
 
+8. **Offline-tolerant browsing (cached queries) deferred — owner
+   decision 2026-07-14 (MM-QA-003 F-01):** MM-PLAN-001 §5 Phase 9
+   lists "offline-tolerant browsing (cached queries) verified" as a
+   gate item. It was not implemented in slices 0–6: the mobile query
+   client is plain in-memory with no persistence, and the gap was
+   absent from this ADR's original shipped/deviation lists. Rather
+   than bolt persistence onto a merged phase, the owner defers it to
+   its own future slice (Phase 9b or later) with proper tests. This
+   gate item is formally waived for the 9a close-out; it must be
+   re-raised before any phase certifies offline capability.
+
 ## Phase 9b (deferred scope)
 
 Doctor/secretary mobile queue views — clinic-day lists, check-in flow,
