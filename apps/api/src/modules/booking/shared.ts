@@ -9,6 +9,7 @@ import {
   ACTIVE_APPOINTMENT_STATUSES,
   findSlotByStart,
   intervalsOverlap,
+  type AppointmentActorKind,
   type Interval,
 } from "@mesomed/domain/booking";
 import { generateSlotsForRange, getDayRangeInZone } from "@mesomed/domain/scheduling";
@@ -162,7 +163,9 @@ export function isSlotUniqueViolation(error: unknown): boolean {
 
 // ── Layer-b actor checks (§3.6) ────────────────────────────────────────
 
-export type AppointmentActor = "admin" | "owning_doctor" | "assigned_secretary" | "patient_owner";
+// Single source in the domain package (allowed-actions.ts) so affordance
+// computation and enforcement share one definition.
+export type AppointmentActor = AppointmentActorKind;
 
 /**
  * Passes when the session satisfies at least one allowed actor binding

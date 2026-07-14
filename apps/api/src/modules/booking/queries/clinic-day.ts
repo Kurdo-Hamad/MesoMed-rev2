@@ -9,6 +9,7 @@
 import type { z } from "zod";
 import type { clinicDayOutputSchema } from "@mesomed/contracts/booking";
 import { ErrorCode } from "@mesomed/contracts/errors";
+import { allowedAppointmentActions, type AppointmentActorKind } from "@mesomed/domain/booking";
 import { getDayRangeInZone } from "@mesomed/domain/scheduling";
 import { and, appointments, asc, eq, gte, lt, type DbExecutor } from "@mesomed/db";
 import type { Session } from "../../../kernel/context.js";
@@ -31,16 +32,27 @@ export async function getClinicDay(
   if (!doctorLocation) throw new AppError(ErrorCode.NOT_FOUND, "Doctor location not found");
 
   // Layer b: admin, owning doctor, or assigned secretary — same bindings
-  // as the lifecycle commands' actor matrix.
-  let bound = session.roles.includes("admin");
-  if (!bound && session.roles.includes("doctor")) {
-    const doctorProfileId = await getDoctorProfileIdForUser(db, session.userId);
-    bound = doctorProfileId !== null && doctorProfileId === doctorLocation.doctorProfileId;
+  // as the lifecycle commands' actor matrix. Every satisfied binding is
+  // kept (not just the first) because the per-item allowedActions below
+  // are the union over the caller's bindings; admin short-circuits as it
+  // is on every allow-list.
+  const actors: AppointmentActorKind[] = [];
+  if (session.roles.includes("admin")) {
+    actors.push("admin");
+  } else {
+    if (session.roles.includes("doctor")) {
+      const doctorProfileId = await getDoctorProfileIdForUser(db, session.userId);
+      if (doctorProfileId !== null && doctorProfileId === doctorLocation.doctorProfileId) {
+        actors.push("owning_doctor");
+      }
+    }
+    if (session.roles.includes("secretary")) {
+      if (await isSecretaryAssigned(db, session.userId, input.doctorLocationId)) {
+        actors.push("assigned_secretary");
+      }
+    }
   }
-  if (!bound && session.roles.includes("secretary")) {
-    bound = await isSecretaryAssigned(db, session.userId, input.doctorLocationId);
-  }
-  if (!bound) {
+  if (actors.length === 0) {
     throw new AppError(ErrorCode.FORBIDDEN, "Not authorized for this doctor location");
   }
 
@@ -95,6 +107,7 @@ export async function getClinicDay(
         patientName: contact?.fullName ?? null,
         patientPhone: contact?.normalizedPhone ?? null,
         note: row.note,
+        allowedActions: allowedAppointmentActions(row.status, actors),
       };
     }),
   };

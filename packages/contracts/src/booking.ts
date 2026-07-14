@@ -115,6 +115,21 @@ export const myAppointmentsOutputSchema = z.object({
 
 // ── Clinic reads (Phase 8 dashboards) ──────────────────────────────────
 
+/**
+ * Lifecycle actions a clinic-side actor can take on an appointment, each
+ * backed by the booking mutation of the same name. Deliberately excludes
+ * reschedule (not a status transition; carries its own input shape).
+ */
+export const APPOINTMENT_ACTIONS = [
+  "confirm",
+  "checkIn",
+  "start",
+  "complete",
+  "noShow",
+  "cancel",
+] as const;
+export type AppointmentAction = (typeof APPOINTMENT_ACTIONS)[number];
+
 export const clinicDayInputSchema = z.object({
   doctorLocationId: z.string().uuid(),
   /** Any instant within the desired day (location timezone); defaults to now. */
@@ -132,6 +147,13 @@ export const clinicAppointmentItemSchema = z.object({
   patientName: z.string().nullable(),
   patientPhone: z.string().nullable(),
   note: z.string().nullable(),
+  /**
+   * Actions the CALLING actor may take on this appointment right now,
+   * computed server-side from the transition map and the same actor
+   * allow-lists the mutations enforce (MM-QA-003 F-07). Clients render
+   * exactly these — never local status rules.
+   */
+  allowedActions: z.array(z.enum(APPOINTMENT_ACTIONS)),
 });
 
 export const clinicDayOutputSchema = z.object({
