@@ -5,6 +5,7 @@
  */
 import type { z } from "zod";
 import type { myAppointmentsOutputSchema } from "@mesomed/contracts/booking";
+import { allowedAppointmentActions } from "@mesomed/domain/booking";
 import { appointments, desc, eq, type DbExecutor } from "@mesomed/db";
 import { getPatientProfileIdForUser } from "../../identity/queries/user-profiles.js";
 
@@ -36,6 +37,9 @@ export async function listMyAppointments(
       ...row,
       startsAt: row.startsAt.toISOString(),
       endsAt: row.endsAt.toISOString(),
+      // Same single source as clinicDay's allowedActions (F-07): cancel is
+      // offered iff the transition is legal and patient_owner is allowed.
+      cancellable: allowedAppointmentActions(row.status, ["patient_owner"]).includes("cancel"),
     })),
   };
 }

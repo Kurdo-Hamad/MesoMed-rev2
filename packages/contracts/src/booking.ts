@@ -107,6 +107,14 @@ export const appointmentListItemSchema = z.object({
   endsAt: z.string(),
   status: z.enum(APPOINTMENT_STATUSES),
   bookedVia: z.enum(BOOKING_CHANNELS),
+  /**
+   * Whether the patient may cancel right now — computed server-side from
+   * the same transition map + actor allow-lists as clinicDay's
+   * allowedActions (MM-QA-003 F-07). Clients render this flag, never a
+   * local status rule. Additive output field: passes the frozen pin
+   * without regeneration.
+   */
+  cancellable: z.boolean(),
 });
 
 export const myAppointmentsOutputSchema = z.object({
