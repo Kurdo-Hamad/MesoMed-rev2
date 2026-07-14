@@ -31,6 +31,10 @@ import {
   weekAvailabilityOutputSchema,
 } from "@mesomed/contracts/booking";
 import { ErrorCode } from "@mesomed/contracts/errors";
+// The allow-lists live in the domain package so the server-computed
+// allowedActions affordances (clinic-day) gate on the SAME objects the
+// commands enforce — they cannot drift (MM-QA-003 F-07).
+import { ANY_PARTY, CLINIC_SIDE, DOCTOR_ONLY, FRONT_DESK } from "@mesomed/domain/booking";
 import { roleProcedure } from "../../kernel/authz.js";
 import { AppError } from "../../kernel/errors.js";
 import { publicProcedure, router } from "../../kernel/trpc.js";
@@ -41,17 +45,6 @@ import { getClinicDay } from "./queries/clinic-day.js";
 import { getWeekAvailability } from "./queries/week-availability.js";
 import { listMyAppointments } from "./queries/my-appointments.js";
 import { isSecretaryAssigned } from "../scheduling/queries/schedule-inputs.js";
-import type { AppointmentActor } from "./shared.js";
-
-const CLINIC_SIDE: readonly AppointmentActor[] = ["assigned_secretary", "owning_doctor", "admin"];
-const FRONT_DESK: readonly AppointmentActor[] = ["assigned_secretary", "admin"];
-const DOCTOR_ONLY: readonly AppointmentActor[] = ["owning_doctor", "admin"];
-const ANY_PARTY: readonly AppointmentActor[] = [
-  "patient_owner",
-  "assigned_secretary",
-  "owning_doctor",
-  "admin",
-];
 
 export interface BookingRouterDeps {
   /** Identity's published find-or-create — see CreateGuestPatientProfile. */
