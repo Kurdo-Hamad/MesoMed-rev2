@@ -1,0 +1,28 @@
+# Guest booking end-to-end (MM-DEC rev02 §1, ADR-0004 #14): no account,
+# no OTP — open a bookable doctor, pick a slot, submit name+phone, land
+# on the confirmation. Runs against the dev-embedded API harness with
+# E2E fixtures (dr-ahmed-doctor has an open 09:00–17:00 schedule); the
+# app renders the platform-default ckb catalog, so every asserted string
+# below is the ckb value of the referenced key (packages/i18n).
+appId: krd.mesomed.app
+---
+- launchApp
+- openLink: mesomed://book/dr-ahmed-doctor
+# web.book.title
+- assertVisible: "نۆرە وەرگرتن"
+# First open slot in the week grid (ASCII digits per ADR-0016 date/digit
+# convention; times render HH:MM).
+- tapOn:
+    text: "09:00"
+# web.book.details — patient form appeared
+- assertVisible: "زانیارییەکانت"
+# web.book.fullName field, then web.book.phone field
+- tapOn: "ناوی تەواو"
+- inputText: "Maestro Guest"
+- tapOn: "ژمارەی تەلەفۆن"
+- inputText: "+9647701234567"
+- hideKeyboard
+# web.book.submit
+- tapOn: "پشتڕاستکردنەوەی نۆرە"
+# web.book.booked — confirmation screen
+- assertVisible: "نۆرەکەت وەرگیرا"

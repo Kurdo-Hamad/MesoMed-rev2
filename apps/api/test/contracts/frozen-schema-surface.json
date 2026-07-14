@@ -1,0 +1,2261 @@
+[
+  {
+    "path": "ai.triageSymptoms",
+    "input": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000
+        }
+      },
+      "required": ["text"]
+    },
+    "output": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "redFlag": {
+          "type": "boolean"
+        },
+        "specialties": {
+          "maxItems": 3,
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "engine": {
+          "type": "string",
+          "enum": ["model", "keyword", "red_flag"]
+        }
+      },
+      "required": ["redFlag", "specialties", "engine"],
+      "additionalProperties": false
+    }
+  },
+  {
+    "path": "booking.cancel",
+    "input": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "appointmentId": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+        },
+        "reason": {
+          "type": "string",
+          "maxLength": 500
+        }
+      },
+      "required": ["appointmentId"]
+    },
+    "output": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "appointmentId": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "booked",
+            "confirmed",
+            "checked_in",
+            "in_progress",
+            "completed",
+            "cancelled",
+            "no_show"
+          ]
+        }
+      },
+      "required": ["appointmentId", "status"],
+      "additionalProperties": false
+    }
+  },
+  {
+    "path": "booking.guestBook",
+    "input": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "doctorLocationId": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+        },
+        "startsAt": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+        },
+        "patient": {
+          "type": "object",
+          "properties": {
+            "fullName": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "phone": {
+              "type": "string",
+              "minLength": 5,
+              "maxLength": 30
+            },
+            "dateOfBirth": {
+              "type": "string",
+              "format": "date",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+            },
+            "gender": {
+              "type": "string",
+              "enum": ["male", "female"]
+            },
+            "email": {
+              "type": "string",
+              "maxLength": 254,
+              "format": "email",
+              "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+            }
+          },
+          "required": ["fullName", "phone"]
+        },
+        "note": {
+          "type": "string",
+          "maxLength": 500
+        }
+      },
+      "required": ["doctorLocationId", "startsAt", "patient"]
+    },
+    "output": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "appointmentId": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "booked",
+            "confirmed",
+            "checked_in",
+            "in_progress",
+            "completed",
+            "cancelled",
+            "no_show"
+          ]
+        },
+        "startsAt": {
+          "type": "string"
+        },
+        "endsAt": {
+          "type": "string"
+        },
+        "patientProfileCreated": {
+          "type": "boolean"
+        }
+      },
+      "required": ["appointmentId", "status", "startsAt", "endsAt", "patientProfileCreated"],
+      "additionalProperties": false
+    }
+  },
+  {
+    "path": "booking.myAppointments",
+    "input": null,
+    "output": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "appointments": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "appointmentId": {
+                "type": "string"
+              },
+              "doctorLocationId": {
+                "type": "string"
+              },
+              "startsAt": {
+                "type": "string"
+              },
+              "endsAt": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "booked",
+                  "confirmed",
+                  "checked_in",
+                  "in_progress",
+                  "completed",
+                  "cancelled",
+                  "no_show"
+                ]
+              },
+              "bookedVia": {
+                "type": "string",
+                "enum": ["guest_web", "patient_account", "secretary_walk_in"]
+              }
+            },
+            "required": [
+              "appointmentId",
+              "doctorLocationId",
+              "startsAt",
+              "endsAt",
+              "status",
+              "bookedVia"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": ["appointments"],
+      "additionalProperties": false
+    }
+  },
+  {
+    "path": "booking.weekAvailability",
+    "input": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "doctorLocationId": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+        },
+        "anchor": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+        }
+      },
+      "required": ["doctorLocationId"]
+    },
+    "output": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "doctorLocationId": {
+          "type": "string"
+        },
+        "timeZone": {
+          "type": "string"
+        },
+        "days": {
+          "minItems": 7,
+          "maxItems": 7,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "date": {
+                "type": "string"
+              },
+              "dayOfWeek": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 6
+              },
+              "isOpen": {
+                "type": "boolean"
+              },
+              "isToday": {
+                "type": "boolean"
+              },
+              "isPast": {
+                "type": "boolean"
+              },
+              "slots": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "startsAt": {
+                      "type": "string"
+                    },
+                    "endsAt": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["startsAt", "endsAt"],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": ["date", "dayOfWeek", "isOpen", "isToday", "isPast", "slots"],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": ["doctorLocationId", "timeZone", "days"],
+      "additionalProperties": false
+    }
+  },
+  {
+    "path": "clinical.addReportedMedication",
+    "input": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "medicationName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        },
+        "dosage": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        },
+        "source": {
+          "type": "string",
+          "enum": ["self_prescribed", "over_the_counter"]
+        },
+        "notes": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 5000
+        }
+      },
+      "required": ["medicationName", "source"]
+    },
+    "output": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "reportedMedicationId": {
+          "type": "string"
+        },
+        "patientProfileId": {
+          "type": "string"
+        },
+        "medicationName": {
+          "type": "string"
+        },
+        "dosage": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "source": {
+          "type": "string",
+          "enum": ["self_prescribed", "over_the_counter"]
+        },
+        "notes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "createdAt": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "reportedMedicationId",
+        "patientProfileId",
+        "medicationName",
+        "dosage",
+        "source",
+        "notes",
+        "createdAt"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "path": "clinical.encounterNotes",
+    "input": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "encounterId": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+        }
+      },
+      "required": ["encounterId"]
+    },
+    "output": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "encounterId": {
+          "type": "string"
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "visitNoteId": {
+                "type": "string"
+              },
+              "encounterId": {
+                "type": "string"
+              },
+              "amendsNoteId": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "authorUserId": {
+                "type": "string"
+              },
+              "content": {
+                "type": "string"
+              },
+              "createdAt": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "visitNoteId",
+              "encounterId",
+              "amendsNoteId",
+              "authorUserId",
+              "content",
+              "createdAt"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": ["encounterId", "notes"],
+      "additionalProperties": false
+    }
+  },
+  {
+    "path": "clinical.myClinicalRecord",
+    "input": null,
+    "output": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "patientProfileId": {
+          "type": "string"
+        },
+        "prescriptionChains": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "revisions": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "prescriptionId": {
+                      "type": "string"
+                    },
+                    "encounterId": {
+                      "type": "string"
+                    },
+                    "doctorProfileId": {
+                      "type": "string"
+                    },
+                    "patientProfileId": {
+                      "type": "string"
+                    },
+                    "medicationName": {
+                      "type": "string"
+                    },
+                    "dosage": {
+                      "type": "string"
+                    },
+                    "frequency": {
+                      "type": "string"
+                    },
+                    "duration": {
+                      "type": "string"
+                    },
+                    "instructions": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": ["active", "superseded", "discontinued"]
+                    },
+                    "supersedesPrescriptionId": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "issuedAt": {
+                      "type": "string"
+                    },
+                    "createdAt": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "prescriptionId",
+                    "encounterId",
+                    "doctorProfileId",
+                    "patientProfileId",
+                    "medicationName",
+                    "dosage",
+                    "frequency",
+                    "duration",
+                    "instructions",
+                    "status",
+                    "supersedesPrescriptionId",
+                    "issuedAt",
+                    "createdAt"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": ["revisions"],
+            "additionalProperties": false
+          }
+        },
+        "medicalProfile": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "patientProfileId": {
+                  "type": "string"
+                },
+                "bloodType": {
+                  "type": "string",
+                  "enum": ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-", "unknown"]
+                },
+                "allergies": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "notes": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "updatedAt": {
+                  "type": "string"
+                }
+              },
+              "required": ["patientProfileId", "bloodType", "allergies", "notes", "updatedAt"],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reportedMedications": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "reportedMedicationId": {
+                "type": "string"
+              },
+              "patientProfileId": {
+                "type": "string"
+              },
+              "medicationName": {
+                "type": "string"
+              },
+              "dosage": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "source": {
+                "type": "string",
+                "enum": ["self_prescribed", "over_the_counter"]
+              },
+              "notes": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "createdAt": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "reportedMedicationId",
+              "patientProfileId",
+              "medicationName",
+              "dosage",
+              "source",
+              "notes",
+              "createdAt"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "patientProfileId",
+        "prescriptionChains",
+        "medicalProfile",
+        "reportedMedications"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "path": "clinical.myEncounters",
+    "input": null,
+    "output": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "encounters": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "encounterId": {
+                "type": "string"
+              },
+              "appointmentId": {
+                "type": "string"
+              },
+              "doctorProfileId": {
+                "type": "string"
+              },
+              "patientProfileId": {
+                "type": "string"
+              },
+              "startsAt": {
+                "type": "string"
+              },
+              "endsAt": {
+                "type": "string"
+              },
+              "createdAt": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "encounterId",
+              "appointmentId",
+              "doctorProfileId",
+              "patientProfileId",
+              "startsAt",
+              "endsAt",
+              "createdAt"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": ["encounters"],
+      "additionalProperties": false
+    }
+  },
+  {
+    "path": "clinical.removeReportedMedication",
+    "input": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "reportedMedicationId": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+        }
+      },
+      "required": ["reportedMedicationId"]
+    },
+    "output": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "reportedMedicationId": {
+          "type": "string"
+        },
+        "removed": {
+          "type": "boolean"
+        }
+      },
+      "required": ["reportedMedicationId", "removed"],
+      "additionalProperties": false
+    }
+  },
+  {
+    "path": "clinical.upsertMedicalProfile",
+    "input": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "bloodType": {
+          "type": "string",
+          "enum": ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-", "unknown"]
+        },
+        "allergies": {
+          "maxItems": 100,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          }
+        },
+        "notes": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 10000
+        }
+      },
+      "required": ["bloodType", "allergies"]
+    },
+    "output": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "patientProfileId": {
+          "type": "string"
+        },
+        "bloodType": {
+          "type": "string",
+          "enum": ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-", "unknown"]
+        },
+        "allergies": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "notes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "updatedAt": {
+          "type": "string"
+        }
+      },
+      "required": ["patientProfileId", "bloodType", "allergies", "notes", "updatedAt"],
+      "additionalProperties": false
+    }
+  },
+  {
+    "path": "communication.registerDeviceToken",
+    "input": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "token": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        },
+        "platform": {
+          "type": "string",
+          "enum": ["ios", "android"]
+        }
+      },
+      "required": ["token", "platform"]
+    },
+    "output": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "deviceTokenId": {
+          "type": "string"
+        }
+      },
+      "required": ["deviceTokenId"],
+      "additionalProperties": false
+    }
+  },
+  {
+    "path": "communication.unregisterDeviceToken",
+    "input": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "token": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        }
+      },
+      "required": ["token"]
+    },
+    "output": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "unregistered": {
+          "type": "boolean"
+        }
+      },
+      "required": ["unregistered"],
+      "additionalProperties": false
+    }
+  },
+  {
+    "path": "directory.browseDoctors",
+    "input": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "specialtyKey": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "citySlug": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "cursor": {
+          "type": "string",
+          "maxLength": 2000
+        },
+        "limit": {
+          "default": 12,
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 50
+        }
+      }
+    },
+    "output": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "slug": {
+                "type": "string"
+              },
+              "name": {
+                "type": "object",
+                "properties": {
+                  "en": {
+                    "type": "string"
+                  },
+                  "ar": {
+                    "type": "string"
+                  },
+                  "ckb": {
+                    "type": "string"
+                  }
+                },
+                "required": ["en", "ar", "ckb"],
+                "additionalProperties": false
+              },
+              "specialtyKey": {
+                "type": "string"
+              },
+              "specialtyName": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "en": {
+                        "type": "string"
+                      },
+                      "ar": {
+                        "type": "string"
+                      },
+                      "ckb": {
+                        "type": "string"
+                      }
+                    },
+                    "required": ["en", "ar", "ckb"],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "citySlug": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "cityName": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "en": {
+                        "type": "string"
+                      },
+                      "ar": {
+                        "type": "string"
+                      },
+                      "ckb": {
+                        "type": "string"
+                      }
+                    },
+                    "required": ["en", "ar", "ckb"],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "photoUrl": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "slug",
+              "name",
+              "specialtyKey",
+              "specialtyName",
+              "citySlug",
+              "cityName",
+              "photoUrl"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "nextCursor": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": ["items", "nextCursor"],
+      "additionalProperties": false
+    }
+  },
+  {
+    "path": "directory.browseFacilities",
+    "input": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "categorySlug": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "citySlug": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "cursor": {
+          "type": "string",
+          "maxLength": 2000
+        },
+        "limit": {
+          "default": 12,
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 50
+        }
+      },
+      "required": ["categorySlug"]
+    },
+    "output": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "slug": {
+                "type": "string"
+              },
+              "name": {
+                "type": "object",
+                "properties": {
+                  "en": {
+                    "type": "string"
+                  },
+                  "ar": {
+                    "type": "string"
+                  },
+                  "ckb": {
+                    "type": "string"
+                  }
+                },
+                "required": ["en", "ar", "ckb"],
+                "additionalProperties": false
+              },
+              "citySlug": {
+                "type": "string"
+              },
+              "cityName": {
+                "type": "object",
+                "properties": {
+                  "en": {
+                    "type": "string"
+                  },
+                  "ar": {
+                    "type": "string"
+                  },
+                  "ckb": {
+                    "type": "string"
+                  }
+                },
+                "required": ["en", "ar", "ckb"],
+                "additionalProperties": false
+              },
+              "tierRank": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "featured": {
+                "type": "boolean"
+              },
+              "photoPath": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "slug",
+              "name",
+              "citySlug",
+              "cityName",
+              "tierRank",
+              "featured",
+              "photoPath"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "nextCursor": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": ["items", "nextCursor"],
+      "additionalProperties": false
+    }
+  },
+  {
+    "path": "directory.doctorDetail",
+    "input": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "slugOrId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        }
+      },
+      "required": ["slugOrId"]
+    },
+    "output": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "slug": {
+          "type": "string"
+        },
+        "name": {
+          "type": "object",
+          "properties": {
+            "en": {
+              "type": "string"
+            },
+            "ar": {
+              "type": "string"
+            },
+            "ckb": {
+              "type": "string"
+            }
+          },
+          "required": ["en", "ar", "ckb"],
+          "additionalProperties": false
+        },
+        "bio": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "en": {
+                  "type": "string"
+                },
+                "ar": {
+                  "type": "string"
+                },
+                "ckb": {
+                  "type": "string"
+                }
+              },
+              "required": ["en", "ar", "ckb"],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "specialtyKey": {
+          "type": "string"
+        },
+        "specialtyName": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "en": {
+                  "type": "string"
+                },
+                "ar": {
+                  "type": "string"
+                },
+                "ckb": {
+                  "type": "string"
+                }
+              },
+              "required": ["en", "ar", "ckb"],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "citySlug": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "cityName": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "en": {
+                  "type": "string"
+                },
+                "ar": {
+                  "type": "string"
+                },
+                "ckb": {
+                  "type": "string"
+                }
+              },
+              "required": ["en", "ar", "ckb"],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "photoUrl": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "slug",
+        "name",
+        "bio",
+        "specialtyKey",
+        "specialtyName",
+        "citySlug",
+        "cityName",
+        "photoUrl"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "path": "directory.facilityDetail",
+    "input": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "slugOrId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        }
+      },
+      "required": ["slugOrId"]
+    },
+    "output": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "slug": {
+          "type": "string"
+        },
+        "name": {
+          "type": "object",
+          "properties": {
+            "en": {
+              "type": "string"
+            },
+            "ar": {
+              "type": "string"
+            },
+            "ckb": {
+              "type": "string"
+            }
+          },
+          "required": ["en", "ar", "ckb"],
+          "additionalProperties": false
+        },
+        "categorySlug": {
+          "type": "string"
+        },
+        "categoryName": {
+          "type": "object",
+          "properties": {
+            "en": {
+              "type": "string"
+            },
+            "ar": {
+              "type": "string"
+            },
+            "ckb": {
+              "type": "string"
+            }
+          },
+          "required": ["en", "ar", "ckb"],
+          "additionalProperties": false
+        },
+        "citySlug": {
+          "type": "string"
+        },
+        "cityName": {
+          "type": "object",
+          "properties": {
+            "en": {
+              "type": "string"
+            },
+            "ar": {
+              "type": "string"
+            },
+            "ckb": {
+              "type": "string"
+            }
+          },
+          "required": ["en", "ar", "ckb"],
+          "additionalProperties": false
+        },
+        "address": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "en": {
+                  "type": "string"
+                },
+                "ar": {
+                  "type": "string"
+                },
+                "ckb": {
+                  "type": "string"
+                }
+              },
+              "required": ["en", "ar", "ckb"],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "phone": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "email": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "websiteOrSocial": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "about": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "en": {
+                  "type": "string"
+                },
+                "ar": {
+                  "type": "string"
+                },
+                "ckb": {
+                  "type": "string"
+                }
+              },
+              "required": ["en", "ar", "ckb"],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "whyChooseUs": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "en": {
+                  "type": "string"
+                },
+                "ar": {
+                  "type": "string"
+                },
+                "ckb": {
+                  "type": "string"
+                }
+              },
+              "required": ["en", "ar", "ckb"],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "tierRank": {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+        },
+        "featured": {
+          "type": "boolean"
+        },
+        "media": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string"
+              },
+              "alt": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "en": {
+                        "type": "string"
+                      },
+                      "ar": {
+                        "type": "string"
+                      },
+                      "ckb": {
+                        "type": "string"
+                      }
+                    },
+                    "required": ["en", "ar", "ckb"],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": ["path", "alt"],
+            "additionalProperties": false
+          }
+        },
+        "sections": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "sectionTypeKey": {
+                "type": "string"
+              },
+              "sectionTypeLabel": {
+                "type": "object",
+                "properties": {
+                  "en": {
+                    "type": "string"
+                  },
+                  "ar": {
+                    "type": "string"
+                  },
+                  "ckb": {
+                    "type": "string"
+                  }
+                },
+                "required": ["en", "ar", "ckb"],
+                "additionalProperties": false
+              },
+              "name": {
+                "type": "object",
+                "properties": {
+                  "en": {
+                    "type": "string"
+                  },
+                  "ar": {
+                    "type": "string"
+                  },
+                  "ckb": {
+                    "type": "string"
+                  }
+                },
+                "required": ["en", "ar", "ckb"],
+                "additionalProperties": false
+              },
+              "imagePath": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": ["id", "sectionTypeKey", "sectionTypeLabel", "name", "imagePath"],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "id",
+        "slug",
+        "name",
+        "categorySlug",
+        "categoryName",
+        "citySlug",
+        "cityName",
+        "address",
+        "phone",
+        "email",
+        "websiteOrSocial",
+        "about",
+        "whyChooseUs",
+        "tierRank",
+        "featured",
+        "media",
+        "sections"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "path": "directory.homepageFeed",
+    "input": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "citySlug": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "limit": {
+          "default": 8,
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 24
+        }
+      }
+    },
+    "output": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "slots": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "const": "facility"
+                  },
+                  "categorySlug": {
+                    "type": "string"
+                  },
+                  "promoted": {
+                    "type": "boolean"
+                  },
+                  "facility": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "slug": {
+                        "type": "string"
+                      },
+                      "name": {
+                        "type": "object",
+                        "properties": {
+                          "en": {
+                            "type": "string"
+                          },
+                          "ar": {
+                            "type": "string"
+                          },
+                          "ckb": {
+                            "type": "string"
+                          }
+                        },
+                        "required": ["en", "ar", "ckb"],
+                        "additionalProperties": false
+                      },
+                      "citySlug": {
+                        "type": "string"
+                      },
+                      "cityName": {
+                        "type": "object",
+                        "properties": {
+                          "en": {
+                            "type": "string"
+                          },
+                          "ar": {
+                            "type": "string"
+                          },
+                          "ckb": {
+                            "type": "string"
+                          }
+                        },
+                        "required": ["en", "ar", "ckb"],
+                        "additionalProperties": false
+                      },
+                      "tierRank": {
+                        "type": "integer",
+                        "minimum": -9007199254740991,
+                        "maximum": 9007199254740991
+                      },
+                      "featured": {
+                        "type": "boolean"
+                      },
+                      "photoPath": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "slug",
+                      "name",
+                      "citySlug",
+                      "cityName",
+                      "tierRank",
+                      "featured",
+                      "photoPath"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": ["kind", "categorySlug", "promoted", "facility"],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "const": "doctor"
+                  },
+                  "categorySlug": {
+                    "type": "string"
+                  },
+                  "promoted": {
+                    "type": "boolean"
+                  },
+                  "doctor": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "slug": {
+                        "type": "string"
+                      },
+                      "name": {
+                        "type": "object",
+                        "properties": {
+                          "en": {
+                            "type": "string"
+                          },
+                          "ar": {
+                            "type": "string"
+                          },
+                          "ckb": {
+                            "type": "string"
+                          }
+                        },
+                        "required": ["en", "ar", "ckb"],
+                        "additionalProperties": false
+                      },
+                      "specialtyKey": {
+                        "type": "string"
+                      },
+                      "specialtyName": {
+                        "anyOf": [
+                          {
+                            "type": "object",
+                            "properties": {
+                              "en": {
+                                "type": "string"
+                              },
+                              "ar": {
+                                "type": "string"
+                              },
+                              "ckb": {
+                                "type": "string"
+                              }
+                            },
+                            "required": ["en", "ar", "ckb"],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "citySlug": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "cityName": {
+                        "anyOf": [
+                          {
+                            "type": "object",
+                            "properties": {
+                              "en": {
+                                "type": "string"
+                              },
+                              "ar": {
+                                "type": "string"
+                              },
+                              "ckb": {
+                                "type": "string"
+                              }
+                            },
+                            "required": ["en", "ar", "ckb"],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "photoUrl": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "slug",
+                      "name",
+                      "specialtyKey",
+                      "specialtyName",
+                      "citySlug",
+                      "cityName",
+                      "photoUrl"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": ["kind", "categorySlug", "promoted", "doctor"],
+                "additionalProperties": false
+              }
+            ]
+          }
+        }
+      },
+      "required": ["slots"],
+      "additionalProperties": false
+    }
+  },
+  {
+    "path": "directory.listCategories",
+    "input": null,
+    "output": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "categories": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "slug": {
+                "type": "string"
+              },
+              "name": {
+                "type": "object",
+                "properties": {
+                  "en": {
+                    "type": "string"
+                  },
+                  "ar": {
+                    "type": "string"
+                  },
+                  "ckb": {
+                    "type": "string"
+                  }
+                },
+                "required": ["en", "ar", "ckb"],
+                "additionalProperties": false
+              },
+              "iconKey": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "active": {
+                "type": "boolean"
+              },
+              "displayOrder": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": ["id", "slug", "name", "iconKey", "active", "displayOrder"],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": ["categories"],
+      "additionalProperties": false
+    }
+  },
+  {
+    "path": "directory.listCities",
+    "input": null,
+    "output": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "cities": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "slug": {
+                "type": "string"
+              },
+              "countrySlug": {
+                "type": "string"
+              },
+              "name": {
+                "type": "object",
+                "properties": {
+                  "en": {
+                    "type": "string"
+                  },
+                  "ar": {
+                    "type": "string"
+                  },
+                  "ckb": {
+                    "type": "string"
+                  }
+                },
+                "required": ["en", "ar", "ckb"],
+                "additionalProperties": false
+              },
+              "active": {
+                "type": "boolean"
+              },
+              "displayOrder": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": ["id", "slug", "countrySlug", "name", "active", "displayOrder"],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": ["cities"],
+      "additionalProperties": false
+    }
+  },
+  {
+    "path": "directory.listSpecialties",
+    "input": null,
+    "output": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "specialties": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "key": {
+                "type": "string"
+              },
+              "name": {
+                "type": "object",
+                "properties": {
+                  "en": {
+                    "type": "string"
+                  },
+                  "ar": {
+                    "type": "string"
+                  },
+                  "ckb": {
+                    "type": "string"
+                  }
+                },
+                "required": ["en", "ar", "ckb"],
+                "additionalProperties": false
+              },
+              "description": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "en": {
+                        "type": "string"
+                      },
+                      "ar": {
+                        "type": "string"
+                      },
+                      "ckb": {
+                        "type": "string"
+                      }
+                    },
+                    "required": ["en", "ar", "ckb"],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "imageUrl": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "displayOrder": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "featured": {
+                "type": "boolean"
+              },
+              "active": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "id",
+              "key",
+              "name",
+              "description",
+              "imageUrl",
+              "displayOrder",
+              "featured",
+              "active"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": ["specialties"],
+      "additionalProperties": false
+    }
+  },
+  {
+    "path": "scheduling.doctorLocations",
+    "input": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "doctorProfileId": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+        }
+      },
+      "required": ["doctorProfileId"]
+    },
+    "output": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "locations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "doctorLocationId": {
+                "type": "string"
+              },
+              "locationId": {
+                "type": "string"
+              },
+              "slug": {
+                "type": "string"
+              },
+              "name": {
+                "type": "object",
+                "properties": {
+                  "en": {
+                    "type": "string"
+                  },
+                  "ar": {
+                    "type": "string"
+                  },
+                  "ckb": {
+                    "type": "string"
+                  }
+                },
+                "required": ["en", "ar", "ckb"],
+                "additionalProperties": false
+              },
+              "address": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "en": {
+                        "type": "string"
+                      },
+                      "ar": {
+                        "type": "string"
+                      },
+                      "ckb": {
+                        "type": "string"
+                      }
+                    },
+                    "required": ["en", "ar", "ckb"],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "phone": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "timeZone": {
+                "type": "string"
+              },
+              "active": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "doctorLocationId",
+              "locationId",
+              "slug",
+              "name",
+              "address",
+              "phone",
+              "timeZone",
+              "active"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": ["locations"],
+      "additionalProperties": false
+    }
+  },
+  {
+    "path": "search.listings",
+    "input": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "entityType": {
+          "type": "string",
+          "enum": ["facility", "doctor"]
+        },
+        "categoryKey": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "citySlug": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "limit": {
+          "default": 12,
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 50
+        }
+      },
+      "required": ["query"]
+    },
+    "output": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "entityType": {
+                "type": "string",
+                "enum": ["facility", "doctor"]
+              },
+              "entityId": {
+                "type": "string"
+              },
+              "slug": {
+                "type": "string"
+              },
+              "name": {
+                "type": "object",
+                "properties": {
+                  "en": {
+                    "type": "string"
+                  },
+                  "ar": {
+                    "type": "string"
+                  },
+                  "ckb": {
+                    "type": "string"
+                  }
+                },
+                "required": ["en", "ar", "ckb"],
+                "additionalProperties": false
+              },
+              "categoryKey": {
+                "type": "string"
+              },
+              "citySlug": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "rank": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "entityType",
+              "entityId",
+              "slug",
+              "name",
+              "categoryKey",
+              "citySlug",
+              "rank"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": ["items"],
+      "additionalProperties": false
+    }
+  }
+]

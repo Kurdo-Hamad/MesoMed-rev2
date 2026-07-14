@@ -1,0 +1,13 @@
+# Patient dashboard reads (Phase 9a Slice 5, ADR-0004 #14): a signed-in
+# patient opens their appointments list. Assumes the auth-sign-in flow's
+# account is signed in (run flows in order: maestro test .maestro/).
+# Strings are ckb catalog values (packages/i18n).
+appId: krd.mesomed.app
+---
+- launchApp
+# Account tab (mobile.account.title)
+- tapOn: "هەژمارەکەم"
+# Appointments dashboard link (web.dashboard.navAppointments)
+- tapOn: "ژوانەکانم"
+# Appointments screen heading (web.dashboard.appointmentsTitle)
+- assertVisible: "ژوانەکانم"

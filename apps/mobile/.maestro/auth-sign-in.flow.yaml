@@ -1,0 +1,29 @@
+# Patient sign-in + session restore (MM-DEC rev02 §4, ADR-0004 #14):
+# phone + password, no OTP on login; relaunching the app must land back
+# in the signed-in account state (secure-store persisted session).
+# Requires a registered patient (+9647709000001 / "correct horse battery"
+# — the account the mobile persistence test provisions) against the
+# dev-embedded API. Strings are ckb catalog values (packages/i18n).
+appId: krd.mesomed.app
+---
+- launchApp
+# Account tab (mobile.account.title)
+- tapOn: "هەژمارەکەم"
+# web.auth.signIn CTA on the signed-out account screen
+- tapOn: "چوونەژوورەوە"
+# web.auth.phone / web.auth.password
+- tapOn: "ژمارەی تەلەفۆن"
+- inputText: "+9647709000001"
+- tapOn: "وشەی نهێنی"
+- inputText: "correct horse battery"
+- hideKeyboard
+# Submit (web.auth.signIn)
+- tapOn: "چوونەژوورەوە"
+# Signed-in account screen shows the dashboard links
+# (web.dashboard.navAppointments)
+- assertVisible: "ژوانەکانم"
+# Session restore: kill and relaunch — still signed in, no re-auth
+- stopApp
+- launchApp
+- tapOn: "هەژمارەکەم"
+- assertVisible: "ژوانەکانم"
