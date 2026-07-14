@@ -6,12 +6,12 @@ import { formatLocalizedDate } from "@mesomed/i18n";
 import { useLocale } from "../../lib/locale";
 import { trpc } from "../../lib/trpc";
 
-const CANCELLABLE = new Set(["booked", "confirmed"]);
-
 /**
  * Patient appointments: own bookings via booking.myAppointments with
  * optimistic cancel — the row greys out immediately and reverts if the
- * API rejects the transition. Parity with
+ * API rejects the transition. The cancel affordance is the
+ * server-computed `cancellable` flag (MM-QA-003 F-07) — no client
+ * status rules. Parity with
  * apps/web/app/[locale]/dashboard/appointments/page.tsx (re-book = find
  * a doctor again; reschedule UI remains a recorded carry-in, ADR-0016 #4).
  */
@@ -32,7 +32,7 @@ export default function AppointmentsScreen() {
           ? {
               appointments: current.appointments.map((appointment) =>
                 appointment.appointmentId === appointmentId
-                  ? { ...appointment, status: "cancelled" as const }
+                  ? { ...appointment, status: "cancelled" as const, cancellable: false }
                   : appointment,
               ),
             }
@@ -97,7 +97,7 @@ export default function AppointmentsScreen() {
                   {t(`status_${appointment.status}`)}
                 </Text>
               </View>
-              {CANCELLABLE.has(appointment.status) && (
+              {appointment.cancellable && (
                 <Pressable
                   disabled={cancel.isPending}
                   onPress={() => cancel.mutate({ appointmentId: appointment.appointmentId })}
