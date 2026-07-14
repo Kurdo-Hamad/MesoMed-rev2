@@ -133,6 +133,8 @@ describe("scheduling + booking authz matrix", () => {
       deniedRoles: ["patient", "secretary"],
     },
     { procedure: "booking.noShow", input: { appointmentId: UUID }, deniedRoles: ["patient"] },
+    { procedure: "booking.delay", input: { appointmentId: UUID }, deniedRoles: ["patient"] },
+    { procedure: "booking.recall", input: { appointmentId: UUID }, deniedRoles: ["patient"] },
     { procedure: "booking.cancel", input: { appointmentId: UUID }, deniedRoles: [] },
     {
       procedure: "booking.reschedule",

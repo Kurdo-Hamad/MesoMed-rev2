@@ -12,6 +12,9 @@ import {
   subtractBusyIntervals,
   findSlotByStart,
   ACTIVE_APPOINTMENT_STATUSES,
+  RESCHEDULABLE_STATUSES,
+  rescheduleTargetStatus,
+  APPOINTMENT_TRANSITIONS,
   type AppointmentStatus,
 } from "./transitions.js";
 
@@ -29,19 +32,58 @@ describe("status transitions", () => {
     }
   });
 
-  it("allows cancellation only from booked and confirmed", () => {
+  it("allows cancellation only from booked, confirmed and delayed", () => {
     expect(canTransition("booked", "cancelled")).toBe(true);
     expect(canTransition("confirmed", "cancelled")).toBe(true);
+    expect(canTransition("delayed", "cancelled")).toBe(true);
     expect(canTransition("checked_in", "cancelled")).toBe(false);
     expect(canTransition("in_progress", "cancelled")).toBe(false);
     expect(canTransition("completed", "cancelled")).toBe(false);
   });
 
-  it("allows no_show only from confirmed and checked_in", () => {
+  it("allows no_show only from confirmed, checked_in and delayed", () => {
     expect(canTransition("confirmed", "no_show")).toBe(true);
     expect(canTransition("checked_in", "no_show")).toBe(true);
+    expect(canTransition("delayed", "no_show")).toBe(true);
     expect(canTransition("booked", "no_show")).toBe(false);
     expect(canTransition("in_progress", "no_show")).toBe(false);
+  });
+
+  it("allows delay only from confirmed and checked_in (MM-DES-002 §1)", () => {
+    expect(canTransition("confirmed", "delayed")).toBe(true);
+    expect(canTransition("checked_in", "delayed")).toBe(true);
+    expect(canTransition("booked", "delayed")).toBe(false);
+    expect(canTransition("in_progress", "delayed")).toBe(false);
+    expect(canTransition("completed", "delayed")).toBe(false);
+    expect(canTransition("cancelled", "delayed")).toBe(false);
+    expect(canTransition("no_show", "delayed")).toBe(false);
+    expect(canTransition("delayed", "delayed")).toBe(false); // no self-loop
+  });
+
+  it("delayed resolves to checked_in (recall), no_show, cancelled, or confirmed (reschedule reset only)", () => {
+    expect(canTransition("delayed", "checked_in")).toBe(true);
+    expect(canTransition("delayed", "no_show")).toBe(true);
+    expect(canTransition("delayed", "cancelled")).toBe(true);
+    expect(canTransition("delayed", "confirmed")).toBe(true);
+    expect(canTransition("delayed", "in_progress")).toBe(false); // recall first
+    expect(canTransition("delayed", "completed")).toBe(false);
+    expect(canTransition("delayed", "booked")).toBe(false);
+  });
+
+  it("pins the map's deliberate cycles: checked_in <-> delayed (delay/recall) and confirmed <-> delayed (delay + reschedule reset)", () => {
+    expect(canTransition("checked_in", "delayed")).toBe(true);
+    expect(canTransition("delayed", "checked_in")).toBe(true);
+    // These are exactly the round-tripping pairs — no others exist. The
+    // confirmed<->delayed return leg is reschedule's status reset (§4.4),
+    // reached by no action; checked_in<->delayed is the re-delay cycle.
+    const statuses = Object.keys(APPOINTMENT_TRANSITIONS) as AppointmentStatus[];
+    const cycles: string[] = [];
+    for (const a of statuses) {
+      for (const b of statuses) {
+        if (a < b && canTransition(a, b) && canTransition(b, a)) cycles.push(`${a}<->${b}`);
+      }
+    }
+    expect(cycles.sort()).toEqual(["checked_in<->delayed", "confirmed<->delayed"]);
   });
 
   it("rejects skipping steps and leaving terminal states", () => {
@@ -50,6 +92,7 @@ describe("status transitions", () => {
     expect(canTransition("completed", "booked")).toBe(false);
     expect(canTransition("cancelled", "confirmed")).toBe(false);
     expect(canTransition("no_show", "checked_in")).toBe(false);
+    expect(canTransition("completed", "delayed")).toBe(false);
   });
 
   it("assertTransition throws a typed error with from/to attached", () => {
@@ -65,13 +108,35 @@ describe("status transitions", () => {
     }
   });
 
-  it("active statuses are exactly the slot-occupying ones", () => {
+  it("active statuses are exactly the slot-occupying ones (delayed is a live commitment)", () => {
     expect(ACTIVE_APPOINTMENT_STATUSES).toEqual([
       "booked",
       "confirmed",
       "checked_in",
       "in_progress",
+      "delayed",
     ]);
+  });
+});
+
+describe("rescheduleTargetStatus (MM-DES-002 §4.4, D4)", () => {
+  it("reschedulable statuses are booked, confirmed and delayed", () => {
+    expect(RESCHEDULABLE_STATUSES).toEqual(["booked", "confirmed", "delayed"]);
+  });
+
+  it("resets delayed to confirmed; identity for every other status", () => {
+    expect(rescheduleTargetStatus("delayed")).toBe("confirmed");
+    const statuses = Object.keys(APPOINTMENT_TRANSITIONS) as AppointmentStatus[];
+    for (const status of statuses.filter((s) => s !== "delayed")) {
+      expect(rescheduleTargetStatus(status)).toBe(status);
+    }
+  });
+
+  it("the reset rides a legal map edge, so the machine stays total", () => {
+    for (const status of RESCHEDULABLE_STATUSES) {
+      const target = rescheduleTargetStatus(status);
+      if (target !== status) expect(canTransition(status, target)).toBe(true);
+    }
   });
 });
 

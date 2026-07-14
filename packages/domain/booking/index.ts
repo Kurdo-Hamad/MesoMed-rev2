@@ -1,8 +1,7 @@
 export {
-  ACTION_ALLOWED_ACTORS,
-  ACTION_TARGET_STATUS,
   allowedAppointmentActions,
   ANY_PARTY,
+  APPOINTMENT_ACTION_EDGES,
   CLINIC_SIDE,
   DOCTOR_ONLY,
   FRONT_DESK,
@@ -17,6 +16,7 @@ export {
   IllegalTransitionError,
   intervalsOverlap,
   RESCHEDULABLE_STATUSES,
+  rescheduleTargetStatus,
   subtractBusyIntervals,
   type AppointmentStatus,
   type Interval,

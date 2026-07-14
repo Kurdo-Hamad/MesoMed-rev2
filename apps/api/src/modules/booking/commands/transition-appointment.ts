@@ -1,15 +1,22 @@
 /**
  * Lifecycle transitions (confirm / check-in / start / complete / no-show /
- * cancel) over the ported state machine (packages/domain/booking). Each
- * command is a role-gated procedure (§3.6 layer a in the router) whose
- * actor binding is proven here against the loaded row (layer b), with the
- * status write and its event in one transaction (§3.2). Transitions with
- * no integration consumer (checked_in, in_progress) emit nothing — events
+ * cancel / delay / recall) over the ported state machine
+ * (packages/domain/booking). Each command is a role-gated procedure (§3.6
+ * layer a in the router) named by its action; sources, target and actor
+ * allow-list are all enforced here from the SAME edge-table record the
+ * allowedActions affordances read (MM-DES-002 §2 — the router no longer
+ * picks allow-lists per call), with the status write and its event in one
+ * transaction (§3.2). Transitions with no integration consumer
+ * (checked_in via checkIn or recall, in_progress) emit nothing — events
  * are contracts, not a changelog (§3.3).
  */
 import { ErrorCode } from "@mesomed/contracts/errors";
-import type { AppointmentStatus } from "@mesomed/contracts/booking";
-import { assertTransition, IllegalTransitionError } from "@mesomed/domain/booking";
+import type { AppointmentAction, AppointmentStatus } from "@mesomed/contracts/booking";
+import {
+  APPOINTMENT_ACTION_EDGES,
+  assertTransition,
+  IllegalTransitionError,
+} from "@mesomed/domain/booking";
 import type { EventName } from "@mesomed/contracts/events";
 import { appointments, eq, type DbTransaction } from "@mesomed/db";
 import { AppError } from "../../../kernel/errors.js";
@@ -21,7 +28,6 @@ import {
   assertAppointmentActor,
   bookingEvent,
   loadAppointmentForUpdate,
-  type AppointmentActor,
 } from "../shared.js";
 
 const TRANSITION_EVENTS: Partial<Record<AppointmentStatus, EventName>> = {
@@ -29,12 +35,12 @@ const TRANSITION_EVENTS: Partial<Record<AppointmentStatus, EventName>> = {
   cancelled: "booking.cancelled.v1",
   completed: "booking.completed.v1",
   no_show: "booking.no_show.v1",
+  delayed: "booking.delayed.v1",
 };
 
 export interface TransitionInput {
   appointmentId: string;
-  to: AppointmentStatus;
-  allowedActors: readonly AppointmentActor[];
+  action: AppointmentAction;
   reason?: string | undefined;
 }
 
@@ -44,14 +50,26 @@ export async function transitionAppointment(
   session: Session,
   input: TransitionInput,
 ): Promise<{ appointmentId: string; status: AppointmentStatus }> {
+  const edge = APPOINTMENT_ACTION_EDGES[input.action];
   const appointment = await loadAppointmentForUpdate(tx, input.appointmentId);
   const doctorLocation = await getDoctorLocation(tx, appointment.doctorLocationId);
   if (!doctorLocation) throw new AppError(ErrorCode.INTERNAL, "Doctor location row missing");
 
-  await assertAppointmentActor(tx, session, appointment, doctorLocation, input.allowedActors);
+  await assertAppointmentActor(tx, session, appointment, doctorLocation, edge.actors);
 
+  // The edge's explicit sources gate the action — target-derivation alone
+  // cannot tell recall from checkIn (both land in checked_in, MM-DES-002 §2).
+  if (!edge.sources.includes(appointment.status)) {
+    throw new AppError(
+      ErrorCode.INVALID_STATUS_TRANSITION,
+      `Action "${input.action}" is not available in status "${appointment.status}"`,
+    );
+  }
+
+  // Consistency assertion against the transition map: the domain unit
+  // proof pins every edge source/target pair legal, so this cannot fire.
   try {
-    assertTransition(appointment.status, input.to);
+    assertTransition(appointment.status, edge.target);
   } catch (error) {
     if (error instanceof IllegalTransitionError) {
       throw new AppError(ErrorCode.INVALID_STATUS_TRANSITION, error.message, { cause: error });
@@ -63,20 +81,20 @@ export async function transitionAppointment(
   await tx
     .update(appointments)
     .set({
-      status: input.to,
-      cancellationReason: input.to === "cancelled" ? (input.reason ?? null) : undefined,
+      status: edge.target,
+      cancellationReason: edge.target === "cancelled" ? (input.reason ?? null) : undefined,
       statusChangedAt: now,
       updatedAt: now,
     })
     .where(eq(appointments.id, appointment.id));
 
-  const eventName = TRANSITION_EVENTS[input.to];
+  const eventName = TRANSITION_EVENTS[edge.target];
   if (eventName) {
-    const snapshot = appointmentSnapshot({ ...appointment, status: input.to }, doctorLocation);
+    const snapshot = appointmentSnapshot({ ...appointment, status: edge.target }, doctorLocation);
     const payload =
-      input.to === "cancelled" ? { ...snapshot, reason: input.reason ?? null } : snapshot;
+      edge.target === "cancelled" ? { ...snapshot, reason: input.reason ?? null } : snapshot;
     await outbox.emit(tx, bookingEvent(eventName, payload, appointment.id));
   }
 
-  return { appointmentId: appointment.id, status: input.to };
+  return { appointmentId: appointment.id, status: edge.target };
 }

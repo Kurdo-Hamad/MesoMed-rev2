@@ -75,7 +75,7 @@ describe("provider queue actions via the real mobile client", () => {
     expect(res.data?.status).toBe("confirmed");
     expect(await dayItem(walked.appointmentId, walked.startsAt, secretaryCookie)).toMatchObject({
       status: "confirmed",
-      allowedActions: ["checkIn", "noShow", "cancel"],
+      allowedActions: ["checkIn", "noShow", "cancel", "delay"],
     });
   });
 
@@ -85,7 +85,7 @@ describe("provider queue actions via the real mobile client", () => {
     expect(res.data?.status).toBe("checked_in");
     expect(await dayItem(walked.appointmentId, walked.startsAt, secretaryCookie)).toMatchObject({
       status: "checked_in",
-      allowedActions: ["noShow"],
+      allowedActions: ["noShow", "delay"],
     });
   });
 
