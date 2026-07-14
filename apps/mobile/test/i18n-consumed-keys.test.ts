@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
-import { APPOINTMENT_STATUSES } from "@mesomed/contracts/booking";
+import { APPOINTMENT_ACTIONS, APPOINTMENT_STATUSES } from "@mesomed/contracts/booking";
 import { MEDICATION_SOURCES, PRESCRIPTION_STATUSES } from "@mesomed/contracts/clinical";
 import { locales } from "@mesomed/i18n";
 import { describe, expect, it } from "vitest";
@@ -29,6 +29,7 @@ const DYNAMIC_KEY_VALUES: Record<string, readonly string[]> = {
   status_: APPOINTMENT_STATUSES,
   source_: MEDICATION_SOURCES,
   prescription_: PRESCRIPTION_STATUSES,
+  action_: APPOINTMENT_ACTIONS,
 };
 
 const SOURCE_DIRS = ["app", "components", "lib"];

@@ -42,6 +42,7 @@ const FROZEN_PATH = join(
 const MOBILE_CONSUMED = [
   "ai.triageSymptoms",
   "booking.cancel",
+  "booking.clinicDay",
   "booking.guestBook",
   "booking.myAppointments",
   "booking.weekAvailability",
@@ -61,7 +62,9 @@ const MOBILE_CONSUMED = [
   "directory.listCategories",
   "directory.listCities",
   "directory.listSpecialties",
+  "identity.me",
   "scheduling.doctorLocations",
+  "scheduling.myWorkplaces",
   "search.listings",
 ] as const;
 
