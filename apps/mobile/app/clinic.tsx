@@ -11,16 +11,18 @@ import { pickText } from "../lib/localized";
 import { trpc } from "../lib/trpc";
 
 /**
- * Clinic day queue (Phase 9b Slice 3, read-only): doctors and secretaries
- * share the screen; per-appointment affordances come EXCLUSIVELY from the
+ * Clinic day queue (Phase 9b Slices 3+4): doctors and secretaries share
+ * the screen; per-appointment affordances come EXCLUSIVELY from the
  * server-computed allowedActions field (MM-QA-003 F-07) — this client
- * holds no status rules. Slice 3 renders them display-only; the wired
- * mutations land in Slice 4. Layer-a/b authorization is entirely
- * server-side; this screen only shows what the session can access.
+ * holds no status rules, an action button exists only when the server
+ * offers that action. The API re-checks every transition (layer a/b);
+ * a rejected action surfaces the failure banner and the refetch restores
+ * server truth.
  */
 export default function ClinicScreen() {
   const t = useTranslations("web.dashboard");
   const { locale } = useLocale();
+  const utils = trpc.useUtils();
   const workplaces = trpc.scheduling.myWorkplaces.useQuery();
   const [workplaceId, setWorkplaceId] = useState<string | undefined>(undefined);
   const [dayOffset, setDayOffset] = useState(0);
@@ -35,6 +37,19 @@ export default function ClinicScreen() {
     { doctorLocationId: selected?.doctorLocationId ?? "", anchor: anchor.toISOString() },
     { enabled: selected !== undefined },
   );
+
+  // Invalidation mirrors the web clinic page: every settled transition
+  // refetches the day so status and allowedActions are server truth.
+  const invalidate = () => void utils.booking.clinicDay.invalidate();
+  const confirm = trpc.booking.confirm.useMutation({ onSettled: invalidate });
+  const checkIn = trpc.booking.checkIn.useMutation({ onSettled: invalidate });
+  const start = trpc.booking.start.useMutation({ onSettled: invalidate });
+  const complete = trpc.booking.complete.useMutation({ onSettled: invalidate });
+  const noShow = trpc.booking.noShow.useMutation({ onSettled: invalidate });
+  const cancel = trpc.booking.cancel.useMutation({ onSettled: invalidate });
+  const mutations = { confirm, checkIn, start, complete, noShow, cancel } as const;
+  const anyPending = Object.values(mutations).some((mutation) => mutation.isPending);
+  const anyError = Object.values(mutations).some((mutation) => mutation.error !== null);
 
   const timeLabel = (value: string) =>
     new Intl.DateTimeFormat(locale, {
@@ -78,6 +93,12 @@ export default function ClinicScreen() {
                 }))}
               />
             </View>
+          )}
+
+          {anyError && (
+            <Text className="mt-4 rounded-md bg-danger-soft px-4 py-3 text-small font-medium text-danger">
+              {t("actionFailed")}
+            </Text>
           )}
 
           <View className="mt-6 flex-row items-center justify-between">
@@ -142,16 +163,35 @@ export default function ClinicScreen() {
                   )}
                   {appointment.allowedActions.length > 0 && (
                     <View className="mt-3 flex-row flex-wrap gap-2">
-                      {appointment.allowedActions.map((action) => (
-                        <View
-                          key={action}
-                          className="rounded-md border border-line bg-canvas px-3 py-1.5 opacity-60"
-                        >
-                          <Text className="text-caption font-medium text-neutral-600">
-                            {t(`action_${action}`)}
-                          </Text>
-                        </View>
-                      ))}
+                      {appointment.allowedActions.map((action) => {
+                        const destructive = action === "cancel" || action === "noShow";
+                        return (
+                          <Pressable
+                            key={action}
+                            disabled={anyPending}
+                            onPress={() =>
+                              mutations[action].mutate({
+                                appointmentId: appointment.appointmentId,
+                              })
+                            }
+                            className={
+                              destructive
+                                ? "rounded-md border border-line px-3 py-1.5 disabled:opacity-50"
+                                : "rounded-md bg-brand px-3 py-1.5 disabled:opacity-50"
+                            }
+                          >
+                            <Text
+                              className={
+                                destructive
+                                  ? "text-caption font-medium text-neutral-600"
+                                  : "text-caption font-semibold text-white"
+                              }
+                            >
+                              {t(`action_${action}`)}
+                            </Text>
+                          </Pressable>
+                        );
+                      })}
                     </View>
                   )}
                 </View>
