@@ -79,6 +79,129 @@
     }
   },
   {
+    "path": "booking.clinicDay",
+    "input": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "doctorLocationId": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+        },
+        "anchor": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+        }
+      },
+      "required": ["doctorLocationId"]
+    },
+    "output": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "doctorLocationId": {
+          "type": "string"
+        },
+        "timeZone": {
+          "type": "string"
+        },
+        "date": {
+          "type": "string"
+        },
+        "appointments": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "appointmentId": {
+                "type": "string"
+              },
+              "startsAt": {
+                "type": "string"
+              },
+              "endsAt": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "booked",
+                  "confirmed",
+                  "checked_in",
+                  "in_progress",
+                  "completed",
+                  "cancelled",
+                  "no_show"
+                ]
+              },
+              "bookedVia": {
+                "type": "string",
+                "enum": ["guest_web", "patient_account", "secretary_walk_in"]
+              },
+              "patientProfileId": {
+                "type": "string"
+              },
+              "patientName": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "patientPhone": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "note": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "allowedActions": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": ["confirm", "checkIn", "start", "complete", "noShow", "cancel"]
+                }
+              }
+            },
+            "required": [
+              "appointmentId",
+              "startsAt",
+              "endsAt",
+              "status",
+              "bookedVia",
+              "patientProfileId",
+              "patientName",
+              "patientPhone",
+              "note",
+              "allowedActions"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": ["doctorLocationId", "timeZone", "date", "appointments"],
+      "additionalProperties": false
+    }
+  },
+  {
     "path": "booking.guestBook",
     "input": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -2048,6 +2171,107 @@
     }
   },
   {
+    "path": "identity.me",
+    "input": null,
+    "output": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string"
+        },
+        "roles": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["patient", "doctor", "secretary", "admin"]
+          }
+        },
+        "phone": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "email": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "patientProfile": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                "fullName": {
+                  "type": "string"
+                }
+              },
+              "required": ["id", "fullName"],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "providerProfile": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "providerProfileId": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                "providerType": {
+                  "type": "string",
+                  "enum": ["doctor", "hospital", "laboratory", "pharmacy", "home_nursing"]
+                },
+                "status": {
+                  "type": "string",
+                  "enum": ["pending", "approved", "rejected"]
+                },
+                "rejectionReason": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": ["providerProfileId", "providerType", "status", "rejectionReason"],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": ["userId", "roles", "phone", "email", "patientProfile", "providerProfile"],
+      "additionalProperties": false
+    }
+  },
+  {
     "path": "scheduling.doctorLocations",
     "input": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -2150,6 +2374,110 @@
         }
       },
       "required": ["locations"],
+      "additionalProperties": false
+    }
+  },
+  {
+    "path": "scheduling.myWorkplaces",
+    "input": null,
+    "output": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "workplaces": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "doctorLocationId": {
+                "type": "string"
+              },
+              "locationId": {
+                "type": "string"
+              },
+              "slug": {
+                "type": "string"
+              },
+              "name": {
+                "type": "object",
+                "properties": {
+                  "en": {
+                    "type": "string"
+                  },
+                  "ar": {
+                    "type": "string"
+                  },
+                  "ckb": {
+                    "type": "string"
+                  }
+                },
+                "required": ["en", "ar", "ckb"],
+                "additionalProperties": false
+              },
+              "address": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "en": {
+                        "type": "string"
+                      },
+                      "ar": {
+                        "type": "string"
+                      },
+                      "ckb": {
+                        "type": "string"
+                      }
+                    },
+                    "required": ["en", "ar", "ckb"],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "phone": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "timeZone": {
+                "type": "string"
+              },
+              "active": {
+                "type": "boolean"
+              },
+              "doctorProfileId": {
+                "type": "string"
+              },
+              "relation": {
+                "type": "string",
+                "enum": ["owning_doctor", "assigned_secretary"]
+              }
+            },
+            "required": [
+              "doctorLocationId",
+              "locationId",
+              "slug",
+              "name",
+              "address",
+              "phone",
+              "timeZone",
+              "active",
+              "doctorProfileId",
+              "relation"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": ["workplaces"],
       "additionalProperties": false
     }
   },
