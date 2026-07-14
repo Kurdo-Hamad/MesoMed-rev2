@@ -70,7 +70,8 @@
             "in_progress",
             "completed",
             "cancelled",
-            "no_show"
+            "no_show",
+            "delayed"
           ]
         }
       },
@@ -108,7 +109,8 @@
             "in_progress",
             "completed",
             "cancelled",
-            "no_show"
+            "no_show",
+            "delayed"
           ]
         }
       },
@@ -171,7 +173,8 @@
                   "in_progress",
                   "completed",
                   "cancelled",
-                  "no_show"
+                  "no_show",
+                  "delayed"
                 ]
               },
               "bookedVia": {
@@ -215,7 +218,16 @@
                 "type": "array",
                 "items": {
                   "type": "string",
-                  "enum": ["confirm", "checkIn", "start", "complete", "noShow", "cancel"]
+                  "enum": [
+                    "confirm",
+                    "checkIn",
+                    "start",
+                    "complete",
+                    "noShow",
+                    "cancel",
+                    "delay",
+                    "recall"
+                  ]
                 }
               }
             },
@@ -269,7 +281,8 @@
             "in_progress",
             "completed",
             "cancelled",
-            "no_show"
+            "no_show",
+            "delayed"
           ]
         }
       },
@@ -307,7 +320,8 @@
             "in_progress",
             "completed",
             "cancelled",
-            "no_show"
+            "no_show",
+            "delayed"
           ]
         }
       },
@@ -385,7 +399,8 @@
             "in_progress",
             "completed",
             "cancelled",
-            "no_show"
+            "no_show",
+            "delayed"
           ]
         },
         "startsAt": {
@@ -435,12 +450,16 @@
                   "in_progress",
                   "completed",
                   "cancelled",
-                  "no_show"
+                  "no_show",
+                  "delayed"
                 ]
               },
               "bookedVia": {
                 "type": "string",
                 "enum": ["guest_web", "patient_account", "secretary_walk_in"]
+              },
+              "cancellable": {
+                "type": "boolean"
               }
             },
             "required": [
@@ -449,7 +468,8 @@
               "startsAt",
               "endsAt",
               "status",
-              "bookedVia"
+              "bookedVia",
+              "cancellable"
             ],
             "additionalProperties": false
           }
@@ -489,7 +509,8 @@
             "in_progress",
             "completed",
             "cancelled",
-            "no_show"
+            "no_show",
+            "delayed"
           ]
         }
       },
@@ -527,7 +548,8 @@
             "in_progress",
             "completed",
             "cancelled",
-            "no_show"
+            "no_show",
+            "delayed"
           ]
         }
       },
