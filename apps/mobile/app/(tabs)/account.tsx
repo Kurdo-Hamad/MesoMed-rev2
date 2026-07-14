@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { I18nManager, Pressable, ScrollView, Text, View } from "react-native";
 import {
+  BriefcaseMedical,
   CalendarDays,
   ChevronLeft,
   ChevronRight,
@@ -28,6 +29,14 @@ export default function AccountScreen() {
   const tAuth = useTranslations("web.auth");
   const tDash = useTranslations("web.dashboard");
   const session = authClient.useSession();
+
+  // Role-aware clinic entry (Phase 9b): providers see the clinic queue
+  // link when the session carries a clinic-side role. The API re-checks
+  // every read/action (layer a/b) — this gating is navigation only.
+  const me = trpc.identity.me.useQuery(undefined, { enabled: session.data !== null });
+  const isClinicSide =
+    me.data !== undefined &&
+    me.data.roles.some((role) => role === "doctor" || role === "secretary");
 
   const register = trpc.communication.registerDeviceToken.useMutation();
   const unregister = trpc.communication.unregisterDeviceToken.useMutation();
@@ -118,6 +127,13 @@ export default function AccountScreen() {
       </View>
 
       <View className="mt-6 gap-3">
+        {isClinicSide && (
+          <DashboardLink
+            href="/clinic"
+            icon={<BriefcaseMedical size={22} color={colors.brand} />}
+            label={tDash("navClinic")}
+          />
+        )}
         <DashboardLink
           href="/dashboard/appointments"
           icon={<CalendarDays size={22} color={colors.brand} />}
