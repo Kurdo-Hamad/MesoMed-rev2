@@ -92,21 +92,28 @@ describe("clinicDay allowedActions", () => {
     expect(await actionsFor(appointmentId, at, asSecretary())).toEqual(["confirm", "cancel"]);
     expect(await actionsFor(appointmentId, at, ADMIN)).toEqual(["confirm", "cancel"]);
 
-    // confirmed — checkIn is front-desk only, so the doctor does not get it
+    // confirmed — checkIn is front-desk only, so the doctor does not get
+    // it; delay is clinic-side (Phase 9c)
     await transition("confirm", appointmentId, asSecretary());
-    expect(await actionsFor(appointmentId, at, asDoctor())).toEqual(["noShow", "cancel"]);
+    expect(await actionsFor(appointmentId, at, asDoctor())).toEqual(["noShow", "cancel", "delay"]);
     expect(await actionsFor(appointmentId, at, asSecretary())).toEqual([
       "checkIn",
       "noShow",
       "cancel",
+      "delay",
     ]);
-    expect(await actionsFor(appointmentId, at, ADMIN)).toEqual(["checkIn", "noShow", "cancel"]);
+    expect(await actionsFor(appointmentId, at, ADMIN)).toEqual([
+      "checkIn",
+      "noShow",
+      "cancel",
+      "delay",
+    ]);
 
-    // checked_in — start is doctor-only; noShow stays clinic-side
+    // checked_in — start is doctor-only; noShow and delay stay clinic-side
     await transition("checkIn", appointmentId, asSecretary());
-    expect(await actionsFor(appointmentId, at, asDoctor())).toEqual(["start", "noShow"]);
-    expect(await actionsFor(appointmentId, at, asSecretary())).toEqual(["noShow"]);
-    expect(await actionsFor(appointmentId, at, ADMIN)).toEqual(["start", "noShow"]);
+    expect(await actionsFor(appointmentId, at, asDoctor())).toEqual(["start", "noShow", "delay"]);
+    expect(await actionsFor(appointmentId, at, asSecretary())).toEqual(["noShow", "delay"]);
+    expect(await actionsFor(appointmentId, at, ADMIN)).toEqual(["start", "noShow", "delay"]);
 
     // in_progress — complete is doctor-only; the secretary has nothing left
     await transition("start", appointmentId, asDoctor());

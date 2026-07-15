@@ -1,0 +1,4 @@
+ALTER TABLE "appointments" DROP CONSTRAINT "appointments_status_check";--> statement-breakpoint
+DROP INDEX "appointments_active_slot_unique";--> statement-breakpoint
+CREATE UNIQUE INDEX "appointments_active_slot_unique" ON "appointments" USING btree ("doctor_location_id","starts_at") WHERE "appointments"."status" in ('booked', 'confirmed', 'checked_in', 'in_progress', 'delayed');--> statement-breakpoint
+ALTER TABLE "appointments" ADD CONSTRAINT "appointments_status_check" CHECK ("appointments"."status" in ('booked', 'confirmed', 'checked_in', 'in_progress', 'completed', 'cancelled', 'no_show', 'delayed'));

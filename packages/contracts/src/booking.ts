@@ -135,6 +135,8 @@ export const APPOINTMENT_ACTIONS = [
   "complete",
   "noShow",
   "cancel",
+  "delay",
+  "recall",
 ] as const;
 export type AppointmentAction = (typeof APPOINTMENT_ACTIONS)[number];
 

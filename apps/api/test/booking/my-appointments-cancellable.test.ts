@@ -104,6 +104,12 @@ describe("myAppointments cancellable flag", () => {
     await transition("cancel", cancelled, secretary.roles, secretary.user);
     expected.set(cancelled, { status: "cancelled", cancellable: false });
 
+    // Phase 9c: a delayed patient can still bail from home (MM-DES-002 §4.5).
+    const delayed = await book();
+    await transition("confirm", delayed, secretary.roles, secretary.user);
+    await transition("delay", delayed, secretary.roles, secretary.user);
+    expected.set(delayed, { status: "delayed", cancellable: true });
+
     const res = await trpc(app, "booking.myAppointments", "query", undefined, {
       roles: "patient",
       user: clinic.patientUserId,

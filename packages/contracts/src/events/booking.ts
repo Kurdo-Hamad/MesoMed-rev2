@@ -17,6 +17,7 @@ export const APPOINTMENT_STATUSES = [
   "completed",
   "cancelled",
   "no_show",
+  "delayed",
 ] as const;
 
 export type AppointmentStatus = (typeof APPOINTMENT_STATUSES)[number];
@@ -65,6 +66,14 @@ export const bookingCompletedV1 = defineEvent("booking", "completed", 1, appoint
 
 export const bookingNoShowV1 = defineEvent("booking", "no_show", 1, appointmentSnapshotSchema);
 
+/**
+ * Phase 9c (MM-DES-002 §5): emitted when a late patient is delayed —
+ * pushed down the queue by state, never by moving instants. Payload is the
+ * standard post-transition snapshot (status "delayed"). No subscriber this
+ * phase; the planned consumer is a future notification system.
+ */
+export const bookingDelayedV1 = defineEvent("booking", "delayed", 1, appointmentSnapshotSchema);
+
 /** All booking event contracts, for registry composition in the API. */
 export const BOOKING_EVENTS = [
   bookingBookedV1,
@@ -73,4 +82,5 @@ export const BOOKING_EVENTS = [
   bookingCancelledV1,
   bookingCompletedV1,
   bookingNoShowV1,
+  bookingDelayedV1,
 ] as const;

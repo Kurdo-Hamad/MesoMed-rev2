@@ -19,6 +19,19 @@ import { trpc } from "../lib/trpc";
  * a rejected action surfaces the failure banner and the refetch restores
  * server truth.
  */
+/**
+ * Actions this build knows how to render and fire (MM-DES-002 §7):
+ * allowedActions is server truth, but a server whose action enum has
+ * widened past this binary may offer members with no mutation wired here —
+ * rendering them would crash on tap. Filtering to the known subset encodes
+ * zero state-machine knowledge (F-07 intact) and is permanent
+ * forward-compat hardening for every future enum widening.
+ */
+const KNOWN_ACTIONS = ["confirm", "checkIn", "start", "complete", "noShow", "cancel"] as const;
+type KnownAction = (typeof KNOWN_ACTIONS)[number];
+const isKnownAction = (action: string): action is KnownAction =>
+  (KNOWN_ACTIONS as readonly string[]).includes(action);
+
 export default function ClinicScreen() {
   const t = useTranslations("web.dashboard");
   const { locale } = useLocale();
@@ -161,9 +174,9 @@ export default function ClinicScreen() {
                       {appointment.note ? ` · ${appointment.note}` : ""}
                     </Text>
                   )}
-                  {appointment.allowedActions.length > 0 && (
+                  {appointment.allowedActions.filter(isKnownAction).length > 0 && (
                     <View className="mt-3 flex-row flex-wrap gap-2">
-                      {appointment.allowedActions.map((action) => {
+                      {appointment.allowedActions.filter(isKnownAction).map((action) => {
                         const destructive = action === "cancel" || action === "noShow";
                         return (
                           <Pressable

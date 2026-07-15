@@ -5,7 +5,8 @@
  * command (layer b). All I/O is typed by the contracts package
  * (§3.11/§3.12).
  *
- * Actor matrix (layer b, enforced in commands):
+ * Actor matrix (layer b, enforced in commands — lifecycle actions read
+ * APPOINTMENT_ACTION_EDGES in the domain package, MM-DES-002 §2):
  *   secretaryBook  assigned secretary · admin
  *   confirm        assigned secretary · owning doctor · admin
  *   checkIn        assigned secretary · admin
@@ -13,7 +14,10 @@
  *   complete       owning doctor · admin
  *   noShow         assigned secretary · owning doctor · admin
  *   cancel         patient owner · assigned secretary · owning doctor · admin
+ *   delay          assigned secretary · owning doctor · admin
+ *   recall         assigned secretary · owning doctor · admin
  *   reschedule     patient owner · assigned secretary · owning doctor · admin
+ *                  (from delayed: clinic-side only — D4a, enforced in the command)
  */
 import {
   appointmentIdInputSchema,
@@ -31,10 +35,6 @@ import {
   weekAvailabilityOutputSchema,
 } from "@mesomed/contracts/booking";
 import { ErrorCode } from "@mesomed/contracts/errors";
-// The allow-lists live in the domain package so the server-computed
-// allowedActions affordances (clinic-day) gate on the SAME objects the
-// commands enforce — they cannot drift (MM-QA-003 F-07).
-import { ANY_PARTY, CLINIC_SIDE, DOCTOR_ONLY, FRONT_DESK } from "@mesomed/domain/booking";
 import { roleProcedure } from "../../kernel/authz.js";
 import { AppError } from "../../kernel/errors.js";
 import { publicProcedure, router } from "../../kernel/trpc.js";
@@ -107,8 +107,7 @@ export function createBookingRouter({ createGuestPatientProfile }: BookingRouter
         ctx.db.transaction((tx) =>
           transitionAppointment(tx, ctx.outbox, ctx.session, {
             appointmentId: input.appointmentId,
-            to: "confirmed",
-            allowedActors: CLINIC_SIDE,
+            action: "confirm",
           }),
         ),
       ),
@@ -120,8 +119,7 @@ export function createBookingRouter({ createGuestPatientProfile }: BookingRouter
         ctx.db.transaction((tx) =>
           transitionAppointment(tx, ctx.outbox, ctx.session, {
             appointmentId: input.appointmentId,
-            to: "checked_in",
-            allowedActors: FRONT_DESK,
+            action: "checkIn",
           }),
         ),
       ),
@@ -133,8 +131,7 @@ export function createBookingRouter({ createGuestPatientProfile }: BookingRouter
         ctx.db.transaction((tx) =>
           transitionAppointment(tx, ctx.outbox, ctx.session, {
             appointmentId: input.appointmentId,
-            to: "in_progress",
-            allowedActors: DOCTOR_ONLY,
+            action: "start",
           }),
         ),
       ),
@@ -146,8 +143,7 @@ export function createBookingRouter({ createGuestPatientProfile }: BookingRouter
         ctx.db.transaction((tx) =>
           transitionAppointment(tx, ctx.outbox, ctx.session, {
             appointmentId: input.appointmentId,
-            to: "completed",
-            allowedActors: DOCTOR_ONLY,
+            action: "complete",
           }),
         ),
       ),
@@ -159,8 +155,7 @@ export function createBookingRouter({ createGuestPatientProfile }: BookingRouter
         ctx.db.transaction((tx) =>
           transitionAppointment(tx, ctx.outbox, ctx.session, {
             appointmentId: input.appointmentId,
-            to: "no_show",
-            allowedActors: CLINIC_SIDE,
+            action: "noShow",
           }),
         ),
       ),
@@ -172,9 +167,34 @@ export function createBookingRouter({ createGuestPatientProfile }: BookingRouter
         ctx.db.transaction((tx) =>
           transitionAppointment(tx, ctx.outbox, ctx.session, {
             appointmentId: input.appointmentId,
-            to: "cancelled",
-            allowedActors: ANY_PARTY,
+            action: "cancel",
             reason: input.reason,
+          }),
+        ),
+      ),
+
+    /** Phase 9c (MM-DES-002): push a late patient down the queue by state. */
+    delay: roleProcedure("secretary", "doctor", "admin")
+      .input(appointmentIdInputSchema)
+      .output(transitionResultSchema)
+      .mutation(({ ctx, input }) =>
+        ctx.db.transaction((tx) =>
+          transitionAppointment(tx, ctx.outbox, ctx.session, {
+            appointmentId: input.appointmentId,
+            action: "delay",
+          }),
+        ),
+      ),
+
+    /** Phase 9c (MM-DES-002): the delayed patient arrived — back to checked_in. */
+    recall: roleProcedure("secretary", "doctor", "admin")
+      .input(appointmentIdInputSchema)
+      .output(transitionResultSchema)
+      .mutation(({ ctx, input }) =>
+        ctx.db.transaction((tx) =>
+          transitionAppointment(tx, ctx.outbox, ctx.session, {
+            appointmentId: input.appointmentId,
+            action: "recall",
           }),
         ),
       ),
@@ -187,7 +207,6 @@ export function createBookingRouter({ createGuestPatientProfile }: BookingRouter
           rescheduleAppointment(tx, ctx.outbox, ctx.session, {
             appointmentId: input.appointmentId,
             newStartsAt: input.newStartsAt,
-            allowedActors: ANY_PARTY,
           }),
         ),
       ),

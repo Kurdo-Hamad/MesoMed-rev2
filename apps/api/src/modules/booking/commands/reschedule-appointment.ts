@@ -1,12 +1,25 @@
 /**
- * Reschedule (MM-PLAN-001 §5 Phase 4): allowed from booked/confirmed only
- * (ported RESCHEDULABLE_STATUSES); the new slot is validated and
+ * Reschedule (MM-PLAN-001 §5 Phase 4): allowed from booked/confirmed/
+ * delayed (ported RESCHEDULABLE_STATUSES); the new slot is validated and
  * conflict-checked in the same transaction as the move and the
  * booking.rescheduled.v1 event (§3.2/§3.4). The status is preserved — a
- * confirmed appointment stays confirmed at its new time.
+ * confirmed appointment stays confirmed at its new time — with one
+ * exception (MM-DES-002 §4.4, D4): a delayed appointment resets to
+ * confirmed, so booking.rescheduled.v1 never carries "delayed". Actor
+ * rule (D4a): ANY_PARTY, EXCEPT from delayed where reschedule is
+ * clinic-side only — the patient must not re-slot themselves after going
+ * delayed; both the allow-list choice and the reset live here so the rule
+ * is enforced server-side in one place.
  */
 import { ErrorCode } from "@mesomed/contracts/errors";
-import { RESCHEDULABLE_STATUSES, type AppointmentStatus } from "@mesomed/domain/booking";
+import {
+  ANY_PARTY,
+  assertTransition,
+  CLINIC_SIDE,
+  RESCHEDULABLE_STATUSES,
+  rescheduleTargetStatus,
+  type AppointmentStatus,
+} from "@mesomed/domain/booking";
 import { appointments, eq, type DbTransaction } from "@mesomed/db";
 import { AppError } from "../../../kernel/errors.js";
 import type { Session } from "../../../kernel/context.js";
@@ -19,13 +32,11 @@ import {
   isSlotUniqueViolation,
   loadAppointmentForUpdate,
   resolveBookableSlot,
-  type AppointmentActor,
 } from "../shared.js";
 
 export interface RescheduleInput {
   appointmentId: string;
   newStartsAt: string;
-  allowedActors: readonly AppointmentActor[];
 }
 
 export interface RescheduleResult {
@@ -45,7 +56,10 @@ export async function rescheduleAppointment(
   const doctorLocation = await getDoctorLocation(tx, appointment.doctorLocationId);
   if (!doctorLocation) throw new AppError(ErrorCode.INTERNAL, "Doctor location row missing");
 
-  await assertAppointmentActor(tx, session, appointment, doctorLocation, input.allowedActors);
+  // D4a (MM-DES-002 §4.4, ruled 2026-07-14): reschedule from delayed is
+  // CLINIC_SIDE only — narrows ANY_PARTY for the delayed-state case.
+  const allowedActors = appointment.status === "delayed" ? CLINIC_SIDE : ANY_PARTY;
+  await assertAppointmentActor(tx, session, appointment, doctorLocation, allowedActors);
 
   if (!(RESCHEDULABLE_STATUSES as readonly string[]).includes(appointment.status)) {
     throw new AppError(
@@ -53,6 +67,11 @@ export async function rescheduleAppointment(
       `Appointments in status "${appointment.status}" cannot be rescheduled`,
     );
   }
+
+  // Status-preservation with the delayed -> confirmed reset (D4), asserted
+  // through the map edge so the machine stays total.
+  const targetStatus = rescheduleTargetStatus(appointment.status);
+  if (targetStatus !== appointment.status) assertTransition(appointment.status, targetStatus);
 
   const slot = await resolveBookableSlot(tx, doctorLocation, new Date(input.newStartsAt), {
     ignoreAppointmentId: appointment.id,
@@ -62,7 +81,13 @@ export async function rescheduleAppointment(
   try {
     await tx
       .update(appointments)
-      .set({ startsAt: slot.startsAt, endsAt: slot.endsAt, statusChangedAt: now, updatedAt: now })
+      .set({
+        startsAt: slot.startsAt,
+        endsAt: slot.endsAt,
+        status: targetStatus,
+        statusChangedAt: now,
+        updatedAt: now,
+      })
       .where(eq(appointments.id, appointment.id));
   } catch (error) {
     if (isSlotUniqueViolation(error)) {
@@ -73,7 +98,12 @@ export async function rescheduleAppointment(
     throw error;
   }
 
-  const moved = { ...appointment, startsAt: slot.startsAt, endsAt: slot.endsAt };
+  const moved = {
+    ...appointment,
+    startsAt: slot.startsAt,
+    endsAt: slot.endsAt,
+    status: targetStatus,
+  };
   await outbox.emit(
     tx,
     bookingEvent(
@@ -89,7 +119,7 @@ export async function rescheduleAppointment(
 
   return {
     appointmentId: appointment.id,
-    status: appointment.status,
+    status: targetStatus,
     startsAt: slot.startsAt.toISOString(),
     endsAt: slot.endsAt.toISOString(),
   };

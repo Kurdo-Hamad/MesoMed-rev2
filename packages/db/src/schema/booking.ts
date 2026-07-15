@@ -22,6 +22,7 @@ export const APPOINTMENT_STATUSES = [
   "completed",
   "cancelled",
   "no_show",
+  "delayed",
 ] as const;
 
 export const BOOKING_CHANNELS = ["guest_web", "patient_account", "secretary_walk_in"] as const;
@@ -53,7 +54,9 @@ export const appointments = pgTable(
      */
     uniqueIndex("appointments_active_slot_unique")
       .on(table.doctorLocationId, table.startsAt)
-      .where(sql`${table.status} in ('booked', 'confirmed', 'checked_in', 'in_progress')`),
+      .where(
+        sql`${table.status} in ('booked', 'confirmed', 'checked_in', 'in_progress', 'delayed')`,
+      ),
     index("appointments_doctor_location_starts_idx").on(table.doctorLocationId, table.startsAt),
     index("appointments_patient_profile_idx").on(table.patientProfileId, table.startsAt),
     /**
@@ -64,7 +67,7 @@ export const appointments = pgTable(
     index("appointments_status_starts_idx").on(table.status, table.startsAt),
     check(
       "appointments_status_check",
-      sql`${table.status} in ('booked', 'confirmed', 'checked_in', 'in_progress', 'completed', 'cancelled', 'no_show')`,
+      sql`${table.status} in ('booked', 'confirmed', 'checked_in', 'in_progress', 'completed', 'cancelled', 'no_show', 'delayed')`,
     ),
     check(
       "appointments_booked_via_check",
