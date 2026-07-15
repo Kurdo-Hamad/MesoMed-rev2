@@ -20,8 +20,11 @@ describe("directory router authz matrix", () => {
   });
 
   afterAll(async () => {
-    await app.close();
-    await tdb.close();
+    // Optional-chained: if beforeAll failed partway these are undefined, and
+    // a secondary TypeError here would mask the real provisioning error
+    // (exactly what hid the ADR-0021 flake's cause).
+    await app?.close();
+    await tdb?.close();
   });
 
   const ADMIN_COMMANDS: Array<[string, unknown]> = [

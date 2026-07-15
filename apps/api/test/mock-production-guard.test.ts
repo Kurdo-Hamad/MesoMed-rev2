@@ -1,4 +1,4 @@
-import { afterEach, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import type { FastifyInstance } from "fastify";
 import { createTestDatabase, type TestDatabase } from "@mesomed/db/testing";
 import { buildServer } from "../src/app.js";
@@ -24,6 +24,13 @@ describe("mock-production guardrail", () => {
       await app.close();
       app = undefined;
     }
+  });
+
+  afterAll(async () => {
+    // Missing since Phase 7: without this, the embedded server was killed
+    // by the library's process-exit hook but its temp dir leaked on every
+    // local run (found while closing the ADR-0021 leak check).
+    await tdb?.close();
   });
 
   it("refuses to boot in production when credentials are missing, naming the mock adapter", async () => {

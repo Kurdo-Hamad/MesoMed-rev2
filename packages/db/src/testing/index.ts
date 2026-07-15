@@ -128,36 +128,69 @@ async function startContainer(): Promise<ProvisionedServer> {
 
 async function startEmbedded(): Promise<ProvisionedServer> {
   const { default: EmbeddedPostgres } = await import("embedded-postgres");
-  const databaseDir = await mkdtemp(path.join(os.tmpdir(), "mesomed-pg-"));
-  const port = await freePort();
-  const server = new EmbeddedPostgres({
-    databaseDir,
-    user: "postgres",
-    password: "postgres",
-    port,
-    // persistent:false makes embedded-postgres delete the data dir inside
-    // stop() with no retry — on Windows the lingering file locks turn that
-    // into EBUSY. Keep the cluster persistent and let teardown below remove
-    // the directory with backoff instead.
-    persistent: true,
-    // initdb inherits the OS locale; on Windows that yields WIN1252, which
-    // cannot store the trilingual (ar/ckb) fixture data. Force UTF8 with the
-    // locale-independent C locale so all three provisioning paths (CI pg
-    // service, Testcontainers, embedded) present the same encoding.
-    initdbFlags: ["--encoding=UTF8", "--no-locale"],
-  });
-  await server.initialise();
-  await server.start();
-  return {
-    connectionString: `postgresql://postgres:postgres@127.0.0.1:${port}/postgres`,
-    teardown: async () => {
-      await server.stop();
-      // On Windows the postgres process releases its file locks a beat after
-      // stop() resolves; plain rm throws EBUSY. fs.rm retries these
-      // transient codes with linear backoff.
+  // Parallel vitest forks provision embedded servers concurrently, and an
+  // ephemeral port probed as free can be re-bound by a sibling before
+  // postgres binds it — postgres then exits at startup, which
+  // embedded-postgres surfaces as a rejection carrying `undefined` (the
+  // message-less directory/authz suite flake, ADR-0021). Two containments:
+  // the port is picked AFTER initdb so the probe→bind window is
+  // milliseconds instead of the whole initdb, and the initialise/start
+  // cycle retries a bounded number of times with a fresh port and data dir
+  // (same shape as the CREATE DATABASE collision retry above).
+  for (let attempt = 1; ; attempt++) {
+    const databaseDir = await mkdtemp(path.join(os.tmpdir(), "mesomed-pg-"));
+    const options = {
+      databaseDir,
+      user: "postgres",
+      password: "postgres",
+      // persistent:false makes embedded-postgres delete the data dir inside
+      // stop() with no retry — on Windows the lingering file locks turn that
+      // into EBUSY. Keep the cluster persistent and let teardown below remove
+      // the directory with backoff instead.
+      persistent: true,
+      // initdb inherits the OS locale; on Windows that yields WIN1252, which
+      // cannot store the trilingual (ar/ckb) fixture data. Force UTF8 with the
+      // locale-independent C locale so all three provisioning paths (CI pg
+      // service, Testcontainers, embedded) present the same encoding.
+      initdbFlags: ["--encoding=UTF8", "--no-locale"],
+    };
+    try {
+      // The library takes the port at construction but only start() uses
+      // it, so initdb runs on a throwaway instance and the real port is
+      // picked just before the server that will bind it.
+      await new EmbeddedPostgres({ ...options, port: 5432 }).initialise();
+      const port = await freePort();
+      const server = new EmbeddedPostgres({ ...options, port });
+      try {
+        await server.start();
+      } catch (cause) {
+        // start() rejects with `undefined` when postgres exits early —
+        // always rethrow something a test reporter can print.
+        const reason =
+          cause instanceof Error ? cause.message : "postgres exited before becoming ready";
+        throw new Error(
+          `embedded Postgres failed to start (attempt ${attempt}, port ${port}): ${reason}`,
+          { cause },
+        );
+      }
+      return {
+        connectionString: `postgresql://postgres:postgres@127.0.0.1:${port}/postgres`,
+        teardown: async () => {
+          await server.stop();
+          // On Windows the postgres process releases its file locks a beat after
+          // stop() resolves; plain rm throws EBUSY. fs.rm retries these
+          // transient codes with linear backoff.
+          await rm(databaseDir, { recursive: true, force: true, maxRetries: 20, retryDelay: 150 });
+        },
+      };
+    } catch (error) {
+      // The handle owning cleanup is never returned on a failed attempt, so
+      // remove the abandoned cluster here — failed provisioning must not
+      // leak /tmp/mesomed-pg-* directories.
       await rm(databaseDir, { recursive: true, force: true, maxRetries: 20, retryDelay: 150 });
-    },
-  };
+      if (attempt >= 3) throw error;
+    }
+  }
 }
 
 function freePort(): Promise<number> {
