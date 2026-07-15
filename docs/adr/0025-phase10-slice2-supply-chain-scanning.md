@@ -58,9 +58,8 @@ branch protection is unavailable on the current GitHub plan (convention
 #15), so "block" is review discipline, not a server-side rule — the
 same enforcement posture as the rest of the merge gate.
 
-Initial-run triage: see the dated amendment section at the bottom once
-the first analysis completes on the Slice 2 PR; pre-existing alerts (if
-any) are dispositioned there.
+Initial-run triage (2026-07-16, first analysis on the Slice 2 PR):
+**zero open alerts** — nothing to disposition.
 
 ### 4. Secrets scan (policy D5, ruled)
 
