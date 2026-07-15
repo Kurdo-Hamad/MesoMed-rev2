@@ -70,11 +70,11 @@ Phase 0 (Foundation) scaffolds the monorepo, tooling, and a health-check-only AP
 ## Development environment (binding)
 
 The WSL clone at `~/mesomed` is the only authoritative working copy. All builds,
-tests, gate runs, commits, and Claude Code sessions execute from WSL. The
-Windows-side checkout (`C:\Users\Lenovo\Documents\MesoMed.rev2`) is read-only
-reference — never build, never test, never commit from it (precedent: a CRLF
-incident corrupted a prior commit). If a session finds itself running the gate
-or committing from a Windows path, stop and surface it before proceeding.
+tests, gate runs, commits, and Claude Code sessions execute from WSL. Never
+build, never test, never commit from any Windows-side (`/mnt/c`) checkout —
+such a checkout is read-only reference at most (precedent: a CRLF incident
+corrupted a prior commit). If a session finds itself running the gate or
+committing from a Windows path, stop and surface it before proceeding.
 
 Local test runs are always serialized (`--concurrency=1`): parallel workspace
 test tasks spawn multiple embedded PG16 instances that trample each other on
