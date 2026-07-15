@@ -180,10 +180,19 @@ describe("clinical-tier RLS and DB-level guardrails (raw connection, no API)", (
   });
 
   it("the channel functions are not executable by arbitrary roles (PUBLIC revoked)", async () => {
+    // Roles are cluster-wide and the existence check is not atomic with
+    // the CREATE; the loser of a concurrent creation race gets
+    // duplicate_object or unique_violation, both meaning "already exists"
+    // when caught around exactly this one CREATE (same pattern and
+    // rationale as the mesomed_api guard in migration 0004).
     await raw.query(`
       do $$ begin
         if not exists (select from pg_roles where rolname = 'mm_scratch_role') then
-          create role mm_scratch_role nologin;
+          begin
+            create role mm_scratch_role nologin;
+          exception when duplicate_object or unique_violation then
+            null; -- lost the creation race; the role exists
+          end;
         end if;
       end $$`);
     try {

@@ -67,11 +67,28 @@ ALTER TABLE "visit_notes" ADD CONSTRAINT "visit_notes_amends_note_id_visit_notes
 --> statement-breakpoint
 -- Least-privilege API role (§3.6). NOLOGIN: production attaches LOGIN via
 -- ALTER ROLE/a member role in ops config; tests adopt it with SET ROLE.
--- Roles are cluster-wide, so creation is guarded for idempotency.
+-- Roles are cluster-wide and the existence check is not atomic with the
+-- CREATE: concurrent migrators on a shared cluster (the CI pg service,
+-- where parallel test files each migrate their own database) can both
+-- pass the check. The loser's CREATE then waits on the winner's in-flight
+-- pg_authid row and raises unique_violation (23505 on
+-- pg_authid_rolname_index — observed in CI run 29398795882), or
+-- duplicate_object (42710) when the winner had already committed. Both
+-- are caught around exactly this one CREATE: in a block containing only
+-- CREATE ROLE they can only mean "another migrator won", and the
+-- unique-index wait semantics guarantee the winner has committed by the
+-- time the loser is signalled. An advisory lock cannot serialize this —
+-- advisory lock keyspaces are per-database, and the racing migrators
+-- each run in their own database (verified empirically on a shared
+-- embedded cluster with 8 concurrent migrators).
 DO $$
 BEGIN
   IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'mesomed_api') THEN
-    CREATE ROLE mesomed_api NOLOGIN;
+    BEGIN
+      CREATE ROLE mesomed_api NOLOGIN;
+    EXCEPTION WHEN duplicate_object OR unique_violation THEN
+      NULL; -- lost the creation race; the role exists
+    END;
   END IF;
 END
 $$;
