@@ -5,7 +5,6 @@ import { useLocale, useTranslations } from "next-intl";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { formatLocalizedDate, type Locale } from "@mesomed/i18n";
 import { normalizePhone } from "@mesomed/contracts/phone";
-import type { AppointmentStatus } from "@mesomed/contracts/booking";
 import { FilterSelect } from "../../../../components/filter-select";
 import { pickText } from "../../../../lib/localized";
 import { trpc } from "../../../../lib/trpc";
@@ -14,10 +13,13 @@ const field =
   "h-11 w-full rounded-md border border-line bg-canvas px-3 text-body text-ink shadow-card outline-none transition-shadow duration-fast placeholder:text-neutral-400 focus:border-brand";
 
 /**
- * Clinic day view (Phase 8 dashboards): doctors and secretaries share the
- * queue; available lifecycle actions differ by relation, mirroring the
- * booking module's actor matrix — the API re-checks every transition
- * (§3.6), the UI only offers what that matrix would allow.
+ * Clinic day view (Phase 8 dashboards, migrated onto server affordances in
+ * Phase 9c Slice 3 — the ADR-0020 F-07 web follow-up): doctors and
+ * secretaries share the queue; per-appointment actions come EXCLUSIVELY
+ * from the server-computed allowedActions field — this client holds no
+ * status rules, a button exists only when the server offers that action.
+ * The API re-checks every transition (layer a/b); a rejected action
+ * surfaces the failure banner and the refetch restores server truth.
  */
 export default function ClinicPage() {
   const t = useTranslations("web.dashboard");
@@ -69,7 +71,6 @@ export default function ClinicPage() {
 
       <DayQueue
         doctorLocationId={selected.doctorLocationId}
-        relation={selected.relation}
         anchor={anchor}
         onShiftDay={(days) =>
           setAnchor((current) => new Date(current.getTime() + days * 86_400_000))
@@ -83,28 +84,34 @@ export default function ClinicPage() {
   );
 }
 
-/** Actions offered per status, split by relation (booking actor matrix). */
-const DOCTOR_ACTIONS: Partial<Record<AppointmentStatus, string[]>> = {
-  booked: ["confirm", "cancel"],
-  confirmed: ["noShow", "cancel"],
-  checked_in: ["start"],
-  in_progress: ["complete"],
-};
-const SECRETARY_ACTIONS: Partial<Record<AppointmentStatus, string[]>> = {
-  booked: ["confirm", "cancel"],
-  confirmed: ["checkIn", "noShow", "cancel"],
-  checked_in: [],
-  in_progress: [],
-};
+/**
+ * Actions this build knows how to render and fire (MM-DES-002 §7):
+ * allowedActions is server truth, but a server whose action enum has
+ * widened past this deploy may offer members with no mutation wired here —
+ * rendering them would crash on click. Filtering to the known subset
+ * encodes zero state-machine knowledge (F-07 intact) and is permanent
+ * forward-compat hardening for every future enum widening.
+ */
+const KNOWN_ACTIONS = [
+  "confirm",
+  "checkIn",
+  "start",
+  "complete",
+  "noShow",
+  "cancel",
+  "delay",
+  "recall",
+] as const;
+type KnownAction = (typeof KNOWN_ACTIONS)[number];
+const isKnownAction = (action: string): action is KnownAction =>
+  (KNOWN_ACTIONS as readonly string[]).includes(action);
 
 function DayQueue({
   doctorLocationId,
-  relation,
   anchor,
   onShiftDay,
 }: {
   doctorLocationId: string;
-  relation: "owning_doctor" | "assigned_secretary";
   anchor: Date;
   onShiftDay: (days: number) => void;
 }) {
@@ -123,8 +130,10 @@ function DayQueue({
   const complete = trpc.booking.complete.useMutation({ onSettled: invalidate });
   const noShow = trpc.booking.noShow.useMutation({ onSettled: invalidate });
   const cancel = trpc.booking.cancel.useMutation({ onSettled: invalidate });
+  const delay = trpc.booking.delay.useMutation({ onSettled: invalidate });
+  const recall = trpc.booking.recall.useMutation({ onSettled: invalidate });
 
-  const mutations = { confirm, checkIn, start, complete, noShow, cancel } as const;
+  const mutations = { confirm, checkIn, start, complete, noShow, cancel, delay, recall } as const;
   const anyPending = Object.values(mutations).some((mutation) => mutation.isPending);
   const anyError = Object.values(mutations).find((mutation) => mutation.error);
 
@@ -146,7 +155,54 @@ function DayQueue({
       })
     : "";
 
-  const actions = relation === "owning_doctor" ? DOCTOR_ACTIONS : SECRETARY_ACTIONS;
+  // Grouping delayed rows below the active list is presentation of server
+  // truth (layout), not a client-side status rule — MM-DES-002 §3; the
+  // actions on every row still come exclusively from allowedActions.
+  const appointments = day.data?.appointments ?? [];
+  const activeAppointments = appointments.filter((a) => a.status !== "delayed");
+  const delayedAppointments = appointments.filter((a) => a.status === "delayed");
+
+  const renderAppointment = (appointment: (typeof appointments)[number]) => (
+    <li
+      key={appointment.appointmentId}
+      className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-line bg-surface p-4"
+    >
+      <div className="flex items-center gap-4">
+        <span className="text-body font-bold text-ink" dir="ltr">
+          {timeLabel?.format(new Date(appointment.startsAt))}
+        </span>
+        <div>
+          <p className="text-body font-medium text-ink">
+            {appointment.patientName ?? t("unknownPatient")}
+          </p>
+          <p className="text-caption text-neutral-500">
+            <span dir="ltr">{appointment.patientPhone ?? ""}</span>
+            {appointment.note ? ` · ${appointment.note}` : ""}
+          </p>
+        </div>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="rounded-sm bg-brand-soft px-2 py-0.5 text-caption font-semibold text-brand">
+          {t(`status_${appointment.status}`)}
+        </span>
+        {appointment.allowedActions.filter(isKnownAction).map((action) => (
+          <button
+            key={action}
+            type="button"
+            disabled={anyPending}
+            onClick={() => mutations[action].mutate({ appointmentId: appointment.appointmentId })}
+            className={
+              action === "cancel" || action === "noShow"
+                ? "rounded-md border border-line px-3 py-1.5 text-caption font-medium text-neutral-600 transition-colors duration-fast hover:border-danger hover:text-danger disabled:opacity-50"
+                : "rounded-md bg-brand px-3 py-1.5 text-caption font-semibold text-white transition-colors duration-fast hover:bg-brand-strong disabled:opacity-50"
+            }
+          >
+            {t(`action_${action}`)}
+          </button>
+        ))}
+      </div>
+    </li>
+  );
 
   return (
     <section className="mt-6">
@@ -187,58 +243,22 @@ function DayQueue({
             <div key={index} className="mb-2 h-16 rounded-lg bg-neutral-100" />
           ))}
         </div>
-      ) : (day.data?.appointments.length ?? 0) === 0 ? (
+      ) : appointments.length === 0 ? (
         <p className="rounded-md bg-surface px-4 py-6 text-center text-body text-neutral-500">
           {t("emptyDay")}
         </p>
       ) : (
-        <ul className="flex flex-col gap-2">
-          {day.data!.appointments.map((appointment) => (
-            <li
-              key={appointment.appointmentId}
-              className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-line bg-surface p-4"
-            >
-              <div className="flex items-center gap-4">
-                <span className="text-body font-bold text-ink" dir="ltr">
-                  {timeLabel?.format(new Date(appointment.startsAt))}
-                </span>
-                <div>
-                  <p className="text-body font-medium text-ink">
-                    {appointment.patientName ?? t("unknownPatient")}
-                  </p>
-                  <p className="text-caption text-neutral-500">
-                    <span dir="ltr">{appointment.patientPhone ?? ""}</span>
-                    {appointment.note ? ` · ${appointment.note}` : ""}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="rounded-sm bg-brand-soft px-2 py-0.5 text-caption font-semibold text-brand">
-                  {t(`status_${appointment.status}`)}
-                </span>
-                {(actions[appointment.status] ?? []).map((action) => (
-                  <button
-                    key={action}
-                    type="button"
-                    disabled={anyPending}
-                    onClick={() =>
-                      mutations[action as keyof typeof mutations].mutate({
-                        appointmentId: appointment.appointmentId,
-                      })
-                    }
-                    className={
-                      action === "cancel" || action === "noShow"
-                        ? "rounded-md border border-line px-3 py-1.5 text-caption font-medium text-neutral-600 transition-colors duration-fast hover:border-danger hover:text-danger disabled:opacity-50"
-                        : "rounded-md bg-brand px-3 py-1.5 text-caption font-semibold text-white transition-colors duration-fast hover:bg-brand-strong disabled:opacity-50"
-                    }
-                  >
-                    {t(`action_${action}`)}
-                  </button>
-                ))}
-              </div>
-            </li>
-          ))}
-        </ul>
+        <>
+          <ul className="flex flex-col gap-2">{activeAppointments.map(renderAppointment)}</ul>
+          {delayedAppointments.length > 0 && (
+            <div className="mt-6">
+              <h3 className="text-small font-medium text-neutral-600">{t("status_delayed")}</h3>
+              <ul className="mt-2 flex flex-col gap-2">
+                {delayedAppointments.map(renderAppointment)}
+              </ul>
+            </div>
+          )}
+        </>
       )}
     </section>
   );
