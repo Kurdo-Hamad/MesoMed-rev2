@@ -113,7 +113,7 @@ describe("AI triage service (MM-PLAN-001 §5 Phase 7, MM-EXEC-003 Phase 6 port)"
     ai.failing = true;
     const service = buildService(ai, log);
 
-    const secretText = "UNIQUE_SYMPTOM_MARKER_78421 severe chest pain";
+    const secretText = "UNIQUE_SYMPTOM_MARKER_78421 severe chest pain"; // gitleaks:allow — synthetic marker, not a credential (ADR-0025)
     // (chest pain would trip the red-flag screen before reaching the model —
     // use a marker-only text so the model path is actually exercised.)
     await service.triageSymptoms("UNIQUE_SYMPTOM_MARKER_78421 some vague ache");

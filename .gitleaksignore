@@ -1,0 +1,7 @@
+# Triaged findings from the one-time full-history scan (Phase 10 Slice 2,
+# ADR-0025). Format: commit:file:rule:line fingerprints.
+#
+# False positive: a log-redaction test's synthetic symptom marker held in a
+# variable named `secretText` — no credential. The live line carries an
+# inline `gitleaks:allow`; this fingerprint covers the historical commit.
+1ecbcbbdadff7ac113feb76fa2a03b2fe37695bc:apps/api/test/ai/triage-service.test.ts:generic-api-key:104
