@@ -1,12 +1,14 @@
 # ADR-0021: Phase 9c Slice 3 — Local-CI-Only Gate Exception (Never Relied Upon)
 
 ## Status
+
 Superseded by events — retained as history. The exception described here was
 drafted but never used: CI was restored and PR #43 merged on real
 GitHub-verified green. Decision to keep this file as a record (not delete it)
 made 2026-07-15.
 
 ## Context
+
 Slice 3 (mobile + web delay/recall UI) reached code-complete on 2026-07-15.
 The merge gate requires green GitHub Actions CI. CI could not run: the
 repository owner's GitHub account (free tier, no payment method) had exhausted
@@ -18,6 +20,7 @@ evidence) to avoid stalling. It was never relied upon. See "What actually
 happened" below.
 
 ## What actually happened (authoritative)
+
 - The billing block was resolved by **making the repository public**, which
   grants unlimited Actions minutes. Rejected alternatives: adding a payment
   method (owner chose not to), and creating a new GitHub account (ToS risk of
@@ -38,6 +41,7 @@ happened" below.
   (`git reset --hard origin/main`). No local-only merge survives in history.
 
 ## Original decision (drafted, NOT used)
+
 Owner had ruled: accept a full local WSL gate run (lint, typecheck, test,
 build — all green on ~/mesomed, apps/api at 63 files / 571 tests) as a
 documented one-time exception. Honest limits recorded at the time: the
@@ -50,6 +54,7 @@ This exception set **no precedent**. Per the F-01 audit, non-GitHub-verified
 green remains a false green in all future gates.
 
 ## Deviations recorded (Slice 3)
+
 - **React pinned to exact 19.2.3** in `apps/web` (prompt said ^19.2.7):
   structural fix for a dual-React-copy issue under the hoisted linker.
 - **Web test infra built fresh** (global-setup + real API + jsdom):
@@ -57,6 +62,7 @@ green remains a false green in all future gates.
   instruction was moot.
 
 ## Carry-forwards
+
 - **Port-race fix** (branch `fix/embedded-pg-port-race`, commit ccb664e):
   freePort() TOCTOU race in `packages/db/src/testing/index.ts`. Code-complete,
   parked. Now tracked by **ADR-0022** (its own slice/PR per the no-bundling
