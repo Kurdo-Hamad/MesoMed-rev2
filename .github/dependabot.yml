@@ -1,0 +1,23 @@
+# Phase 10 Slice 2 (ADR-0025). Dependabot PRs ride the normal
+# convention-#15 flow: CI must pass, human merges, no auto-merge — this
+# repo's pins are load-bearing (e.g. react 19.2.3 exact, ADR-0024
+# deviation #1), so a green Dependabot PR is a proposal, not a decision.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    # One grouped PR per week for minor+patch keeps noise down; majors
+    # (and anything that escapes the group) arrive as individual PRs.
+    groups:
+      minor-and-patch:
+        update-types:
+          - minor
+          - patch
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

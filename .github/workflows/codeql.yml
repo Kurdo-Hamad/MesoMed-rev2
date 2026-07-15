@@ -1,0 +1,36 @@
+# Phase 10 Slice 2 (ADR-0025): CodeQL static analysis, free on the
+# public repo (ADR-0021). Alert policy: new alerts surfaced on a PR are
+# triaged before merge; branch protection is unavailable on the current
+# GitHub plan, so blocking is discipline + review, not a server-side rule
+# (same honesty note as convention #15).
+name: CodeQL
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "0 3 * * 1" # weekly, Monday 03:00 UTC
+
+permissions:
+  contents: read
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+          build-mode: none
+
+      - uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:javascript-typescript"
