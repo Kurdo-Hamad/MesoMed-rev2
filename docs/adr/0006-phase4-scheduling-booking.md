@@ -118,3 +118,30 @@ cancellation link (signed token) is deferred until a phase needs it.
   residue on a failed booking).
 - Suite: 24 files / 240 tests green; workspace build, typecheck, lint,
   format green.
+
+## Amendment — 2026-07-15 (Phase 9c delay/late-patient; MM-DES-002, ADR-0024)
+
+Recorded per the dated-amendment pattern (ADR-0009 precedent). Owner
+rulings D1–D7/D4a of 2026-07-14 (MM-DES-002 §11, FINAL) extend this
+ADR's appointment machine:
+
+- **Machine extension — 8 statuses.** `delayed` is added with edges
+  `confirmed`/`checked_in` → `delayed`; `delayed` →
+  `checked_in`/`no_show`/`cancelled`; `delayed → confirmed` reserved for
+  the reschedule reset. The `checked_in ↔ delayed` cycle is deliberate
+  and pinned in unit tests. `delayed` joins the active-status set: the
+  `appointments_active_slot_unique` partial index and the status CHECK
+  were recreated with `delayed` in migration `0009` — a delay never
+  frees the slot and never changes `starts_at`/`ends_at` (D1).
+- **Reschedule-status exception.** "Patient reschedule (status
+  preserved)" above gains its one exception: reschedule from `delayed`
+  resets status to `confirmed` (D4). The `booking.rescheduled.v1`
+  payload carries `confirmed`, never `delayed`.
+- **Authorization narrowing (D4a).** Reschedule remains ANY_PARTY from
+  `booked`/`confirmed`, but from `delayed` it is CLINIC_SIDE only
+  (secretary/doctor/admin), enforced server-side. Delay and recall are
+  CLINIC_SIDE only; patients get neither action (D2/D3).
+- **Event set.** `booking.delayed.v1` joins the set (now 7 events,
+  pinned in `booking-events.test.ts`) with the standard post-transition
+  snapshot; no subscriber this phase (EV ruling — the future consumer is
+  the notification system, MM-DES-002 §12). Recall emits no event.
