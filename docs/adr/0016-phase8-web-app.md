@@ -99,9 +99,14 @@ recordSubscriptionPayment` is admin-API only; the e2e drives it
 9. ~~**RTL sign-off and production deploy are HALTED for the owner**~~ —
    **RTL sign-off resolved 2026-07-13** (Phase 9a Slice 0, ADR-0018): the
    owner reviewed docs/rtl-review/phase8/ and approved the set as-is.
-   Production deploy remains halted — docs/deploy/phase8-production-deployment.md's
-   manual-step checklist is unaffected by this note and is still not
-   self-certified or executed autonomously.
+   **Production-deploy checklist owner-signed-off 2026-07-15**: the owner
+   signed off docs/deploy/phase8-production-deployment.md (the manual-step
+   checklist), closing the remaining half of this item. Recorded on the
+   owner's instruction — nothing was self-certified, and no manual step
+   was executed autonomously. With both halves resolved (and item 10's
+   screenshot regeneration explicitly dispositioned as a non-blocking
+   owner deferral), Phase 8's human gates are closed and Phase 9 is fully
+   unblocked.
 10. **RTL screenshot regeneration for the numeric-date fix — deferred, not
     resolved.** The screenshots in docs/rtl-review/phase8/ still show the
     pre-fix dates (e.g. ckb's English month-name fallback, ar's
