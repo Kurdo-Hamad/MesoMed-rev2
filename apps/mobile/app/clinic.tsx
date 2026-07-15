@@ -27,7 +27,16 @@ import { trpc } from "../lib/trpc";
  * zero state-machine knowledge (F-07 intact) and is permanent
  * forward-compat hardening for every future enum widening.
  */
-const KNOWN_ACTIONS = ["confirm", "checkIn", "start", "complete", "noShow", "cancel"] as const;
+const KNOWN_ACTIONS = [
+  "confirm",
+  "checkIn",
+  "start",
+  "complete",
+  "noShow",
+  "cancel",
+  "delay",
+  "recall",
+] as const;
 type KnownAction = (typeof KNOWN_ACTIONS)[number];
 const isKnownAction = (action: string): action is KnownAction =>
   (KNOWN_ACTIONS as readonly string[]).includes(action);
@@ -60,7 +69,9 @@ export default function ClinicScreen() {
   const complete = trpc.booking.complete.useMutation({ onSettled: invalidate });
   const noShow = trpc.booking.noShow.useMutation({ onSettled: invalidate });
   const cancel = trpc.booking.cancel.useMutation({ onSettled: invalidate });
-  const mutations = { confirm, checkIn, start, complete, noShow, cancel } as const;
+  const delay = trpc.booking.delay.useMutation({ onSettled: invalidate });
+  const recall = trpc.booking.recall.useMutation({ onSettled: invalidate });
+  const mutations = { confirm, checkIn, start, complete, noShow, cancel, delay, recall } as const;
   const anyPending = Object.values(mutations).some((mutation) => mutation.isPending);
   const anyError = Object.values(mutations).some((mutation) => mutation.error !== null);
 
@@ -76,6 +87,70 @@ export default function ClinicScreen() {
         timeZone: day.data.timeZone,
       })
     : "";
+
+  // Grouping delayed rows below the active list is presentation of server
+  // truth (layout), not a client-side status rule — MM-DES-002 §3; the
+  // actions on every row still come exclusively from allowedActions.
+  const appointments = day.data?.appointments ?? [];
+  const activeAppointments = appointments.filter((a) => a.status !== "delayed");
+  const delayedAppointments = appointments.filter((a) => a.status === "delayed");
+
+  const renderAppointment = (appointment: (typeof appointments)[number]) => (
+    <View key={appointment.appointmentId} className="rounded-lg border border-line bg-surface p-4">
+      <View className="flex-row flex-wrap items-center justify-between gap-2">
+        <Text className="text-body font-bold text-ink" style={{ writingDirection: "ltr" }}>
+          {timeLabel(appointment.startsAt)}
+        </Text>
+        <View className="rounded-sm bg-brand-soft px-2 py-0.5">
+          <Text className="text-caption font-semibold text-brand">
+            {t(`status_${appointment.status}`)}
+          </Text>
+        </View>
+      </View>
+      <Text className="mt-1 text-body font-medium text-ink">
+        {appointment.patientName ?? t("unknownPatient")}
+      </Text>
+      {(appointment.patientPhone || appointment.note) && (
+        <Text className="mt-0.5 text-caption text-neutral-500">
+          <Text style={{ writingDirection: "ltr" }}>{appointment.patientPhone ?? ""}</Text>
+          {appointment.note ? ` · ${appointment.note}` : ""}
+        </Text>
+      )}
+      {appointment.allowedActions.filter(isKnownAction).length > 0 && (
+        <View className="mt-3 flex-row flex-wrap gap-2">
+          {appointment.allowedActions.filter(isKnownAction).map((action) => {
+            const destructive = action === "cancel" || action === "noShow";
+            return (
+              <Pressable
+                key={action}
+                disabled={anyPending}
+                onPress={() =>
+                  mutations[action].mutate({
+                    appointmentId: appointment.appointmentId,
+                  })
+                }
+                className={
+                  destructive
+                    ? "rounded-md border border-line px-3 py-1.5 disabled:opacity-50"
+                    : "rounded-md bg-brand px-3 py-1.5 disabled:opacity-50"
+                }
+              >
+                <Text
+                  className={
+                    destructive
+                      ? "text-caption font-medium text-neutral-600"
+                      : "text-caption font-semibold text-white"
+                  }
+                >
+                  {t(`action_${action}`)}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      )}
+    </View>
+  );
 
   return (
     <ScrollView className="flex-1 bg-canvas" contentContainerClassName="p-4 pb-10">
@@ -144,72 +219,17 @@ export default function ClinicScreen() {
               <Text className="text-body text-neutral-500">{t("emptyDay")}</Text>
             </View>
           ) : (
-            <View className="mt-4 gap-2">
-              {day.data!.appointments.map((appointment) => (
-                <View
-                  key={appointment.appointmentId}
-                  className="rounded-lg border border-line bg-surface p-4"
-                >
-                  <View className="flex-row flex-wrap items-center justify-between gap-2">
-                    <Text
-                      className="text-body font-bold text-ink"
-                      style={{ writingDirection: "ltr" }}
-                    >
-                      {timeLabel(appointment.startsAt)}
-                    </Text>
-                    <View className="rounded-sm bg-brand-soft px-2 py-0.5">
-                      <Text className="text-caption font-semibold text-brand">
-                        {t(`status_${appointment.status}`)}
-                      </Text>
-                    </View>
-                  </View>
-                  <Text className="mt-1 text-body font-medium text-ink">
-                    {appointment.patientName ?? t("unknownPatient")}
+            <>
+              <View className="mt-4 gap-2">{activeAppointments.map(renderAppointment)}</View>
+              {delayedAppointments.length > 0 && (
+                <View className="mt-6">
+                  <Text className="text-small font-medium text-neutral-600">
+                    {t("status_delayed")}
                   </Text>
-                  {(appointment.patientPhone || appointment.note) && (
-                    <Text className="mt-0.5 text-caption text-neutral-500">
-                      <Text style={{ writingDirection: "ltr" }}>
-                        {appointment.patientPhone ?? ""}
-                      </Text>
-                      {appointment.note ? ` · ${appointment.note}` : ""}
-                    </Text>
-                  )}
-                  {appointment.allowedActions.filter(isKnownAction).length > 0 && (
-                    <View className="mt-3 flex-row flex-wrap gap-2">
-                      {appointment.allowedActions.filter(isKnownAction).map((action) => {
-                        const destructive = action === "cancel" || action === "noShow";
-                        return (
-                          <Pressable
-                            key={action}
-                            disabled={anyPending}
-                            onPress={() =>
-                              mutations[action].mutate({
-                                appointmentId: appointment.appointmentId,
-                              })
-                            }
-                            className={
-                              destructive
-                                ? "rounded-md border border-line px-3 py-1.5 disabled:opacity-50"
-                                : "rounded-md bg-brand px-3 py-1.5 disabled:opacity-50"
-                            }
-                          >
-                            <Text
-                              className={
-                                destructive
-                                  ? "text-caption font-medium text-neutral-600"
-                                  : "text-caption font-semibold text-white"
-                              }
-                            >
-                              {t(`action_${action}`)}
-                            </Text>
-                          </Pressable>
-                        );
-                      })}
-                    </View>
-                  )}
+                  <View className="mt-2 gap-2">{delayedAppointments.map(renderAppointment)}</View>
                 </View>
-              ))}
-            </View>
+              )}
+            </>
           )}
         </>
       )}

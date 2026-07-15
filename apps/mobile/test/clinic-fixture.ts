@@ -19,6 +19,8 @@ import { createMobileAuthClient, type AuthClientStorage } from "../lib/create-au
 export const PHONES = {
   doctor: "+9647709100001",
   admin: "+9647709100002",
+  /** Registered patient — bookings on this phone bind patient_owner. */
+  patient: "+9647709100003",
   secretary: "+9647709100004",
   /** Carries the secretary role but NO assignment — layer-b denial actor. */
   outsiderSecretary: "+9647709100005",
@@ -53,8 +55,9 @@ export interface ClinicHarness {
     cookie?: string,
   ): Promise<RpcResult<T>>;
   signInCookie(phone: string): Promise<string>;
-  /** Guest-books the next open slot a week out; returns the queue item. */
-  bookSlot(): Promise<{ appointmentId: string; startsAt: string }>;
+  /** Guest-books the next open slot a week out; returns the queue item.
+   * Passing a registered phone links the appointment to that patient. */
+  bookSlot(phone?: string): Promise<{ appointmentId: string; startsAt: string }>;
   close(): Promise<void>;
 }
 
@@ -158,6 +161,9 @@ export async function setupClinicHarness(): Promise<ClinicHarness> {
   const adminUserId = await signUpAndVerify(PHONES.admin, "Mobile Admin");
   const secretaryUserId = await signUpAndVerify(PHONES.secretary, "Mobile Secretary");
   const outsiderUserId = await signUpAndVerify(PHONES.outsiderSecretary, "Outsider Secretary");
+  // Patient role + profile claim ride the phone-verification hook —
+  // a later guest booking on this phone binds patient_owner (MM-DEC §2).
+  await signUpAndVerify(PHONES.patient, "Mobile Patient");
   await db.insert(userRoles).values([
     { userId: doctorUserId, role: "doctor" },
     { userId: adminUserId, role: "admin" },
@@ -230,7 +236,7 @@ export async function setupClinicHarness(): Promise<ClinicHarness> {
   let guestPhoneCounter = 0;
   const slotCursor = { taken: new Set<string>() };
 
-  async function bookSlot(): Promise<{ appointmentId: string; startsAt: string }> {
+  async function bookSlot(phone?: string): Promise<{ appointmentId: string; startsAt: string }> {
     const anchor = new Date(Date.now() + 7 * 86_400_000).toISOString();
     const availability = await rpc<{
       days: Array<{ isPast: boolean; slots: Array<{ startsAt: string }> }>;
@@ -241,11 +247,11 @@ export async function setupClinicHarness(): Promise<ClinicHarness> {
       .find((candidate) => !slotCursor.taken.has(candidate.startsAt));
     if (!slot) throw new Error("no open slot in fixture");
     slotCursor.taken.add(slot.startsAt);
-    const phone = `+96477091100${String(++guestPhoneCounter).padStart(2, "0")}`;
+    const guestPhone = phone ?? `+96477091100${String(++guestPhoneCounter).padStart(2, "0")}`;
     const booked = await rpc<{ appointmentId: string }>("booking.guestBook", "mutation", {
       doctorLocationId,
       startsAt: slot.startsAt,
-      patient: { fullName: "Queue Patient", phone },
+      patient: { fullName: "Queue Patient", phone: guestPhone },
     });
     if (booked.status !== 200 || booked.data === null) {
       throw new Error(`guestBook failed in fixture: ${booked.status}`);
