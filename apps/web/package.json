@@ -23,8 +23,8 @@
     "lucide-react": "^1.24.0",
     "next": "^16.2.10",
     "next-intl": "^4.13.2",
-    "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react": "19.2.7",
+    "react-dom": "19.2.7"
   },
   "devDependencies": {
     "@mesomed/api": "workspace:*",
@@ -40,7 +40,7 @@
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "jsdom": "^29.1.1",
-    "postcss": "^8.5.16",
+    "postcss": "^8.5.19",
     "tailwindcss": "^4.3.2",
     "typescript": "~6.0.3",
     "vitest": "^4.1.10"
