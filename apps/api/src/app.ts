@@ -39,6 +39,7 @@ import { createHandlerRegistry, type HandlerRegistry } from "./kernel/events.js"
 import { healthPayload, readinessPayload } from "./kernel/health.js";
 import { createJobScheduler, type JobScheduler } from "./kernel/jobs.js";
 import { createOutboxEmitter, type OutboxEmitter } from "./kernel/outbox.js";
+import { registerOutboxMetrics } from "./kernel/metrics.js";
 import { REDACT_PATHS } from "./kernel/redaction.js";
 import { registerPaymentWebhookRoutes } from "./modules/billing/webhook.js";
 import { registerBillingSubscribers } from "./modules/billing/index.js";
@@ -259,6 +260,9 @@ export async function buildServer(
   });
 
   const { db, pool, close } = createDb(env.DATABASE_URL);
+  // Outbox lag / dead-letter gauges, observed at each metric export
+  // (ADR-0026). No-op unless an OTel SDK is running (kernel/otel.ts).
+  registerOutboxMetrics(db);
   // Module event contracts and subscribers accumulate here from Phase 2 on.
   const registry =
     overrides.eventRegistry ??
