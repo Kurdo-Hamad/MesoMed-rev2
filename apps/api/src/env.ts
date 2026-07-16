@@ -71,6 +71,12 @@ const envSchema = z.object({
   AI_TRIAGE_MODEL: z.string().optional(),
   // Next-day reminder cron (pg-boss schedule syntax).
   REMINDER_CRON: z.string().default("0 6 * * *"),
+  // Data-retention prune (Phase 10 Slice 6, ADR-0028): daily cron; windows
+  // per ADR-0011 (notification_log 12–24 months → 540d default) and the
+  // send_rate_events schema comment (days-scale → 7d default).
+  RETENTION_CRON: z.string().default("30 2 * * *"),
+  RETENTION_NOTIFICATION_LOG_DAYS: z.coerce.number().int().min(365).default(540),
+  RETENTION_SEND_RATE_EVENTS_DAYS: z.coerce.number().int().min(1).default(7),
   // Notification sender tuning — mirrors the outbox dispatcher's own knobs.
   NOTIFICATION_POLL_INTERVAL_MS: z.coerce.number().int().min(50).default(5_000),
   NOTIFICATION_MAX_ATTEMPTS: z.coerce.number().int().min(1).default(5),

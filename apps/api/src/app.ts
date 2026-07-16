@@ -47,6 +47,8 @@ import type { PaymentGatewayRegistry } from "./modules/billing/shared.js";
 import { registerClinicalSubscribers } from "./modules/clinical/index.js";
 import { registerCommunicationSubscribers } from "./modules/communication/index.js";
 import { planNextDayReminders } from "./modules/communication/reminders.js";
+import { pruneNotificationLog } from "./modules/communication/retention.js";
+import { pruneSendRateEvents } from "./kernel/abuse.js";
 import {
   createNotificationSender,
   type NotificationChannels,
@@ -356,6 +358,14 @@ export async function buildServer(
   await jobScheduler.start();
   await jobScheduler.schedule("communication-reminders", env.REMINDER_CRON, async () => {
     await planNextDayReminders(db, new Date());
+  });
+  // Data-retention prune (ADR-0028): each module prunes its own tables
+  // (convention #1) — communication's notification_log, the kernel's
+  // send-rate ledger.
+  await jobScheduler.schedule("data-retention-prune", env.RETENTION_CRON, async () => {
+    const notifications = await pruneNotificationLog(db, env.RETENTION_NOTIFICATION_LOG_DAYS);
+    const rateEvents = await pruneSendRateEvents(db, env.RETENTION_SEND_RATE_EVENTS_DAYS);
+    app.log.info({ notifications, rateEvents }, "data-retention prune completed");
   });
 
   app.get("/health", async () => healthPayload());
