@@ -36,5 +36,7 @@ async function shutdown(signal: string): Promise<void> {
 process.on("SIGTERM", () => void shutdown("SIGTERM"));
 process.on("SIGINT", () => void shutdown("SIGINT"));
 
-const address = await app.listen({ port: env.PORT, host: "0.0.0.0" });
+// Dual-stack listen: Railway-style private networking is IPv6-only, and
+// "::" accepts IPv4 too (ADR-0030 — surfaced by the Phase 10 load test).
+const address = await app.listen({ port: env.PORT, host: "::" });
 app.log.info(`MesoMed API listening on ${address}`);
