@@ -64,4 +64,32 @@ long-open owner deferrals restated here for disposition, per MM-DES-003
 
 ## Amendments
 
-_(none yet — HG outcomes land here, dated, owner-attributed)_
+### 2026-07-16 — owner-directed: Slice 4 evidence provenance + headroom correction
+
+Two corrections to the Slice 4 (ADR-0030) record, ruled by the owner on
+2026-07-16:
+
+1. **Evidence provenance.** The load-test figures in
+   `docs/perf/phase10/load-test-report.md` are self-reported by the
+   executing agent from the Railway scratch environment, which was
+   deleted after the run (per D2). No independent artifacts survive —
+   no k6 output logs, no deployment records — so the figures were not
+   independently verified. Contributing context, recorded honestly:
+   during the same session, two log watchers misidentified a 1-minute
+   smoke run as the 15-minute baseline, and both misidentifications
+   were caught only by human log inspection.
+2. **Headroom claim removed.** The "headroom is large at 10× (worst p95
+   is 7× under budget)" claim in ADR-0030 §Consequences (also stated as
+   "~7× headroom" in the Slice 4 handback) is removed as inaccurate:
+   the 10× run sustained only ~7.5 req/s — nowhere near saturation, so
+   p95-vs-budget distance says nothing about capacity headroom. The
+   accurate statement, corrected in place in ADR-0030: **all §6
+   thresholds passed at the modeled 10× traffic level; the saturation
+   point of the API was not established.** The claim does not appear in
+   `load-test-report.md` itself.
+
+**Phase 10 carry-forward:** if load-test evidence is needed for a
+future gate, re-run with log artifacts retained (k6 summary output,
+deployment records) before environment teardown.
+
+_(further HG outcomes land here, dated, owner-attributed)_
