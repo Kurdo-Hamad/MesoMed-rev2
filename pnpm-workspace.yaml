@@ -27,3 +27,4 @@ allowBuilds:
   sharp: true
   ssh2: false
   unrs-resolver: true
+minimumReleaseAge: 60
