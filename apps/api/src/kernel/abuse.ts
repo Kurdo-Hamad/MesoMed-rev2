@@ -18,7 +18,17 @@ import {
   resolveVelocityPolicy,
   type SendRateScope,
 } from "@mesomed/config";
-import { abuseAlerts, and, channelSpend, eq, gt, sendRateEvents, sql, type Db } from "@mesomed/db";
+import {
+  abuseAlerts,
+  and,
+  channelSpend,
+  eq,
+  gt,
+  lt,
+  sendRateEvents,
+  sql,
+  type Db,
+} from "@mesomed/db";
 import type { ConfigService } from "./config.js";
 import { AppError } from "./errors.js";
 
@@ -176,4 +186,20 @@ export async function recordVelocity(
       details: { count, threshold: policy.threshold },
     });
   }
+}
+
+/**
+ * Retention prune (Phase 10 Slice 6, ADR-0028): send-rate ledger rows are
+ * operational data with a days-scale window (see the schema comment on
+ * `send_rate_events`) — anything older than the widest rate window is
+ * dead weight and PII (phone/IP keys, crypto-shred scope, ADR-0011).
+ * Kernel-owned table, so the kernel prunes it (convention #1).
+ */
+export async function pruneSendRateEvents(db: Db, olderThanDays: number): Promise<number> {
+  const cutoff = new Date(Date.now() - olderThanDays * 24 * 60 * 60 * 1000);
+  const deleted = await db
+    .delete(sendRateEvents)
+    .where(lt(sendRateEvents.sentAt, cutoff))
+    .returning({ id: sendRateEvents.id });
+  return deleted.length;
 }
