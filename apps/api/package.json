@@ -17,7 +17,8 @@
     "test": "vitest run",
     "seed": "tsx scripts/seed/index.ts",
     "dev:embedded": "tsx scripts/dev-embedded.ts",
-    "perf": "tsx scripts/perf/perf-validation.ts"
+    "perf": "tsx scripts/perf/perf-validation.ts",
+    "verify:db-role": "tsx scripts/verify-db-role.ts"
   },
   "dependencies": {
     "@better-auth/core": "^1.6.23",
