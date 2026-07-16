@@ -78,9 +78,13 @@ managed PG + deploy the API image + `seed-load` + the two k6 scripts.
 
 - The §6 performance gate is evidence-backed green; the launch
   checklist (Slice 8) can reference this ADR and the report.
-- Headroom is large at 10× (worst p95 is 7× under budget); the Slice 3
-  alert thresholds (outbox lag > 60 s, 5xx > 2%) stand as configured —
-  nothing observed in the shakedown argues for tightening or loosening
-  them yet (no alert-worthy condition was inducible at 10×).
+- All §6 thresholds passed at the modeled 10× traffic level (~7.5
+  req/s sustained); **the saturation point of the API was not
+  established**. _(Amended 2026-07-16, owner-directed: replaced an
+  inaccurate "headroom is large / 7× under budget" claim — see the
+  ADR-0031 amendment of the same date.)_ The Slice 3 alert thresholds
+  (outbox lag > 60 s, 5xx > 2%) stand as configured — nothing observed
+  in the shakedown argues for tightening or loosening them yet (no
+  alert-worthy condition was inducible at 10×).
 - The load suite is reusable against any future environment by setting
   `BASE_URL`/`K6_DATA`.
