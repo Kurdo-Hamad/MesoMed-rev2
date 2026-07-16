@@ -1,0 +1,55 @@
+{
+  "__inputs": [
+    {
+      "name": "DS_PROMETHEUS",
+      "label": "Prometheus",
+      "type": "datasource",
+      "pluginId": "prometheus"
+    }
+  ],
+  "uid": "mesomed-dead-letter",
+  "title": "MesoMed — Dead-letter queue",
+  "tags": ["mesomed", "adr-0026"],
+  "schemaVersion": 39,
+  "time": { "from": "now-24h", "to": "now" },
+  "refresh": "1m",
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Dead-lettered events (current)",
+      "description": "domain_events rows with status='dead' (exhausted retries). Anything > 0 needs triage; redeliver via the dispatcher's redeliver() after fixing the handler.",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 0 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 1 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [{ "refId": "A", "expr": "max(mesomed_outbox_dead)" }]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Dead-letter depth over time",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 8, "w": 16, "x": 8, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "max(mesomed_outbox_dead)",
+          "legendFormat": "dead rows"
+        }
+      ]
+    }
+  ]
+}

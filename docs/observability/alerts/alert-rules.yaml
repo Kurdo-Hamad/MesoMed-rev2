@@ -1,0 +1,95 @@
+# MesoMed launch alerts (Phase 10 Slice 3, ADR-0026). Grafana alert-rule
+# provisioning format. Import into Grafana Cloud via the provisioning API:
+#   POST /api/v1/provisioning/alert-rules  (one call per rule, JSON body)
+# or recreate in the UI with the same queries/thresholds during HG-2.
+# Replace <DS_PROMETHEUS_UID> with the stack's Prometheus datasource UID.
+# Thresholds are ADR-0026 starting values, expected to be tuned during the
+# Slice 4 load test.
+apiVersion: 1
+groups:
+  - orgId: 1
+    name: mesomed-launch
+    folder: MesoMed
+    interval: 1m
+    rules:
+      - uid: mesomed-outbox-lag
+        title: Outbox lag high
+        condition: C
+        for: 5m
+        noDataState: NoData
+        execErrState: Error
+        annotations:
+          summary: >-
+            Oldest pending outbox row is older than 60s for 5 minutes —
+            the dispatcher is behind or down. Runbook: check API logs
+            (pg-boss errors), then domain_events status counts.
+        labels:
+          service: mesomed-api
+          adr: "0026"
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: <DS_PROMETHEUS_UID>
+            model:
+              expr: max(mesomed_outbox_lag_seconds)
+              refId: A
+          - refId: B
+            relativeTimeRange: { from: 0, to: 0 }
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: last
+              refId: B
+          - refId: C
+            relativeTimeRange: { from: 0, to: 0 }
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              refId: C
+              conditions:
+                - evaluator: { type: gt, params: [60] }
+
+      - uid: mesomed-error-rate
+        title: API 5xx error rate high
+        condition: C
+        for: 5m
+        noDataState: OK # no traffic ⇒ no error rate; don't page on quiet
+        execErrState: Error
+        annotations:
+          summary: >-
+            More than 2% of API requests returned 5xx for 5 minutes.
+            Check Sentry for the failing route, then the latency
+            dashboard for saturation.
+        labels:
+          service: mesomed-api
+          adr: "0026"
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: <DS_PROMETHEUS_UID>
+            model:
+              expr: >-
+                100 *
+                sum(rate(http_server_duration_milliseconds_count{http_status_code=~"5.."}[5m]))
+                /
+                sum(rate(http_server_duration_milliseconds_count[5m]))
+              refId: A
+          - refId: B
+            relativeTimeRange: { from: 0, to: 0 }
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: last
+              refId: B
+          - refId: C
+            relativeTimeRange: { from: 0, to: 0 }
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              refId: C
+              conditions:
+                - evaluator: { type: gt, params: [2] }

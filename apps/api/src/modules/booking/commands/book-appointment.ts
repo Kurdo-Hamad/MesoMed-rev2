@@ -18,6 +18,7 @@ import type { BookingChannel } from "@mesomed/contracts/booking";
 import { ErrorCode } from "@mesomed/contracts/errors";
 import { appointments, type DbTransaction } from "@mesomed/db";
 import { AppError } from "../../../kernel/errors.js";
+import { recordBookingCreated } from "../../../kernel/metrics.js";
 import type { OutboxEmitter } from "../../../kernel/outbox.js";
 import type { createGuestPatientProfile } from "../../identity/commands/create-guest-patient-profile.js";
 import {
@@ -100,6 +101,10 @@ export async function bookAppointment(
     tx,
     bookingEvent("booking.booked.v1", appointmentSnapshot(row, doctorLocation), row.id),
   );
+
+  // Funnel metric, not an event (ADR-0026). Counted at command success;
+  // the enclosing tx commits as soon as this returns.
+  recordBookingCreated(input.bookedVia);
 
   return {
     appointmentId: row.id,

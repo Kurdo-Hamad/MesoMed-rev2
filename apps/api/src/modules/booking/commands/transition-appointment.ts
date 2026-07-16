@@ -20,6 +20,7 @@ import {
 import type { EventName } from "@mesomed/contracts/events";
 import { appointments, eq, type DbTransaction } from "@mesomed/db";
 import { AppError } from "../../../kernel/errors.js";
+import { recordBookingTransition } from "../../../kernel/metrics.js";
 import type { Session } from "../../../kernel/context.js";
 import type { OutboxEmitter } from "../../../kernel/outbox.js";
 import { getDoctorLocation } from "../../scheduling/queries/schedule-inputs.js";
@@ -95,6 +96,10 @@ export async function transitionAppointment(
       edge.target === "cancelled" ? { ...snapshot, reason: input.reason ?? null } : snapshot;
     await outbox.emit(tx, bookingEvent(eventName, payload, appointment.id));
   }
+
+  // Funnel metric, not an event (ADR-0026). Counted at command success;
+  // the enclosing tx commits as soon as this returns.
+  recordBookingTransition(input.action);
 
   return { appointmentId: appointment.id, status: edge.target };
 }

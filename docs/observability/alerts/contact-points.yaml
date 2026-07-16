@@ -1,0 +1,14 @@
+# Alert delivery channel (Phase 10 Slice 3, ADR-0026; owner ruling D3).
+# Import via POST /api/v1/provisioning/contact-points, or create in the
+# Grafana Cloud UI (Alerting → Contact points) during HG-2, then set the
+# default notification policy to route to it and SEND A TEST NOTIFICATION.
+apiVersion: 1
+contactPoints:
+  - orgId: 1
+    name: mesomed-owner-email
+    receivers:
+      - uid: mesomed-owner-email
+        type: email
+        settings:
+          addresses: hakeem.pijdary@gmail.com
+          singleEmail: true
