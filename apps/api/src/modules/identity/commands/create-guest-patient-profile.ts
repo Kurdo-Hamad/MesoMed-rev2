@@ -59,14 +59,10 @@ export async function createGuestPatientProfile(
   }
 
   await outbox.emit(tx, {
-    name: "identity.patient_profile_created.v1",
+    name: "identity.patient_profile_created.v2",
     aggregateType: "patient_profile",
     aggregateId: inserted.id,
-    payload: {
-      profileId: inserted.id,
-      normalizedPhone: normalized,
-      source: "guest_booking",
-    },
+    payload: { profileId: inserted.id, source: "guest_booking" },
   });
   return { profileId: inserted.id, created: true };
 }

@@ -8,6 +8,15 @@ import { defineEvent } from "./index.js";
 
 export const USER_TYPES = ["patient", "provider"] as const;
 
+/**
+ * MM-QA-004 F-04 (closes MM-QA-002 F-07): domain_events is retained
+ * indefinitely, so contact PII must never persist there. New identity
+ * schemas (v2 and later) are ids only, and all emit sites use v2.
+ * The v1 schemas keep phone/email/normalizedPhone declared exactly as
+ * shipped — owner ruling 2026-07-17 (ADR-0032): shipped contract
+ * versions are never edited; they are the historical record of what
+ * those rows contained. Migration 0010 alone redacts the stored data.
+ */
 export const userRegisteredV1 = defineEvent(
   "identity",
   "user_registered",
@@ -17,6 +26,16 @@ export const userRegisteredV1 = defineEvent(
     userType: z.enum(USER_TYPES),
     phone: z.string().nullable(),
     email: z.string().nullable(),
+  }),
+);
+
+export const userRegisteredV2 = defineEvent(
+  "identity",
+  "user_registered",
+  2,
+  z.object({
+    userId: z.string(),
+    userType: z.enum(USER_TYPES),
   }),
 );
 
@@ -37,6 +56,16 @@ export const patientProfileCreatedV1 = defineEvent(
   z.object({
     profileId: z.string(),
     normalizedPhone: z.string(),
+    source: z.enum(["guest_booking", "registration"]),
+  }),
+);
+
+export const patientProfileCreatedV2 = defineEvent(
+  "identity",
+  "patient_profile_created",
+  2,
+  z.object({
+    profileId: z.string(),
     source: z.enum(["guest_booking", "registration"]),
   }),
 );
@@ -81,8 +110,10 @@ export const providerRecoveredV1 = defineEvent(
 /** All identity event contracts, for registry composition in the API. */
 export const IDENTITY_EVENTS = [
   userRegisteredV1,
+  userRegisteredV2,
   roleAssignedV1,
   patientProfileCreatedV1,
+  patientProfileCreatedV2,
   profileClaimedV1,
   providerStatusChangedV1,
   providerRecoveredV1,

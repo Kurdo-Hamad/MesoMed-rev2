@@ -56,15 +56,10 @@ export async function completeProviderSignup(
   await tx.insert(userRoles).values({ userId: input.userId, role: "doctor" }).onConflictDoNothing();
 
   await outbox.emit(tx, {
-    name: "identity.user_registered.v1",
+    name: "identity.user_registered.v2",
     aggregateType: "user",
     aggregateId: input.userId,
-    payload: {
-      userId: input.userId,
-      userType: "provider",
-      phone: normalized,
-      email: account.email,
-    },
+    payload: { userId: input.userId, userType: "provider" },
   });
   await outbox.emit(tx, {
     name: "identity.role_assigned.v1",

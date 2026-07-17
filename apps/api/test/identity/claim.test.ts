@@ -102,7 +102,7 @@ describe("guest → account claim (MM-DEC rev02 §2, convention #7)", () => {
     expect((claimed[0]?.payload as { proof: string }).proof).toBe("otp-verified-phone");
     // The guest-created profile must not get a second "created" event.
     const created = events.filter(
-      (e) => e.name === "identity.patient_profile_created.v1" && e.aggregateId === guest.profileId,
+      (e) => e.name === "identity.patient_profile_created.v2" && e.aggregateId === guest.profileId,
     );
     expect(created).toHaveLength(1);
     expect((created[0]?.payload as { source: string }).source).toBe("guest_booking");

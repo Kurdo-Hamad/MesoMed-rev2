@@ -71,6 +71,13 @@
       "when": 1784064618186,
       "tag": "0009_booking_delayed_status",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1784308545940,
+      "tag": "0010_redact_identity_event_pii",
+      "breakpoints": true
     }
   ]
 }

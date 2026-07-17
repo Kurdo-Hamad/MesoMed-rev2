@@ -100,14 +100,10 @@ export async function claimPatientProfile(
         throw new AppError(ErrorCode.INTERNAL, "Failed to create patient profile");
       }
       await outbox.emit(tx, {
-        name: "identity.patient_profile_created.v1",
+        name: "identity.patient_profile_created.v2",
         aggregateType: "patient_profile",
         aggregateId: created.id,
-        payload: {
-          profileId: created.id,
-          normalizedPhone: input.normalizedPhone,
-          source: "registration",
-        },
+        payload: { profileId: created.id, source: "registration" },
       });
       await outbox.emit(tx, {
         name: "identity.profile_claimed.v1",
