@@ -92,9 +92,9 @@ describe("patient auth (phone + password + OTP)", () => {
     // Events written through the outbox, atomically with the state.
     const events = await kernel.db.select().from(domainEvents);
     const names = events.map((event) => event.name);
-    expect(names).toContain("identity.user_registered.v1");
+    expect(names).toContain("identity.user_registered.v2");
     expect(names).toContain("identity.role_assigned.v1");
-    expect(names).toContain("identity.patient_profile_created.v1");
+    expect(names).toContain("identity.patient_profile_created.v2");
     expect(names).toContain("identity.profile_claimed.v1");
 
     // The session works against the kernel context (whoami).
@@ -223,7 +223,7 @@ describe("patient auth (phone + password + OTP)", () => {
     expect(verify.statusCode).toBe(200);
 
     const events = await app.kernel.db.select().from(domainEvents);
-    const registered = events.filter((event) => event.name === "identity.user_registered.v1");
+    const registered = events.filter((event) => event.name === "identity.user_registered.v2");
     // Two users signed up in this suite, but re-verification must not
     // produce another user_registered/profile_claimed pair.
     expect(registered).toHaveLength(1);

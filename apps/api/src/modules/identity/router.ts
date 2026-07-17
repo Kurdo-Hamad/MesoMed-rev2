@@ -94,11 +94,7 @@ export function createIdentityRouter(auth: IdentityAuth) {
           }
 
           if (proofVerified) {
-            await ensurePatientRegistration(tx, ctx.outbox, {
-              userId,
-              phone: account.phoneNumber ?? null,
-              email: isPlaceholderEmail(account.email) ? null : account.email,
-            });
+            await ensurePatientRegistration(tx, ctx.outbox, { userId });
           }
 
           const result = await claimPatientProfile(tx, ctx.outbox, {

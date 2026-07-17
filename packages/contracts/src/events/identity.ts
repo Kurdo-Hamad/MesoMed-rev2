@@ -8,6 +8,16 @@ import { defineEvent } from "./index.js";
 
 export const USER_TYPES = ["patient", "provider"] as const;
 
+/**
+ * Identity payloads are ids only, in every version (MM-QA-004 F-04,
+ * closing MM-QA-002 F-07): domain_events is retained indefinitely, so
+ * contact PII must never persist there. v1 originally carried
+ * phone/email/normalizedPhone; migration 0010 redacted those keys from
+ * every stored v1 row, and the v1 schemas below match the redacted
+ * state (envelope parse is non-strict, so a not-yet-redacted payload
+ * still parses — the extra keys strip). v1 stays registered read-only
+ * for pre-0010 rows; all emit sites use v2.
+ */
 export const userRegisteredV1 = defineEvent(
   "identity",
   "user_registered",
@@ -15,8 +25,16 @@ export const userRegisteredV1 = defineEvent(
   z.object({
     userId: z.string(),
     userType: z.enum(USER_TYPES),
-    phone: z.string().nullable(),
-    email: z.string().nullable(),
+  }),
+);
+
+export const userRegisteredV2 = defineEvent(
+  "identity",
+  "user_registered",
+  2,
+  z.object({
+    userId: z.string(),
+    userType: z.enum(USER_TYPES),
   }),
 );
 
@@ -36,7 +54,16 @@ export const patientProfileCreatedV1 = defineEvent(
   1,
   z.object({
     profileId: z.string(),
-    normalizedPhone: z.string(),
+    source: z.enum(["guest_booking", "registration"]),
+  }),
+);
+
+export const patientProfileCreatedV2 = defineEvent(
+  "identity",
+  "patient_profile_created",
+  2,
+  z.object({
+    profileId: z.string(),
     source: z.enum(["guest_booking", "registration"]),
   }),
 );
@@ -81,8 +108,10 @@ export const providerRecoveredV1 = defineEvent(
 /** All identity event contracts, for registry composition in the API. */
 export const IDENTITY_EVENTS = [
   userRegisteredV1,
+  userRegisteredV2,
   roleAssignedV1,
   patientProfileCreatedV1,
+  patientProfileCreatedV2,
   profileClaimedV1,
   providerStatusChangedV1,
   providerRecoveredV1,

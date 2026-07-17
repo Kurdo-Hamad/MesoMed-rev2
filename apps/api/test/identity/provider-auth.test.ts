@@ -127,7 +127,7 @@ describe("provider accounts (email+password, verified email, pending gate)", () 
     expect(roles.map((r) => r.role)).toEqual(["doctor"]);
 
     const events = await app.kernel.db.select().from(domainEvents);
-    const registered = events.filter((e) => e.name === "identity.user_registered.v1");
+    const registered = events.filter((e) => e.name === "identity.user_registered.v2");
     expect(registered).toHaveLength(1);
     expect((registered[0]?.payload as { userType: string }).userType).toBe("provider");
 
@@ -140,7 +140,7 @@ describe("provider accounts (email+password, verified email, pending gate)", () 
     });
     expect(again.json().result.data.providerProfileId).toBe(providerProfileId);
     const eventsAfter = await app.kernel.db.select().from(domainEvents);
-    expect(eventsAfter.filter((e) => e.name === "identity.user_registered.v1")).toHaveLength(1);
+    expect(eventsAfter.filter((e) => e.name === "identity.user_registered.v2")).toHaveLength(1);
   });
 
   it("a patient without a verified email cannot become a provider", async () => {

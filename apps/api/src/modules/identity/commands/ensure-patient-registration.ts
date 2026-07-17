@@ -9,7 +9,7 @@ import type { OutboxEmitter } from "../../../kernel/outbox.js";
 export async function ensurePatientRegistration(
   tx: DbTransaction,
   outbox: OutboxEmitter,
-  input: { userId: string; phone: string | null; email: string | null },
+  input: { userId: string },
 ): Promise<void> {
   const inserted = await tx
     .insert(userRoles)
@@ -21,10 +21,10 @@ export async function ensurePatientRegistration(
   if (inserted.length === 0) return;
 
   await outbox.emit(tx, {
-    name: "identity.user_registered.v1",
+    name: "identity.user_registered.v2",
     aggregateType: "user",
     aggregateId: input.userId,
-    payload: { userId: input.userId, userType: "patient", phone: input.phone, email: input.email },
+    payload: { userId: input.userId, userType: "patient" },
   });
   await outbox.emit(tx, {
     name: "identity.role_assigned.v1",

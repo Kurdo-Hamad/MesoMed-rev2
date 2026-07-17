@@ -44,7 +44,7 @@ describe("guest patient profiles (create-on-booking, MM-DEC rev02 §1)", () => {
     expect(profile?.fullName).toBe("Guest Zero");
 
     const events = await db.select().from(domainEvents);
-    const created = events.filter((e) => e.name === "identity.patient_profile_created.v1");
+    const created = events.filter((e) => e.name === "identity.patient_profile_created.v2");
     expect(created).toHaveLength(1);
     expect((created[0]?.payload as { source: string }).source).toBe("guest_booking");
   });
@@ -67,7 +67,7 @@ describe("guest patient profiles (create-on-booking, MM-DEC rev02 §1)", () => {
     expect(rows[0]?.fullName).toBe("Guest Zero");
 
     const events = await db.select().from(domainEvents);
-    expect(events.filter((e) => e.name === "identity.patient_profile_created.v1")).toHaveLength(1);
+    expect(events.filter((e) => e.name === "identity.patient_profile_created.v2")).toHaveLength(1);
   });
 
   it("rejects an invalid phone with a typed VALIDATION error", async () => {
