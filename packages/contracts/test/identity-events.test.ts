@@ -32,11 +32,25 @@ describe("identity event contracts", () => {
     expect(registry.names()).toHaveLength(IDENTITY_EVENTS.length);
   });
 
-  it("no identity event payload schema contains contact PII fields (MM-QA-004 F-04)", () => {
-    // domain_events is retained indefinitely: identity payloads are ids
-    // only, in every version — v1 matches the post-0010 redacted rows.
+  it("no identity event payload schema beyond shipped v1 contains contact PII fields (MM-QA-004 F-04)", () => {
+    // domain_events is retained indefinitely: every identity schema from
+    // v2 onward (including any future event) must be ids only. The
+    // shipped Phase 2 v1 contracts are excluded — owner ruling
+    // 2026-07-17 (ADR-0032): shipped contract versions are never edited;
+    // v1 is the historical record of what those rows contained, and
+    // migration 0010 alone redacted the stored data.
+    const SHIPPED_V1_NAMES = [
+      "identity.patient_profile_created.v1",
+      "identity.profile_claimed.v1",
+      "identity.provider_recovered.v1",
+      "identity.provider_status_changed.v1",
+      "identity.role_assigned.v1",
+      "identity.user_registered.v1",
+    ];
     const PII_FIELDS = ["phone", "email", "normalizedPhone"];
-    for (const event of IDENTITY_EVENTS) {
+    const checked = IDENTITY_EVENTS.filter((event) => !SHIPPED_V1_NAMES.includes(event.name));
+    expect(checked.length).toBeGreaterThan(0);
+    for (const event of checked) {
       const shape = (event.payload as z.ZodObject<z.ZodRawShape>).shape;
       expect(
         Object.keys(shape).filter((key) => PII_FIELDS.includes(key)),
@@ -66,22 +80,42 @@ describe("identity event contracts", () => {
     ).toThrow();
   });
 
-  it("v1 stays registered for pre-0010 rows and strips redacted PII keys on parse", () => {
-    // Envelope parse is non-strict: a legacy payload that still carries
-    // the pre-redaction keys parses, and the keys do not survive it.
-    const legacyRegistered = userRegisteredV1.envelope.parse({
+  it("user_registered.v1 carries user type and contact identifiers, as shipped", () => {
+    const parsed = userRegisteredV1.envelope.parse({
       name: "identity.user_registered.v1",
       version: 1,
-      payload: { userId: "u1", userType: "patient", phone: "+9647701234567", email: "a@b.c" },
+      payload: {
+        userId: "u1",
+        userType: "patient",
+        phone: "+9647701234567",
+        email: null,
+      },
     });
-    expect(legacyRegistered.payload).toEqual({ userId: "u1", userType: "patient" });
+    expect(parsed.payload.userType).toBe("patient");
+    expect(() =>
+      userRegisteredV1.payload.parse({
+        userId: "u1",
+        userType: "visitor",
+        phone: null,
+        email: null,
+      }),
+    ).toThrow();
+  });
 
-    const legacyProfile = patientProfileCreatedV1.envelope.parse({
-      name: "identity.patient_profile_created.v1",
-      version: 1,
-      payload: { profileId: "p1", normalizedPhone: "+9647701234567", source: "guest_booking" },
+  it("patient_profile_created.v1 records the normalized phone and source, as shipped", () => {
+    const payload = patientProfileCreatedV1.payload.parse({
+      profileId: "p1",
+      normalizedPhone: "+9647701234567",
+      source: "guest_booking",
     });
-    expect(legacyProfile.payload).toEqual({ profileId: "p1", source: "guest_booking" });
+    expect(payload.source).toBe("guest_booking");
+    expect(() =>
+      patientProfileCreatedV1.payload.parse({
+        profileId: "p1",
+        normalizedPhone: "+9647701234567",
+        source: "import",
+      }),
+    ).toThrow();
   });
 
   it("role_assigned only accepts platform roles", () => {
