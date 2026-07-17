@@ -102,3 +102,15 @@ export const meResponseSchema = z.object({
 export const revokeOtherSessionsOutputSchema = z.object({
   revoked: z.boolean(),
 });
+
+/**
+ * Self-service account deletion (MM-QA-004 F-02). No input: the procedure
+ * always acts on the authenticated caller's own id — there is no id
+ * parameter, so one account can never delete another (self-only by
+ * construction). The erasure runbook's matrix disposition is executed
+ * server-side (anonymize the patient profile, delete the Better Auth user
+ * and sessions, prune notification_log via the account-deleted event).
+ */
+export const deleteAccountOutputSchema = z.object({
+  deleted: z.boolean(),
+});

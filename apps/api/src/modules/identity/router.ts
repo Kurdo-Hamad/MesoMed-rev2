@@ -12,6 +12,7 @@ import {
   claimProfileOutputSchema,
   completeProviderSignupInputSchema,
   completeProviderSignupOutputSchema,
+  deleteAccountOutputSchema,
   listPendingProvidersOutputSchema,
   meResponseSchema,
   providerStatusResponseSchema,
@@ -30,6 +31,7 @@ import { router } from "../../kernel/trpc.js";
 import type { IdentityAuth } from "./auth.js";
 import { claimPatientProfile } from "./commands/claim-patient-profile.js";
 import { completeProviderSignup } from "./commands/complete-provider-signup.js";
+import { deleteAccount } from "./commands/delete-account.js";
 import { ensurePatientRegistration } from "./commands/ensure-patient-registration.js";
 import { recoverProviderAccount } from "./commands/recover-provider-account.js";
 import { setProviderStatus } from "./commands/set-provider-status.js";
@@ -186,5 +188,13 @@ export function createIdentityRouter(auth: IdentityAuth) {
         });
         return { revoked: result.status === true };
       }),
+
+    // Self-only by construction: no id input, always the caller's own
+    // account (MM-QA-004 F-02). Erases per the retention runbook matrix.
+    deleteAccount: authenticatedProcedure
+      .output(deleteAccountOutputSchema)
+      .mutation(({ ctx }) =>
+        deleteAccount({ db: ctx.db, outbox: ctx.outbox, auth }, { userId: ctx.session.userId }),
+      ),
   });
 }

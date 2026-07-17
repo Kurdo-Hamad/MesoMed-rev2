@@ -366,7 +366,12 @@
       "specialtyFeaturing": "Featured specialties",
       "specialtyFeaturingHint": "Featured specialties appear on the homepage.",
       "featured": "Featured",
-      "feature": "Feature"
+      "feature": "Feature",
+      "deleteAccount": "Delete account",
+      "deleteConfirmBody": "This permanently deletes your account and personal details. Your medical records are kept as required by law. This can't be undone.",
+      "deleteConfirmCta": "Delete",
+      "deleteCancel": "Cancel",
+      "deleteFailed": "Couldn't delete your account. Please try again."
     },
     "metadata": {
       "title": "MesoMed — Healthcare, made reachable",
@@ -384,7 +389,13 @@
     },
     "account": {
       "title": "My account",
-      "signedOutBody": "Sign in to see your appointments, medical records and prescriptions in one place."
+      "signedOutBody": "Sign in to see your appointments, medical records and prescriptions in one place.",
+      "deleteAccount": "Delete account",
+      "deleteConfirmTitle": "Delete account?",
+      "deleteConfirmBody": "This permanently deletes your account and personal details. Your medical records are kept as required by law. This can't be undone.",
+      "deleteConfirmCta": "Delete",
+      "deleteCancel": "Cancel",
+      "deleteFailed": "Couldn't delete your account. Please try again."
     }
   }
 }

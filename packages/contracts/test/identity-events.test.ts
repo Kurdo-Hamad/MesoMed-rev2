@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { z } from "zod";
 import { createEventRegistry } from "../src/events/index.js";
 import {
+  accountDeletedV1,
   IDENTITY_EVENTS,
   patientProfileCreatedV1,
   patientProfileCreatedV2,
@@ -14,8 +15,9 @@ import {
 } from "../src/events/identity.js";
 
 describe("identity event contracts", () => {
-  it("exposes exactly the identity event set: Phase 2 v1 + the F-04 id-only v2 pair", () => {
+  it("exposes exactly the identity event set: Phase 2 v1 + the F-04 id-only v2 pair + F-02 account_deleted", () => {
     expect(IDENTITY_EVENTS.map((event) => event.name).sort()).toEqual([
+      "identity.account_deleted.v1",
       "identity.patient_profile_created.v1",
       "identity.patient_profile_created.v2",
       "identity.profile_claimed.v1",
@@ -116,6 +118,18 @@ describe("identity event contracts", () => {
         source: "import",
       }),
     ).toThrow();
+  });
+
+  it("account_deleted.v1 carries the ids only, profile id nullable (MM-QA-004 F-02)", () => {
+    expect(accountDeletedV1.payload.parse({ userId: "u1", patientProfileId: "p1" })).toEqual({
+      userId: "u1",
+      patientProfileId: "p1",
+    });
+    expect(accountDeletedV1.payload.parse({ userId: "u1", patientProfileId: null })).toEqual({
+      userId: "u1",
+      patientProfileId: null,
+    });
+    expect(() => accountDeletedV1.payload.parse({ userId: "u1" })).toThrow();
   });
 
   it("role_assigned only accepts platform roles", () => {

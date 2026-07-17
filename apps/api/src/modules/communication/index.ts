@@ -25,6 +25,7 @@ import {
   ON_PRESCRIPTION_ISSUED_HANDLER,
   onPrescriptionIssued,
 } from "./events/on-prescription-issued.js";
+import { ON_ACCOUNT_DELETED_HANDLER, onAccountDeleted } from "./events/on-account-deleted.js";
 
 export function registerCommunicationSubscribers(deps: { events: HandlerRegistry }): void {
   deps.events.on("booking.booked.v1", ON_BOOKING_BOOKED_HANDLER, onBookingBooked);
@@ -45,4 +46,5 @@ export function registerCommunicationSubscribers(deps: { events: HandlerRegistry
     ON_PRESCRIPTION_ISSUED_HANDLER,
     onPrescriptionIssued,
   );
+  deps.events.on("identity.account_deleted.v1", ON_ACCOUNT_DELETED_HANDLER, onAccountDeleted);
 }
