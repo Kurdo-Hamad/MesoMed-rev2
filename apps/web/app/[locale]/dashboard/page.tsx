@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "../../../i18n/navigation";
 import { authClient } from "../../../lib/auth-client";
@@ -15,6 +16,12 @@ export default function DashboardOverviewPage() {
   const tAuth = useTranslations("web.auth");
   const router = useRouter();
   const me = trpc.identity.me.useQuery(undefined, { retry: false });
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const deleteAccount = trpc.identity.deleteAccount.useMutation({
+    onSuccess: () => {
+      void authClient.signOut().then(() => router.push("/"));
+    },
+  });
 
   if (!me.data) return null;
   const user = me.data;
@@ -72,6 +79,43 @@ export default function DashboardOverviewPage() {
       >
         {tAuth("signOut")}
       </button>
+
+      <section className="mt-10 border-t border-line pt-6">
+        {!confirmingDelete ? (
+          <button
+            type="button"
+            onClick={() => setConfirmingDelete(true)}
+            className="text-small font-medium text-danger underline-offset-2 hover:underline"
+          >
+            {t("deleteAccount")}
+          </button>
+        ) : (
+          <div className="rounded-md border border-danger bg-danger-soft p-4">
+            <p className="text-small text-ink">{t("deleteConfirmBody")}</p>
+            {deleteAccount.isError && (
+              <p className="mt-2 text-small font-medium text-danger">{t("deleteFailed")}</p>
+            )}
+            <div className="mt-4 flex gap-3">
+              <button
+                type="button"
+                disabled={deleteAccount.isPending}
+                onClick={() => deleteAccount.mutate()}
+                className="rounded-md bg-danger px-5 py-2 text-small font-semibold text-white disabled:opacity-60"
+              >
+                {t("deleteConfirmCta")}
+              </button>
+              <button
+                type="button"
+                disabled={deleteAccount.isPending}
+                onClick={() => setConfirmingDelete(false)}
+                className="rounded-md border border-line px-5 py-2 text-small font-medium text-neutral-600"
+              >
+                {t("deleteCancel")}
+              </button>
+            </div>
+          </div>
+        )}
+      </section>
     </main>
   );
 }

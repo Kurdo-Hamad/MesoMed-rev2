@@ -107,6 +107,24 @@ export const providerRecoveredV1 = defineEvent(
   }),
 );
 
+/**
+ * Self-service account deletion (MM-QA-004 F-02): the subject erased their
+ * account. Id-only — the subscriber (communication) deletes its own PII
+ * rows keyed by these ids; `patientProfileId` is null for accounts that
+ * never had a patient profile (e.g. providers). The identity module has
+ * already anonymized the profile and deleted the Better Auth user before
+ * this drains, so handlers must key off ids alone.
+ */
+export const accountDeletedV1 = defineEvent(
+  "identity",
+  "account_deleted",
+  1,
+  z.object({
+    userId: z.string(),
+    patientProfileId: z.string().nullable(),
+  }),
+);
+
 /** All identity event contracts, for registry composition in the API. */
 export const IDENTITY_EVENTS = [
   userRegisteredV1,
@@ -117,4 +135,5 @@ export const IDENTITY_EVENTS = [
   profileClaimedV1,
   providerStatusChangedV1,
   providerRecoveredV1,
+  accountDeletedV1,
 ] as const;

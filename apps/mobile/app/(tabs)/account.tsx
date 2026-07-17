@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { I18nManager, Pressable, ScrollView, Text, View } from "react-native";
+import { Alert, I18nManager, Pressable, ScrollView, Text, View } from "react-native";
 import {
   BriefcaseMedical,
   CalendarDays,
@@ -40,6 +40,7 @@ export default function AccountScreen() {
 
   const register = trpc.communication.registerDeviceToken.useMutation();
   const unregister = trpc.communication.unregisterDeviceToken.useMutation();
+  const deleteAccount = trpc.identity.deleteAccount.useMutation();
   const registeredRef = useRef(false);
 
   useEffect(() => {
@@ -69,6 +70,27 @@ export default function AccountScreen() {
     }
     registeredRef.current = false;
     await authClient.signOut();
+  }
+
+  function confirmDeleteAccount() {
+    Alert.alert(t("deleteConfirmTitle"), t("deleteConfirmBody"), [
+      { text: t("deleteCancel"), style: "cancel" },
+      {
+        text: t("deleteConfirmCta"),
+        style: "destructive",
+        onPress: () => {
+          void (async () => {
+            try {
+              await deleteAccount.mutateAsync();
+              registeredRef.current = false;
+              await authClient.signOut();
+            } catch {
+              Alert.alert(t("deleteFailed"));
+            }
+          })();
+        },
+      },
+    ]);
   }
 
   if (session.isPending) {
@@ -156,6 +178,14 @@ export default function AccountScreen() {
         className="mt-6 self-start rounded-md border border-line bg-canvas px-6 py-2.5"
       >
         <Text className="text-small font-medium text-ink">{tAuth("signOut")}</Text>
+      </Pressable>
+
+      <Pressable
+        onPress={confirmDeleteAccount}
+        disabled={deleteAccount.isPending}
+        className="mt-10 self-start border-t border-line pt-6"
+      >
+        <Text className="text-small font-medium text-danger">{t("deleteAccount")}</Text>
       </Pressable>
     </ScrollView>
   );
