@@ -92,4 +92,58 @@ Two corrections to the Slice 4 (ADR-0030) record, ruled by the owner on
 future gate, re-run with log artifacts retained (k6 summary output,
 deployment records) before environment teardown.
 
+### 2026-07-17 — owner disposition of MM-QA-004 (pre-launch audit, all 28 findings)
+
+The owner (Hakeem) ruled on 2026-07-17 on every finding in
+`docs/qa/MM-QA-004-Prelaunch-Audit.md` (audited revision `f3be3e8`).
+Remediation executes per `docs/qa/MM-QA-004-Remediation-Plan.md`
+(landed with this amendment). **No finding is accepted as debt except
+F-21** (recorded fact, no action — institutionalized as the plan's
+rule 5: migration fixes ship as new migrations, never edits).
+
+**F-01..F-05 (High): launch blockers — fix now, pre-HG-5**, in this
+order:
+
+1. Slice 1 · F-05 — web booking error classification switches on
+   `appCode` (mirrors mobile).
+2. Slice 2 · F-04 (code half) — v2 id-only identity events per
+   convention #3 + redaction migration over existing v1 rows; closes
+   MM-QA-002 F-07. (The documentation half — the erasure runbook's
+   false "verified" row and the matching ADR-0028 correction — lands
+   with this amendment: a launch-facing document must not keep a false
+   claim while code work proceeds.)
+3. Slice 3 · F-02 — account-deletion flow (3a, code) + privacy policy
+   and terms pages (3b, content; legal content is owner-approved,
+   never self-certified). Hard prerequisite of checklist item 1.
+4. Slice 4 · F-03 — outage detection (silence-fires alerting, external
+   uptime/synthetic probe config) + the six MM-ARC-002 §10.9 incident
+   runbooks.
+5. Slice 5 · F-01 — password recovery implemented per MM-DEC rev02 §5
+   **as written**. This ruling satisfies the locked document by
+   **implementing** it, so no locked-document amendment is needed.
+   The slice also adds password recovery to this launch checklist
+   (its omission was the F-01 aggravator).
+
+**F-06..F-14 (Medium): all fix-now**, as named slices: Slice 6 · F-06
+branch protection (owner-confirmed before applying) + stale-posture
+doc corrections; Slice 7 · F-07+F-19 authz pinning across all routers;
+Slice 8 · F-08 write-isolation guardrail; Slice 9 · F-09 domain-purity
+guardrail; Slice 10 · F-10 adapter-ban real import path; Slice 11 ·
+F-11 statement/lock/idle timeouts; Slice 12 · F-12 clinical list
+bounds; Slice 13 · F-13 ar/ckb search normalization; Slice 14 · F-14
+mobile lib tests.
+
+**F-15..F-28 (Low): fixed via bundles**: Slice 15 (doc-only: F-15 +
+F-17 + F-26 + F-27 + F-28 + the stray leading-backslash QA file);
+Slice 16 · F-16 cycle detection; Slice 17 · F-18 directory events pin;
+Slice 18 · F-20 support-grant DB cap; Slice 19 · F-22+F-23+F-24 i18n
+trio; Slice 20 · F-25 seq-scan revisit trigger. F-21: recorded, no
+action.
+
+**§4 orchestrator observation (`SENTRY_DSN`):** `SENTRY_DSN`
+provisioning is added to HG-2's scope (checklist item 5). The formal
+checklist-item extension — together with the external uptime/synthetic
+probes — lands as the dated amendment inside the F-03 slice's ADR
+(Slice 4).
+
 _(further HG outcomes land here, dated, owner-attributed)_

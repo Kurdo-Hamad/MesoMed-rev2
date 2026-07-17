@@ -61,3 +61,18 @@ tables, against the migrated embedded database.
   clinical/audit immutability conflict remains parked behind the
   crypto-shred build triggers, by explicit ruling.
 - New env knobs default sensibly; no deploy action required.
+
+## Amendment — 2026-07-17: MM-QA-004 F-04 correction
+
+The runbook's `domain_events` matrix row shipped claiming "id-only by
+design … verified" — that claim was false: the cited verification
+covered only booking events, while identity v1 events persist `phone`,
+`email`, and `normalizedPhone` in `domain_events` indefinitely
+(MM-QA-002 F-07, left "pending" in ADR-0011 and never resolved), so the
+D7 retention ruling and this ADR's "keep (pseudonymous)" erasure
+posture rested on an incorrect premise for identity events. The row is
+corrected to the true state in the same PR as this amendment; the
+substance is fixed by the owner's 2026-07-17 MM-QA-004 disposition
+(ADR-0031 amendment) as the F-04 slice — v2 id-only identity events per
+convention #3 plus a redaction migration over existing v1 rows — after
+which the runbook row returns to a verified id-only state.
