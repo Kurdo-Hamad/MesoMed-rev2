@@ -13,14 +13,16 @@
       "distribution": "internal",
       "channel": "preview",
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://api.mesomed.krd"
+        "EXPO_PUBLIC_API_URL": "https://api.mesomed.krd",
+        "EXPO_PUBLIC_WEB_URL": "https://mesomed.krd"
       }
     },
     "production": {
       "autoIncrement": true,
       "channel": "production",
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://api.mesomed.krd"
+        "EXPO_PUBLIC_API_URL": "https://api.mesomed.krd",
+        "EXPO_PUBLIC_WEB_URL": "https://mesomed.krd"
       }
     }
   },

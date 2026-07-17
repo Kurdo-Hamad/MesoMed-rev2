@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { Alert, I18nManager, Pressable, ScrollView, Text, View } from "react-native";
+import { Alert, I18nManager, Linking, Pressable, ScrollView, Text, View } from "react-native";
 import {
   BriefcaseMedical,
   CalendarDays,
@@ -13,8 +13,30 @@ import { Link, type Href } from "expo-router";
 import { useTranslations } from "use-intl";
 import { colors } from "@mesomed/ui-tokens";
 import { authClient } from "../../lib/auth-client";
+import { useLocale } from "../../lib/locale";
 import { devicePlatform, getPushToken } from "../../lib/push";
 import { trpc } from "../../lib/trpc";
+
+/**
+ * Canonical legal pages live on the web (ADR-0034): the store-required
+ * privacy policy URL and terms are one copy, opened in the user's locale.
+ */
+const WEB_URL = process.env.EXPO_PUBLIC_WEB_URL ?? "https://mesomed.krd";
+
+function LegalLinks() {
+  const tLegal = useTranslations("web.legal");
+  const { locale } = useLocale();
+  return (
+    <View className="mt-8 flex-row gap-6 border-t border-line pt-4">
+      <Pressable onPress={() => void Linking.openURL(`${WEB_URL}/${locale}/privacy`)}>
+        <Text className="text-small text-neutral-500 underline">{tLegal("privacyLink")}</Text>
+      </Pressable>
+      <Pressable onPress={() => void Linking.openURL(`${WEB_URL}/${locale}/terms`)}>
+        <Text className="text-small text-neutral-500 underline">{tLegal("termsLink")}</Text>
+      </Pressable>
+    </View>
+  );
+}
 
 /**
  * Account tab: session surface for MM-DEC rev02 §4 — the persisted session
@@ -122,6 +144,7 @@ export default function AccountScreen() {
             </Pressable>
           </Link>
         </View>
+        <LegalLinks />
       </ScrollView>
     );
   }
@@ -187,6 +210,8 @@ export default function AccountScreen() {
       >
         <Text className="text-small font-medium text-danger">{t("deleteAccount")}</Text>
       </Pressable>
+
+      <LegalLinks />
     </ScrollView>
   );
 }

@@ -376,6 +376,54 @@
     "metadata": {
       "title": "MesoMed — Healthcare, made reachable",
       "description": "Find doctors, hospitals, labs and pharmacies across Iraq and book appointments in minutes — no account required."
+    },
+    "legal": {
+      "privacyLink": "Privacy Policy",
+      "termsLink": "Terms of Service",
+      "privacy": {
+        "title": "Privacy Policy",
+        "updated": "Last updated: 17 July 2026",
+        "intro": "MesoMed is a medical appointment platform. This policy explains what personal data we collect, why we collect it, and the choices you have. It applies to the MesoMed website and mobile app.",
+        "collectTitle": "What we collect",
+        "collectBody": "Account and profile data: your name, phone number, and — if you provide them — email address, date of birth, and gender. Booking data: the appointments you book, including provider, time, and place. Clinical data: encounter records, visit notes, and prescriptions your treating doctor creates on the platform. Communication data: notification delivery records and, on the mobile app, a push-notification token for your device. Technical data: rate-limiting and abuse-prevention records keyed to your phone number or network address.",
+        "useTitle": "How we use it",
+        "useBody": "We use your data to operate the service: booking and managing appointments, sending you appointment confirmations and reminders over push notification, WhatsApp, SMS, or email, maintaining your medical record with your treating providers, and keeping the platform safe from abuse. We do not sell your personal data and we do not use it for third-party advertising.",
+        "shareTitle": "Who we share it with",
+        "shareBody": "Your booking and clinical data is visible to the healthcare providers who treat you, and to their authorized clinic staff. Delivery of messages relies on service providers (WhatsApp Business, SMS and email delivery services, and push-notification infrastructure) that process the destination address and message content on our behalf. Platform staff can only access clinical records through time-boxed, audited support grants. We disclose data to authorities only where the law requires it.",
+        "retainTitle": "How long we keep it",
+        "retainBody": "Notification delivery records are deleted automatically after at most 540 days, and abuse-prevention rate records after 7 days. Medical records (encounters, visit notes, prescriptions) are retained for as long as medical-records law requires and are never edited or deleted — corrections are recorded as amendments. Booking history is kept in pseudonymous form for operational continuity.",
+        "rightsTitle": "Your rights and choices",
+        "rightsBody": "You can delete your account at any time from the account screen in the app or the dashboard on the web. Deletion permanently removes your sign-in identity and personal details and anonymizes your profile; medical records are retained as required by law, in a form no longer linked to a usable identity. You can also ask us to correct inaccurate profile data or to show you what we hold about you.",
+        "securityTitle": "Security",
+        "securityBody": "Clinical records are protected by layered access controls, database-level protections, and an append-only access audit log. Access by our own staff requires a time-boxed, recorded support grant.",
+        "changesTitle": "Changes to this policy",
+        "changesBody": "If we change this policy, we will post the new version here with a new date. Material changes will be announced in the app.",
+        "contactTitle": "Contact",
+        "contactBody": "For privacy questions or requests, contact us at mesotrip.official@gmail.com."
+      },
+      "terms": {
+        "title": "Terms of Service",
+        "updated": "Last updated: 17 July 2026",
+        "intro": "These terms govern your use of MesoMed, a platform for finding healthcare providers and booking medical appointments. By using MesoMed you agree to these terms.",
+        "serviceTitle": "What MesoMed is",
+        "serviceBody": "MesoMed connects patients with independent healthcare providers and lets them book appointments, receive appointment communications, and access records their treating providers create. MesoMed is not a healthcare provider and does not itself provide medical advice, diagnosis, or treatment.",
+        "medicalTitle": "Not for emergencies",
+        "medicalBody": "MesoMed is not an emergency service. If you have a medical emergency, contact local emergency services immediately. Information on the platform, including any AI-assisted guidance, is informational only and never a substitute for the judgment of a qualified clinician.",
+        "accountsTitle": "Accounts",
+        "accountsBody": "You must provide accurate information and keep your credentials safe; you are responsible for activity under your account. Patients register with a verified phone number; providers register with a verified email and are listed publicly only after review and approval. You can delete your account at any time from the app or web dashboard.",
+        "providersTitle": "Providers and listings",
+        "providersBody": "Provider profiles, availability, and prices are supplied by the providers themselves. Approval of a listing means the provider passed our onboarding review; it is not a guarantee of the outcome of any treatment. The care you receive is a matter between you and the provider.",
+        "useTitle": "Acceptable use",
+        "useBody": "Do not misuse the platform: no false bookings, no attempts to access other people's data, no abusive messaging, and no interference with the service. We may suspend accounts that violate these rules and we keep abuse-prevention records as described in the Privacy Policy.",
+        "liabilityTitle": "Liability",
+        "liabilityBody": "MesoMed provides the platform \"as is\". To the maximum extent permitted by law, MesoMed is not liable for the acts or omissions of healthcare providers, for missed or cancelled appointments, or for indirect damages arising from use of the platform. Nothing in these terms limits liability that cannot be limited by law.",
+        "lawTitle": "Governing law",
+        "lawBody": "These terms are governed by the laws applicable in the Republic of Iraq, including the Kurdistan Region. Disputes will be resolved before the competent courts there.",
+        "changesTitle": "Changes to these terms",
+        "changesBody": "We may update these terms; the current version is always available here with its date. Continued use after a change means you accept the updated terms.",
+        "contactTitle": "Contact",
+        "contactBody": "Questions about these terms: mesotrip.official@gmail.com."
+      }
     }
   },
   "mobile": {
