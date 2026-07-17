@@ -11,6 +11,7 @@ import {
   createOnProviderStatusChanged,
   ON_PROVIDER_STATUS_CHANGED_HANDLER,
 } from "./events/on-provider-status-changed.js";
+import { createOnAccountDeleted, ON_ACCOUNT_DELETED_HANDLER } from "./events/on-account-deleted.js";
 import {
   createOnSubscriptionActivated,
   createOnSubscriptionExpired,
@@ -35,6 +36,13 @@ export function registerDirectorySubscribers(deps: {
     "identity.provider_status_changed.v1",
     ON_PROVIDER_STATUS_CHANGED_HANDLER,
     createOnProviderStatusChanged({ outbox: deps.outbox }),
+  );
+  // F-02 close-out (ADR-0038): a self-deleted provider's cascade emits no
+  // status event — retire the listing from the deletion event instead.
+  deps.events.on(
+    "identity.account_deleted.v2",
+    ON_ACCOUNT_DELETED_HANDLER,
+    createOnAccountDeleted({ outbox: deps.outbox }),
   );
   // Phase 6: billing state reaches the directory ONLY through these events;
   // the directory mirrors it into its own columns and recomputes visibility.

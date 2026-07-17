@@ -125,6 +125,25 @@ export const accountDeletedV1 = defineEvent(
   }),
 );
 
+/**
+ * v2 (MM-QA-004 F-02 close-out, ADR-0038): adds the provider-profile id so
+ * the directory can retire a self-deleted provider's public listing — the
+ * CASCADE that removes provider_profiles emits no event of its own, which
+ * left an approved listing publicly bookable with no account behind it.
+ * Still id-only. v1 stays registered for rows already emitted (ADR-0032:
+ * shipped contract versions are never edited); all emit sites use v2.
+ */
+export const accountDeletedV2 = defineEvent(
+  "identity",
+  "account_deleted",
+  2,
+  z.object({
+    userId: z.string(),
+    patientProfileId: z.string().nullable(),
+    providerProfileId: z.string().nullable(),
+  }),
+);
+
 /** All identity event contracts, for registry composition in the API. */
 export const IDENTITY_EVENTS = [
   userRegisteredV1,
@@ -136,4 +155,5 @@ export const IDENTITY_EVENTS = [
   providerStatusChangedV1,
   providerRecoveredV1,
   accountDeletedV1,
+  accountDeletedV2,
 ] as const;

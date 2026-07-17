@@ -47,4 +47,5 @@ export function registerCommunicationSubscribers(deps: { events: HandlerRegistry
     onPrescriptionIssued,
   );
   deps.events.on("identity.account_deleted.v1", ON_ACCOUNT_DELETED_HANDLER, onAccountDeleted);
+  deps.events.on("identity.account_deleted.v2", ON_ACCOUNT_DELETED_HANDLER, onAccountDeleted);
 }

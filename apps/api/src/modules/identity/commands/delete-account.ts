@@ -16,8 +16,12 @@
  *    ON DELETE CASCADE; patient_profiles.user_id is ON DELETE SET NULL and
  *    we already nulled it).
  *  - notification_log (communication-owned): pruned by the communication
- *    subscriber to the id-only `identity.account_deleted.v1` event
+ *    subscriber to the id-only `identity.account_deleted.v2` event
  *    (convention #1 — identity never writes another module's tables).
+ *  - directory listing (directory-owned): the CASCADE that removes
+ *    provider_profiles emits no event, so the event carries the caller's
+ *    provider-profile id (when one exists) and the directory subscriber
+ *    retires the public listing (ADR-0038, F-02 close-out).
  *
  * Ordering: the identity transaction (anonymize + emit) commits first,
  * then the Better Auth user is deleted. If the delete fails after the
@@ -25,7 +29,7 @@
  * idempotent and re-emitting only re-runs an idempotent prune.
  */
 import { sql } from "drizzle-orm";
-import { eq, patientProfiles, type Db } from "@mesomed/db";
+import { eq, patientProfiles, providerProfiles, type Db } from "@mesomed/db";
 import type { OutboxEmitter } from "../../../kernel/outbox.js";
 import type { IdentityAuth } from "../auth.js";
 
@@ -50,11 +54,22 @@ export async function deleteAccount(
       .where(eq(patientProfiles.userId, input.userId))
       .returning({ id: patientProfiles.id });
 
+    // Read before the post-commit Better Auth delete cascades the row away;
+    // provider_profiles is identity-owned, so this is an in-module read.
+    const [providerProfile] = await tx
+      .select({ id: providerProfiles.id })
+      .from(providerProfiles)
+      .where(eq(providerProfiles.userId, input.userId));
+
     await deps.outbox.emit(tx, {
-      name: "identity.account_deleted.v1",
+      name: "identity.account_deleted.v2",
       aggregateType: "user",
       aggregateId: input.userId,
-      payload: { userId: input.userId, patientProfileId: profile?.id ?? null },
+      payload: {
+        userId: input.userId,
+        patientProfileId: profile?.id ?? null,
+        providerProfileId: providerProfile?.id ?? null,
+      },
     });
   });
 

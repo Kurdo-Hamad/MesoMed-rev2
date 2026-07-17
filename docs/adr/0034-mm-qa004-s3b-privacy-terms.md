@@ -96,6 +96,10 @@ store-compliance story; flagged as the option NOT chosen. This is a
 close-out code fix lands as the immediately following slice, and a
 different owner ruling reopens this section as a dated amendment.
 
+_Amendment (2026-07-18): the close-out code fix landed as ADR-0038
+(`identity.account_deleted.v2` carrying `providerProfileId` + the
+`directory.retire-deleted-provider` subscriber)._
+
 ## Tests (convention #12)
 
 Content slice: no domain logic. The existing i18n parity test enforces
