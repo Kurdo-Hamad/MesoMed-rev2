@@ -248,6 +248,11 @@ export async function buildServer(
       redact: { paths: REDACT_PATHS, censor: "[REDACTED]" },
     },
     trustProxy: resolveTrustProxy(env.TRUST_PROXY),
+    // tRPC batched GETs put every procedure name in ONE comma-joined path
+    // param; Fastify's 100-char default 414s any batch of ≥6 procedures
+    // (observed: 7 rapid clinic day-shifts → FST_ERR_MAX_PARAM_LENGTH).
+    // 4096 covers ~200 batched procedures — far beyond any real client.
+    maxParamLength: 4096,
   });
 
   Sentry.setupFastifyErrorHandler(app);
