@@ -69,6 +69,23 @@ stops at "ready for human gate: device verification" — push round-trip
 and biometric-free session restore are verified ON PHYSICAL DEVICES
 before any rollout widens (Phase 9a gate).
 
+Submission prerequisites (MM-QA-004 F-02, ADR-0034 — feeds HG-1):
+
+- **Privacy policy URL** in both stores' listing metadata:
+  `https://mesomed.krd/<locale>/privacy` (live before submission; the
+  mobile account screen links to the same canonical pages).
+- **Apple App Privacy labels** (App Store Connect): declare the data the
+  app collects — contact info (name, phone, email), health data
+  (clinical records), identifiers, and usage/diagnostics — mirroring the
+  privacy policy's "What we collect" section and the retention-erasure
+  runbook's matrix.
+- **Google Play Data safety form**: same declarations, plus data-deletion
+  disclosure.
+- **Account-deletion disclosure**: both stores ask how users delete
+  their account — answer: in-app, account screen → Delete account
+  (`identity.deleteAccount`, Slice 3a), plus the privacy policy's
+  "Your rights" section.
+
 ## 6. After rollout
 
 - Set/raise the `mobile.compat` `minSupportedVersion` config row ONLY
