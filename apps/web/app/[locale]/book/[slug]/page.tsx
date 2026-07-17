@@ -7,6 +7,7 @@ import { formatLocalizedDate, pinLtr, type Locale } from "@mesomed/i18n";
 import { normalizePhone } from "@mesomed/contracts/phone";
 import { FilterSelect } from "../../../../components/filter-select";
 import { Link } from "../../../../i18n/navigation";
+import { classifyBookingError } from "../../../../lib/booking-error";
 import { pickText } from "../../../../lib/localized";
 import { trpc } from "../../../../lib/trpc";
 
@@ -104,7 +105,7 @@ export default function BookPage({ params }: { params: Promise<{ slug: string }>
           slot={slot}
           doctorLocationId={selectedLocationId}
           pending={book.isPending}
-          error={book.error ? classifyBookingError(book.error.message) : null}
+          error={book.error ? classifyBookingError(book.error) : null}
           onSubmit={(input) => book.mutate(input)}
         />
       )}
@@ -238,12 +239,6 @@ function WeekGrid({
       )}
     </section>
   );
-}
-
-function classifyBookingError(message: string): "slotTaken" | "failed" {
-  // Typed error codes ride the message envelope's code field; the tRPC
-  // client surfaces CONFLICT for the slot-uniqueness invariant.
-  return /conflict|taken|SLOT/i.test(message) ? "slotTaken" : "failed";
 }
 
 function PatientForm({
