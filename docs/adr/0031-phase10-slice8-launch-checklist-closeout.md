@@ -147,3 +147,35 @@ probes — lands as the dated amendment inside the F-03 slice's ADR
 (Slice 4).
 
 _(further HG outcomes land here, dated, owner-attributed)_
+
+## Amendment (2026-07-18) — owner override: autonomous execution of the remaining MM-QA-004 remediation
+
+Owner (Hakeem) ruling, 2026-07-18, recorded here per the amendment
+pattern; this section is the authority the autonomous run executes under.
+
+- Autonomous execution of the entire remaining MM-QA-004 remediation is
+  authorized. Remediation-plan **rule 9 (pause per PR for owner
+  approval) is suspended**; every other plan rule stays binding.
+- Sequence: PR #76 (red-main fix, owner-approved) → web-test masking fix
+  (gate integrity — until it lands no local web green is trustworthy;
+  ADR-0036) → Slice 3b → Slices 4–20 in plan order. Slice 15
+  additionally takes the clinic-delay clock-pin (ADR-0036's deferred
+  note) and the stray leading-backslash QA file.
+- Autonomous merge contract per slice: full uncached local gate on both
+  sides; PR CI green → squash-merge → merge commit verified via
+  `gh run view`; web verdicts read from vitest summary lines until the
+  masking fix is merged, exit codes after. A red main stops the line —
+  fix-forward per the #76 precedent. One slice = one branch = one PR; new
+  migrations only; shipped contract versions are never edited (the
+  ADR-0032 owner ruling stands).
+- Mid-flight decisions that would otherwise need an owner ruling: the
+  conservative option is taken and recorded in the slice ADR as
+  **"delegated ruling under owner override — ratification pending."**
+  Options that edit shipped artifacts or weaken a guardrail are never
+  taken autonomously.
+- Remaining owner-only, prepared but never executed or self-certified:
+  Slice 6 branch-protection application (exact commands prepared only),
+  HG-1..HG-5, the D10 production deploy, translation/RTL native-speaker
+  review, and legal sign-off of the privacy/terms content — Slice 3b's
+  legal text merges as **DRAFT pending owner + counsel review before
+  store submission**; merging does not make it legally reviewed.

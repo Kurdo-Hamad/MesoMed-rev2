@@ -126,8 +126,29 @@ async function startContainer(): Promise<ProvisionedServer> {
   };
 }
 
+/**
+ * embedded-postgres registers an async-exit-hook handler at module scope,
+ * and that library hooks node's `beforeExit` with a hardcoded exit code 0:
+ * a process finishing with `process.exitCode = 1` (vitest after test
+ * failures) gets re-exited as 0, masking the failures from turbo and the
+ * local gate whenever the embedded server runs in the MAIN vitest process —
+ * exactly the web clinic harness in apps/web/test/global-setup.ts
+ * (ADR-0036). The hook only exists to stop clusters a caller forgot to
+ * close, and every TestDatabase here is closed explicitly by its owner's
+ * teardown — so drop the `beforeExit` listener the import adds. The
+ * library's SIGINT/SIGTERM hooks (correct 128+n re-exits) stay in place.
+ */
+export async function importEmbeddedPostgres() {
+  const preexisting = new Set(process.listeners("beforeExit"));
+  const mod = await import("embedded-postgres");
+  for (const listener of process.listeners("beforeExit")) {
+    if (!preexisting.has(listener)) process.removeListener("beforeExit", listener);
+  }
+  return mod;
+}
+
 async function startEmbedded(): Promise<ProvisionedServer> {
-  const { default: EmbeddedPostgres } = await import("embedded-postgres");
+  const { default: EmbeddedPostgres } = await importEmbeddedPostgres();
   // Parallel vitest forks provision embedded servers concurrently, and an
   // ephemeral port probed as free can be re-bound by a sibling before
   // postgres binds it — postgres then exits at startup, which
