@@ -35,21 +35,7 @@ export {
 export { createMockPushChannel, type MockPushChannel } from "./push-mock.js";
 export { AiGatewayError, type AiGateway, type AiGatewayInput } from "./ai.js";
 export { createMockAiGateway, type MockAiGateway } from "./ai-mock.js";
-export {
-  createMetaWhatsAppAdapter,
-  type MetaWhatsAppAdapter,
-  type MetaWhatsAppAdapterOptions,
-} from "./whatsapp-meta.js";
-export {
-  createTwilioSmsAdapter,
-  type TwilioSmsAdapter,
-  type TwilioSmsAdapterOptions,
-} from "./sms-twilio.js";
-export { createExpoPushAdapter, type ExpoPushAdapterOptions } from "./push-expo.js";
-export { createResendEmailAdapter, type ResendEmailAdapterOptions } from "./email-resend.js";
-export {
-  createAnthropicAiGateway,
-  DEFAULT_ANTHROPIC_TRIAGE_MODEL,
-  type AnthropicAiGatewayOptions,
-} from "./ai-anthropic.js";
+// Concrete vendor adapters live in ./adapters.js (the "./adapters"
+// entrypoint), importable only by the apps/api composition root
+// (MM-PLAN-001 §3.8, MM-QA-004 F-10).
 export { isMockAdapter } from "./mock-flag.js";

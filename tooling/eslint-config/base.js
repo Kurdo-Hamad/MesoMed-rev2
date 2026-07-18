@@ -13,9 +13,12 @@ import prettier from "eslint-config-prettier";
  * re-include this pattern or module files would silently lose the ban.
  */
 export const platformAdapterRestriction = {
-  group: ["@mesomed/platform/adapters/*"],
+  // The exact entrypoint plus any subpath (gitignore semantics: a matched
+  // directory bans its contents too) — MM-QA-004 F-10 moved the concrete
+  // vendor factories to this real path; the root keeps interfaces + mocks.
+  group: ["@mesomed/platform/adapters"],
   message:
-    "Concrete platform adapters may only be wired in the apps/api composition root (MM-PLAN-001 §3.8). Import the adapter interface from @mesomed/platform instead.",
+    "Concrete platform adapters may only be wired in the apps/api composition root (src/app.ts, src/composition/**) — MM-PLAN-001 §3.8. Import the adapter interface from @mesomed/platform instead.",
 };
 
 /** Base ESLint flat config shared by every workspace package/app. */
