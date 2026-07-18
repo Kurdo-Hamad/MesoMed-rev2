@@ -114,3 +114,31 @@ export const revokeOtherSessionsOutputSchema = z.object({
 export const deleteAccountOutputSchema = z.object({
   deleted: z.boolean(),
 });
+
+/**
+ * Provider password recovery by profile phone (MM-DEC rev02 §5, MM-QA-004
+ * F-01). Providers sign in with email and carry their phone on the
+ * identity provider profile (not the Better Auth user), so the phone leg
+ * of the §5 chain (verified email → WhatsApp OTP → SMS) is these two
+ * public procedures rather than the phone-number plugin's user-phone
+ * reset. Responses never disclose whether the phone matched an account
+ * (no enumeration); the OTP is single-use and short-lived, and a
+ * successful reset revokes every session.
+ */
+export const requestProviderRecoveryOtpInputSchema = z.object({
+  phone: z.string().min(5).max(20),
+});
+
+export const requestProviderRecoveryOtpOutputSchema = z.object({
+  sent: z.boolean(),
+});
+
+export const resetProviderPasswordByOtpInputSchema = z.object({
+  phone: z.string().min(5).max(20),
+  code: z.string().min(4).max(12),
+  newPassword: z.string().min(8).max(128),
+});
+
+export const resetProviderPasswordByOtpOutputSchema = z.object({
+  reset: z.boolean(),
+});

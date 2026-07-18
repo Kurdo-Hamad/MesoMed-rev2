@@ -18,6 +18,10 @@ import {
   providerStatusResponseSchema,
   recoverProviderAccountInputSchema,
   recoverProviderAccountOutputSchema,
+  requestProviderRecoveryOtpInputSchema,
+  requestProviderRecoveryOtpOutputSchema,
+  resetProviderPasswordByOtpInputSchema,
+  resetProviderPasswordByOtpOutputSchema,
   revokeOtherSessionsOutputSchema,
   setProviderStatusInputSchema,
   setProviderStatusOutputSchema,
@@ -27,16 +31,21 @@ import { isPlaceholderEmail, normalizePhone } from "@mesomed/domain/identity";
 import { eq, patientProfiles, providerProfiles, user } from "@mesomed/db";
 import { authenticatedProcedure, roleProcedure } from "../../kernel/authz.js";
 import { AppError } from "../../kernel/errors.js";
-import { router } from "../../kernel/trpc.js";
-import type { IdentityAuth } from "./auth.js";
+import { publicProcedure, router } from "../../kernel/trpc.js";
+import { localeFromAcceptLanguage, type IdentityAuth } from "./auth.js";
 import { claimPatientProfile } from "./commands/claim-patient-profile.js";
 import { completeProviderSignup } from "./commands/complete-provider-signup.js";
 import { deleteAccount } from "./commands/delete-account.js";
 import { ensurePatientRegistration } from "./commands/ensure-patient-registration.js";
+import {
+  requestProviderRecoveryOtp,
+  resetProviderPasswordByOtp,
+} from "./commands/provider-phone-recovery.js";
 import { recoverProviderAccount } from "./commands/recover-provider-account.js";
 import { setProviderStatus } from "./commands/set-provider-status.js";
+import type { OtpSender } from "./otp-sender.js";
 
-export function createIdentityRouter(auth: IdentityAuth) {
+export function createIdentityRouter(auth: IdentityAuth, deps: { otpSender: OtpSender }) {
   return router({
     me: authenticatedProcedure.output(meResponseSchema).query(async ({ ctx }) => {
       const userId = ctx.session.userId;
@@ -188,6 +197,28 @@ export function createIdentityRouter(auth: IdentityAuth) {
         });
         return { revoked: result.status === true };
       }),
+
+    // Provider password recovery, phone leg (MM-DEC rev02 §5, F-01):
+    // public by necessity — the caller has lost their credentials. The
+    // command layer enforces no-enumeration, single-attempt codes, the
+    // OTP send-rate machinery, and session revocation on reset.
+    requestProviderRecoveryOtp: publicProcedure
+      .input(requestProviderRecoveryOtpInputSchema)
+      .output(requestProviderRecoveryOtpOutputSchema)
+      .mutation(({ ctx, input }) =>
+        requestProviderRecoveryOtp({ db: ctx.db, auth, otpSender: deps.otpSender }, input, {
+          ip: ctx.req.ip,
+          deviceId: (ctx.req.headers["x-device-id"] as string | undefined) ?? undefined,
+          locale: localeFromAcceptLanguage(ctx.req.headers["accept-language"]),
+        }),
+      ),
+
+    resetProviderPasswordByOtp: publicProcedure
+      .input(resetProviderPasswordByOtpInputSchema)
+      .output(resetProviderPasswordByOtpOutputSchema)
+      .mutation(({ ctx, input }) =>
+        resetProviderPasswordByOtp({ db: ctx.db, auth, otpSender: deps.otpSender }, input),
+      ),
 
     // Self-only by construction: no id input, always the caller's own
     // account (MM-QA-004 F-02). Erases per the retention runbook matrix.

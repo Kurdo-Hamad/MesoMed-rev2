@@ -33,7 +33,7 @@ export function createAppRouter(
   return router({
     health: healthRouter,
     system: systemRouter,
-    identity: createIdentityRouter(identity.auth),
+    identity: createIdentityRouter(identity.auth, { otpSender: identity.otpSender }),
     directory: createDirectoryRouter(),
     scheduling: createSchedulingRouter(),
     // The guest-profile write is identity code injected at this seam, so

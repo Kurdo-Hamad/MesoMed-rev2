@@ -33,6 +33,12 @@ export interface IdentityAuthOptions {
   ) => Promise<void>;
   /** Deliver a provider verification email. Never called for placeholder emails. */
   sendVerificationEmail: (input: { email: string; url: string }) => Promise<void>;
+  /**
+   * Deliver a password-reset email (MM-DEC rev02 §5, MM-QA-004 F-01).
+   * Never called for placeholder emails. Throwing fails the endpoint —
+   * the wiring applies the OTP-abuse send-rate machinery before sending.
+   */
+  sendResetPasswordEmail: (input: { email: string; url: string }) => Promise<void>;
   /** Runs after phone ownership is proven — assigns role + claims profile in one tx. */
   onPhoneVerified: (input: { userId: string; phoneNumber: string }) => Promise<void>;
   otp?: IdentityOtpOptions;
@@ -105,6 +111,20 @@ export function createIdentityAuth(options: IdentityAuthOptions) {
       // their placeholder email is never verified, which also keeps the
       // placeholder path unusable for login.
       requireEmailVerification: true,
+      // Password recovery (MM-DEC rev02 §5, MM-QA-004 F-01): email leg.
+      // Reset tokens are single-use (consumed by Better Auth) and
+      // short-lived; every reset — email OR phone-OTP (the plugin route
+      // honors this same option) — revokes all sessions (§4: password
+      // change ends signed-in sessions).
+      resetPasswordTokenExpiresIn: 15 * 60,
+      revokeSessionsOnPasswordReset: true,
+      async sendResetPassword({ user, url }) {
+        // Placeholder addresses are non-routable by construction; never
+        // mail them. Returning (not throwing) keeps the endpoint response
+        // identical for existing and non-existing accounts.
+        if (isPlaceholderEmail(user.email)) return;
+        await options.sendResetPasswordEmail({ email: user.email, url });
+      },
     },
     emailVerification: {
       sendOnSignUp: true,
@@ -126,6 +146,16 @@ export function createIdentityAuth(options: IdentityAuthOptions) {
           // domain rule keeps profile keys and auth identifiers identical.
           normalizePhone(phone) === phone,
         async sendOTP({ phoneNumber: phone, code }, ctx) {
+          const request = ctx?.request;
+          const ip = request ? (getIp(request, ctx.context.options) ?? undefined) : undefined;
+          const deviceId = ctx?.headers?.get("x-device-id") ?? undefined;
+          const locale = localeFromAcceptLanguage(ctx?.headers?.get("accept-language"));
+          await options.sendOtp({ phoneNumber: phone, code }, { ip, deviceId, locale });
+        },
+        // Patient password recovery by phone (MM-DEC rev02 §5): the reset
+        // OTP rides the exact same dispatch service as the sign-up OTP —
+        // per-phone send limit, kernel abuse guards, WhatsApp→SMS order.
+        async sendPasswordResetOTP({ phoneNumber: phone, code }, ctx) {
           const request = ctx?.request;
           const ip = request ? (getIp(request, ctx.context.options) ?? undefined) : undefined;
           const deviceId = ctx?.headers?.get("x-device-id") ?? undefined;

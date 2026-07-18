@@ -81,6 +81,12 @@ export default function SignInScreen() {
         </Pressable>
       </View>
 
+      <View className="mt-4 flex-row justify-center">
+        <Link href="/auth/forgot-password" className="text-small font-medium text-brand">
+          {t("forgotPassword")}
+        </Link>
+      </View>
+
       <View className="mt-6 flex-row justify-center gap-1">
         <Text className="text-small text-neutral-500">{t("noAccount")}</Text>
         <Link href="/auth/sign-up" className="text-small font-medium text-brand">
