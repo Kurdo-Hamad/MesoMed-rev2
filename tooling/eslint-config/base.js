@@ -4,6 +4,20 @@ import tseslint from "typescript-eslint";
 import importX from "eslint-plugin-import-x";
 import prettier from "eslint-config-prettier";
 
+/**
+ * MM-PLAN-001 §3.8: only the apps/api composition root wires concrete
+ * adapters (api.js lifts this there). Everything else — modules, kernel,
+ * domain, clients — imports adapter interfaces from @mesomed/platform's
+ * root entrypoint. Exported because flat-config rule entries replace, not
+ * merge: api.js's per-module `no-restricted-imports` overrides must
+ * re-include this pattern or module files would silently lose the ban.
+ */
+export const platformAdapterRestriction = {
+  group: ["@mesomed/platform/adapters/*"],
+  message:
+    "Concrete platform adapters may only be wired in the apps/api composition root (MM-PLAN-001 §3.8). Import the adapter interface from @mesomed/platform instead.",
+};
+
 /** Base ESLint flat config shared by every workspace package/app. */
 export const base = tseslint.config(
   js.configs.recommended,
@@ -53,22 +67,7 @@ export const base = tseslint.config(
       "@typescript-eslint/no-explicit-any": "error",
       "@typescript-eslint/ban-ts-comment": "error",
       "@typescript-eslint/consistent-type-imports": "error",
-      // MM-PLAN-001 §3.8: only the apps/api composition root wires concrete
-      // adapters (api.js lifts this there). Everything else — modules,
-      // kernel, domain, clients — imports adapter interfaces from
-      // @mesomed/platform's root entrypoint.
-      "no-restricted-imports": [
-        "error",
-        {
-          patterns: [
-            {
-              group: ["@mesomed/platform/adapters/*"],
-              message:
-                "Concrete platform adapters may only be wired in the apps/api composition root (MM-PLAN-001 §3.8). Import the adapter interface from @mesomed/platform instead.",
-            },
-          ],
-        },
-      ],
+      "no-restricted-imports": ["error", { patterns: [platformAdapterRestriction] }],
     },
   },
 );

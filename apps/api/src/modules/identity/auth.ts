@@ -18,7 +18,7 @@ import { expo } from "@better-auth/expo";
 import { getIp } from "@better-auth/core/utils/ip";
 import { isPlaceholderEmail, normalizePhone } from "@mesomed/domain/identity";
 import { isLocale, type Locale } from "@mesomed/contracts/i18n";
-import type { Db } from "@mesomed/db";
+import type { Db } from "@mesomed/db/modules/identity";
 import type { OtpSendContext } from "./otp-sender.js";
 
 export interface IdentityAuthOptions {

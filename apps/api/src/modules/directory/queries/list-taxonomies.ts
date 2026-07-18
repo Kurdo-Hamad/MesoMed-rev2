@@ -28,7 +28,7 @@ import {
   symptomSpecialtyMap,
   symptoms,
   type Db,
-} from "@mesomed/db";
+} from "@mesomed/db/modules/directory";
 import type { ConfigService } from "../../../kernel/config.js";
 import { packOptionalText, packText } from "../shared.js";
 

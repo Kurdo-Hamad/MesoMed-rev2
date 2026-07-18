@@ -5,7 +5,7 @@
  * profile id (directory's `providers.identityProfileId` — a cross-module
  * reference, resolved via directory's own published query first).
  */
-import { eq, providerProfiles, user, type DbExecutor } from "@mesomed/db";
+import { eq, providerProfiles, user, type DbExecutor } from "@mesomed/db/modules/identity";
 
 export interface ProviderContact {
   userId: string;

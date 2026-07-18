@@ -8,7 +8,12 @@
 import type { z } from "zod";
 import type { setCancellationPolicyInputSchema } from "@mesomed/contracts/billing";
 import { ErrorCode } from "@mesomed/contracts/errors";
-import { eq, providerCancellationPolicy, type DbExecutor, type DbTransaction } from "@mesomed/db";
+import {
+  eq,
+  providerCancellationPolicy,
+  type DbExecutor,
+  type DbTransaction,
+} from "@mesomed/db/modules/billing";
 import { AppError } from "../../../kernel/errors.js";
 import { getProviderRef } from "../../directory/queries/provider-refs.js";
 

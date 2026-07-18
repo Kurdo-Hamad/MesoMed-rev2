@@ -9,14 +9,9 @@ export * from "./schema/booking.js";
 export * from "./schema/clinical.js";
 export * from "./schema/billing.js";
 export * from "./schema/communication.js";
-export * from "./client.js";
-
-// Query operators re-exported from the drizzle-orm build this package's
-// tables are typed with. Module code must import them from here — mixing a
-// second drizzle-orm instance (e.g. hoisted differently by a dependency)
-// produces incompatible column types at compile time.
-export { and, asc, desc, eq, gt, gte, inArray, isNull, lt, lte, ne, or, sql } from "drizzle-orm";
-export type { SQL } from "drizzle-orm";
+// Client factory + query operators (moved to core.ts for the per-module
+// entrypoints, MM-QA-004 F-08); the root surface is unchanged.
+export * from "./core.js";
 
 /** Where the drizzle migrator records applied migrations (pinned, not defaulted). */
 export const MIGRATIONS_SCHEMA = "drizzle";

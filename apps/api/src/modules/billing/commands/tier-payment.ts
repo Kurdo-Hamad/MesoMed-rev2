@@ -11,7 +11,7 @@
  * NOTHING — no extension, no event.
  */
 import { paymentPeriod } from "@mesomed/domain/billing";
-import { eq, facilityTiers, tierPayments, type DbTransaction } from "@mesomed/db";
+import { eq, facilityTiers, tierPayments, type DbTransaction } from "@mesomed/db/modules/billing";
 import { ErrorCode } from "@mesomed/contracts/errors";
 import { AppError } from "../../../kernel/errors.js";
 import type { OutboxEmitter } from "../../../kernel/outbox.js";

@@ -2,7 +2,7 @@
  * Channel-preference writes (MM-DEC §6, own-row-only per §3.6 layer b —
  * the router binds `userId` to the session, never to caller input).
  */
-import { userChannelPreferences, type DbExecutor } from "@mesomed/db";
+import { userChannelPreferences, type DbExecutor } from "@mesomed/db/modules/communication";
 import {
   DEFAULT_CHANNEL_PREFERENCES,
   type ChannelPreferences,

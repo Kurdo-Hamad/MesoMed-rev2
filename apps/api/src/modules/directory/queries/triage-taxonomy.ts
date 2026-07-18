@@ -4,7 +4,13 @@
  * active specialty whitelist and the deterministic keyword taxonomy
  * through these two functions only.
  */
-import { eq, specialties, symptomSpecialtyMap, symptoms, type DbExecutor } from "@mesomed/db";
+import {
+  eq,
+  specialties,
+  symptomSpecialtyMap,
+  symptoms,
+  type DbExecutor,
+} from "@mesomed/db/modules/directory";
 
 export interface ActiveSpecialty {
   key: string;

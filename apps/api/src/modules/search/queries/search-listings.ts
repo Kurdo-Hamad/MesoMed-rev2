@@ -5,7 +5,16 @@
  */
 import type { z } from "zod";
 import type { searchInputSchema, searchOutputSchema } from "@mesomed/contracts/search";
-import { and, asc, eq, or, searchDocuments, sql, type Db, type SQL } from "@mesomed/db";
+import {
+  and,
+  asc,
+  eq,
+  or,
+  searchDocuments,
+  sql,
+  type Db,
+  type SQL,
+} from "@mesomed/db/modules/search";
 import { packText } from "@mesomed/contracts/directory";
 
 export type SearchInput = z.output<typeof searchInputSchema>;

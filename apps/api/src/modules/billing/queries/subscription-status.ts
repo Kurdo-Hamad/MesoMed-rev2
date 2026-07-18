@@ -3,7 +3,7 @@
  * cross-module read surface; the router's `mySubscription` binds it to the
  * session's own doctor profile (§3.6 layer b).
  */
-import { eq, subscriptions, type DbExecutor } from "@mesomed/db";
+import { eq, subscriptions, type DbExecutor } from "@mesomed/db/modules/billing";
 
 export interface SubscriptionState {
   subscriptionId: string;

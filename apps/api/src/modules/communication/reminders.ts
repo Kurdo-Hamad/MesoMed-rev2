@@ -6,7 +6,7 @@
  * {channel}`) makes a second run for the same day a no-op, so the cron
  * job is safe to redeliver or run twice.
  */
-import type { Db } from "@mesomed/db";
+import type { Db } from "@mesomed/db/modules/communication";
 import { listRemindableAppointments } from "../booking/queries/appointment-refs.js";
 import { getDoctorDisplayName } from "../directory/queries/doctor-display-names.js";
 import { getLocationNameForDoctorLocation } from "../scheduling/queries/location-names.js";

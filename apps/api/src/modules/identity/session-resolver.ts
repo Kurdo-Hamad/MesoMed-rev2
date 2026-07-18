@@ -6,7 +6,7 @@
 import type { FastifyRequest } from "fastify";
 import { fromNodeHeaders } from "better-auth/node";
 
-import { eq, userRoles, type Db } from "@mesomed/db";
+import { eq, userRoles, type Db } from "@mesomed/db/modules/identity";
 import type { Session, SessionResolver } from "../../kernel/context.js";
 import type { IdentityAuth } from "./auth.js";
 

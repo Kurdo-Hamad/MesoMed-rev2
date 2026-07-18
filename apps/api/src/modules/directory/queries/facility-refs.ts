@@ -4,7 +4,7 @@
  * commands validate payment targets through this, never by joining
  * directory tables.
  */
-import { eq, facilities, type DbExecutor } from "@mesomed/db";
+import { eq, facilities, type DbExecutor } from "@mesomed/db/modules/directory";
 
 /** True when the directory owns a facility with this id. */
 export async function facilityExists(db: DbExecutor, facilityId: string): Promise<boolean> {

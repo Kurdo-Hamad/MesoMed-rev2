@@ -3,7 +3,7 @@
  * is enabled at the platform default locale — a user only gets a row once
  * they explicitly set a preference.
  */
-import { eq, userChannelPreferences, type DbExecutor } from "@mesomed/db";
+import { eq, userChannelPreferences, type DbExecutor } from "@mesomed/db/modules/communication";
 import {
   DEFAULT_CHANNEL_PREFERENCES,
   type ChannelPreferences,

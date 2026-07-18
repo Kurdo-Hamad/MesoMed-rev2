@@ -3,7 +3,12 @@
  * The scheduling/booking modules resolve "who is this session" through
  * these functions — never by joining identity tables directly (§3.1).
  */
-import { eq, patientProfiles, providerProfiles, type DbExecutor } from "@mesomed/db";
+import {
+  eq,
+  patientProfiles,
+  providerProfiles,
+  type DbExecutor,
+} from "@mesomed/db/modules/identity";
 
 /** The user's provider profile id, or null when they have none. */
 export async function getProviderProfileIdForUser(

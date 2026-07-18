@@ -18,7 +18,7 @@ import {
   eq,
   providerBillingConfig,
   type DbTransaction,
-} from "@mesomed/db";
+} from "@mesomed/db/modules/billing";
 import { AppError } from "../../../kernel/errors.js";
 import type { OutboxEmitter } from "../../../kernel/outbox.js";
 import { requireActiveRate } from "./rate-config.js";

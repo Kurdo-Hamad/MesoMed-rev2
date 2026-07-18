@@ -24,7 +24,7 @@
  * reminder cron, a natural key that changes when the underlying fact does
  * (appointment id + its current start time).
  */
-import { notificationLog, type DbExecutor } from "@mesomed/db";
+import { notificationLog, type DbExecutor } from "@mesomed/db/modules/communication";
 import type { Locale } from "@mesomed/contracts/i18n";
 import type { NotificationTemplate } from "@mesomed/contracts/communication";
 import { resolveDeliveryPlan } from "../shared.js";

@@ -20,7 +20,7 @@
  */
 import type { EventEnvelope, bookingCompletedV1 } from "@mesomed/contracts";
 import { bookingChargeFor } from "@mesomed/domain/billing";
-import { eq, providerBillingConfig } from "@mesomed/db";
+import { eq, providerBillingConfig } from "@mesomed/db/modules/billing";
 import type { EventHandlerFn } from "../../../kernel/events.js";
 import type { OutboxEmitter } from "../../../kernel/outbox.js";
 import { getProviderRefForDoctorProfile } from "../../directory/queries/provider-refs.js";

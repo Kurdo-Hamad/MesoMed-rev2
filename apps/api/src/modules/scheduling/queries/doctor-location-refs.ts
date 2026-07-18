@@ -4,7 +4,7 @@
  * `active`: a treating relationship established through a location the
  * doctor has since left still counts.
  */
-import { doctorLocations, eq, type DbExecutor } from "@mesomed/db";
+import { doctorLocations, eq, type DbExecutor } from "@mesomed/db/modules/scheduling";
 
 export async function getDoctorLocationIdsForDoctorProfile(
   db: DbExecutor,

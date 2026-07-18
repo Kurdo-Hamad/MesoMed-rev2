@@ -3,7 +3,7 @@
  * exactly once per user. Shared by the phone-verification hook and the
  * claim procedure (email-path patients never pass through the phone hook).
  */
-import { userRoles, type DbTransaction } from "@mesomed/db";
+import { userRoles, type DbTransaction } from "@mesomed/db/modules/identity";
 import type { OutboxEmitter } from "../../../kernel/outbox.js";
 
 export async function ensurePatientRegistration(

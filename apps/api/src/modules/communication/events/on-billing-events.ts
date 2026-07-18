@@ -11,7 +11,7 @@ import type {
   subscriptionActivatedV1,
   subscriptionExpiredV1,
 } from "@mesomed/contracts";
-import { notificationLog, type DbTransaction } from "@mesomed/db";
+import { notificationLog, type DbTransaction } from "@mesomed/db/modules/communication";
 import type { EventHandlerFn } from "../../../kernel/events.js";
 import { getIdentityProviderProfileIdForDoctorProfile } from "../../directory/queries/doctor-display-names.js";
 import { getProviderContact } from "../../identity/queries/provider-contacts.js";

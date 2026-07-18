@@ -7,7 +7,7 @@
 import type { PaymentKind } from "@mesomed/contracts/billing";
 import { ErrorCode } from "@mesomed/contracts/errors";
 import { resolvePaymentGatewayId } from "@mesomed/config";
-import { eq, listingTiers, type DbExecutor } from "@mesomed/db";
+import { eq, listingTiers, type DbExecutor } from "@mesomed/db/modules/billing";
 import type { PaymentGateway } from "@mesomed/platform";
 import type { ConfigService } from "../../kernel/config.js";
 import { AppError } from "../../kernel/errors.js";

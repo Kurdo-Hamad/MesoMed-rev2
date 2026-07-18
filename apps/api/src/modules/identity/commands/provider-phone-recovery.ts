@@ -22,7 +22,7 @@ import { randomInt, timingSafeEqual } from "node:crypto";
 import { APIError } from "better-auth/api";
 import { ErrorCode } from "@mesomed/contracts/errors";
 import { normalizePhone } from "@mesomed/domain/identity";
-import { eq, providerProfiles, type Db } from "@mesomed/db";
+import { eq, providerProfiles, type Db } from "@mesomed/db/modules/identity";
 import { AppError } from "../../../kernel/errors.js";
 import type { IdentityAuth } from "../auth.js";
 import { DEFAULT_OTP_EXPIRES_IN_SECONDS } from "../auth.js";

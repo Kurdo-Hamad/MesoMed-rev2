@@ -11,7 +11,7 @@
  */
 import { ErrorCode } from "@mesomed/contracts/errors";
 import { TREATING_APPOINTMENT_STATUSES } from "@mesomed/domain/clinical";
-import { sql, type DbExecutor } from "@mesomed/db";
+import { sql, type DbExecutor } from "@mesomed/db/modules/clinical";
 import { AppError } from "../../kernel/errors.js";
 import type { Session } from "../../kernel/context.js";
 import { hasAppointmentForLocations } from "../booking/queries/appointment-refs.js";

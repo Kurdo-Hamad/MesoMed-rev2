@@ -6,7 +6,7 @@
  * model follows — all on the handler's idempotency-claimed transaction.
  */
 import type { EventEnvelope, tierPaymentRecordedV1 } from "@mesomed/contracts";
-import { categories, cities, eq, facilities } from "@mesomed/db";
+import { categories, cities, eq, facilities } from "@mesomed/db/modules/directory";
 import type { EventHandlerFn } from "../../../kernel/events.js";
 import type { OutboxEmitter } from "../../../kernel/outbox.js";
 import { packText } from "../shared.js";

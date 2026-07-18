@@ -7,7 +7,7 @@
  */
 import { ErrorCode } from "@mesomed/contracts/errors";
 import { normalizePhone } from "@mesomed/domain/identity";
-import { eq, patientProfiles, type DbTransaction } from "@mesomed/db";
+import { eq, patientProfiles, type DbTransaction } from "@mesomed/db/modules/identity";
 import { AppError } from "../../../kernel/errors.js";
 import type { OutboxEmitter } from "../../../kernel/outbox.js";
 

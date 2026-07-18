@@ -14,7 +14,7 @@
  * including in its own failure-path logging. Keep it that way.
  */
 import type { FastifyBaseLogger } from "fastify";
-import type { DbExecutor } from "@mesomed/db";
+import type { DbExecutor } from "@mesomed/db/core";
 import type { TriageOutput } from "@mesomed/contracts/ai";
 import type { AiGateway } from "@mesomed/platform";
 import {

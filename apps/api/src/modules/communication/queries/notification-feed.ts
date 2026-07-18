@@ -3,7 +3,7 @@
  * — deliberately excludes `destination` and `paramsJson` (PII) so this
  * feed is safe for general ops tooling, not just support-access-gated code.
  */
-import { desc, notificationLog, type DbExecutor } from "@mesomed/db";
+import { desc, notificationLog, type DbExecutor } from "@mesomed/db/modules/communication";
 import type {
   NotificationChannel,
   NotificationStatus,

@@ -18,7 +18,7 @@ import {
   providerBillingConfig,
   type DbExecutor,
   type DbTransaction,
-} from "@mesomed/db";
+} from "@mesomed/db/modules/billing";
 import { resolveTrialDefaultMonths, type ConfigReader } from "@mesomed/config";
 import { trialEndsAt } from "@mesomed/domain/billing";
 import { AppError } from "../../../kernel/errors.js";

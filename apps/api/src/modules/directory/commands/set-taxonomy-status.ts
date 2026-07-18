@@ -18,7 +18,7 @@ import {
   specialties,
   symptoms,
   type DbTransaction,
-} from "@mesomed/db";
+} from "@mesomed/db/modules/directory";
 import { AppError } from "../../../kernel/errors.js";
 import type { OutboxEmitter } from "../../../kernel/outbox.js";
 

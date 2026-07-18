@@ -5,7 +5,7 @@
  */
 import type { z } from "zod";
 import type { chargeSchema } from "@mesomed/contracts/billing";
-import { billingCharges, desc, eq, type DbExecutor } from "@mesomed/db";
+import { billingCharges, desc, eq, type DbExecutor } from "@mesomed/db/modules/billing";
 
 export type ChargeView = z.output<typeof chargeSchema>;
 

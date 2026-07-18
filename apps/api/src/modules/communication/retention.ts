@@ -8,7 +8,7 @@
  * All statuses are pruned: a pending row older than the window is stuck
  * garbage that must not survive its own retention policy.
  */
-import { lt, notificationLog, type Db } from "@mesomed/db";
+import { lt, notificationLog, type Db } from "@mesomed/db/modules/communication";
 
 export async function pruneNotificationLog(db: Db, retentionDays: number): Promise<number> {
   const cutoff = new Date(Date.now() - retentionDays * 24 * 60 * 60 * 1000);

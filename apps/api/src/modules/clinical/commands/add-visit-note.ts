@@ -8,7 +8,7 @@
  */
 import { validateAmendmentTarget } from "@mesomed/domain/clinical";
 import { ErrorCode } from "@mesomed/contracts/errors";
-import type { DbTransaction } from "@mesomed/db";
+import type { DbTransaction } from "@mesomed/db/modules/clinical";
 import { AppError } from "../../../kernel/errors.js";
 import type { Session } from "../../../kernel/context.js";
 import type { OutboxEmitter } from "../../../kernel/outbox.js";

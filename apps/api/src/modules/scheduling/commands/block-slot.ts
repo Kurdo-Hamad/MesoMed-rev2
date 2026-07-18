@@ -10,7 +10,13 @@ import type {
   removeBlockedSlotInputSchema,
 } from "@mesomed/contracts/scheduling";
 import { ErrorCode } from "@mesomed/contracts/errors";
-import { and, blockedSlots, doctorLocations, eq, type DbTransaction } from "@mesomed/db";
+import {
+  and,
+  blockedSlots,
+  doctorLocations,
+  eq,
+  type DbTransaction,
+} from "@mesomed/db/modules/scheduling";
 import { AppError } from "../../../kernel/errors.js";
 
 export type BlockSlotInput = z.output<typeof blockSlotInputSchema>;

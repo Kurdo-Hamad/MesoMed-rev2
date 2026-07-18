@@ -17,7 +17,7 @@ import {
   sql,
   type Db,
   type SQL,
-} from "@mesomed/db";
+} from "@mesomed/db/modules/directory";
 import { doctorNameColumn, packOptionalText, packText } from "../shared.js";
 
 export type BrowseDoctorsInput = z.output<typeof browseDoctorsInputSchema>;

@@ -6,7 +6,7 @@
  * claim. Keyed by user id and/or patient-profile id — a subject may have
  * account-holder rows (user id) and guest-era rows (profile id).
  */
-import { eq, notificationLog, or, type DbTransaction } from "@mesomed/db";
+import { eq, notificationLog, or, type DbTransaction } from "@mesomed/db/modules/communication";
 
 export async function deleteSubjectNotifications(
   tx: DbTransaction,

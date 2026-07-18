@@ -7,7 +7,7 @@
  * fails and the admin retries (the operations are idempotent).
  */
 import { ErrorCode } from "@mesomed/contracts/errors";
-import { eq, providerProfiles, type Db } from "@mesomed/db";
+import { eq, providerProfiles, type Db } from "@mesomed/db/modules/identity";
 import { AppError } from "../../../kernel/errors.js";
 import type { OutboxEmitter } from "../../../kernel/outbox.js";
 import type { IdentityAuth } from "../auth.js";

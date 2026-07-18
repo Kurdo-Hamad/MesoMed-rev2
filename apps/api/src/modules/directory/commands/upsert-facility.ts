@@ -7,7 +7,7 @@
 import type { z } from "zod";
 import type { upsertFacilityInputSchema } from "@mesomed/contracts/directory";
 import { ErrorCode } from "@mesomed/contracts/errors";
-import type { DIRECTORY_PROVIDER_TYPES } from "@mesomed/db";
+import type { DIRECTORY_PROVIDER_TYPES } from "@mesomed/db/modules/directory";
 import {
   eq,
   facilities,
@@ -17,7 +17,7 @@ import {
   inArray,
   providers,
   type DbTransaction,
-} from "@mesomed/db";
+} from "@mesomed/db/modules/directory";
 import { AppError } from "../../../kernel/errors.js";
 import type { OutboxEmitter } from "../../../kernel/outbox.js";
 import { isProviderProfileApproved } from "../../identity/queries/provider-visibility.js";

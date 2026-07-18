@@ -14,7 +14,7 @@ import {
   scheduleBreaks,
   weeklySchedules,
   type DbTransaction,
-} from "@mesomed/db";
+} from "@mesomed/db/modules/scheduling";
 import { AppError } from "../../../kernel/errors.js";
 
 export type SetWeeklyScheduleInput = z.output<typeof setWeeklyScheduleInputSchema>;

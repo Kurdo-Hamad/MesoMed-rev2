@@ -12,7 +12,13 @@ import type {
 } from "@mesomed/contracts/billing";
 import type { BillingCategory, BillingModel, RateKind } from "@mesomed/contracts/billing";
 import { ErrorCode } from "@mesomed/contracts/errors";
-import { and, billingRateConfig, eq, type DbExecutor, type DbTransaction } from "@mesomed/db";
+import {
+  and,
+  billingRateConfig,
+  eq,
+  type DbExecutor,
+  type DbTransaction,
+} from "@mesomed/db/modules/billing";
 import { AppError } from "../../../kernel/errors.js";
 
 export type SetBillingRateInput = z.output<typeof setBillingRateInputSchema>;

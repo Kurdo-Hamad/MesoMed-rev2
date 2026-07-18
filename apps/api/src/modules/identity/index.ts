@@ -6,7 +6,7 @@
 import type { FastifyBaseLogger } from "fastify";
 import { defaultLocale, locales } from "@mesomed/i18n";
 import type { EmailChannel } from "@mesomed/platform";
-import type { Db } from "@mesomed/db";
+import type { Db } from "@mesomed/db/modules/identity";
 import type { Env } from "../../env.js";
 import type { ConfigService } from "../../kernel/config.js";
 import type { OutboxEmitter } from "../../kernel/outbox.js";

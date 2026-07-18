@@ -3,7 +3,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { ESLint } from "eslint";
 import type { Linter } from "eslint";
-import { apiConfig } from "../api.js";
+import { apiConfig, dbIsolationOverrides } from "../api.js";
 
 /**
  * Meta-tests: prove the architecture guardrails actually fire (MM-QA-001
@@ -14,11 +14,11 @@ import { apiConfig } from "../api.js";
  */
 const fixtureRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "fixtures", "api-app");
 
-async function lintFixture(relativeFile: string) {
+async function lintFixture(relativeFile: string, config: unknown[] = apiConfig) {
   const eslint = new ESLint({
     cwd: fixtureRoot,
     overrideConfigFile: true,
-    overrideConfig: apiConfig as Linter.Config[],
+    overrideConfig: config as Linter.Config[],
   });
   const results = await eslint.lintFiles([relativeFile]);
   const result = results[0];
@@ -64,6 +64,43 @@ describe("published query surface (MM-PLAN-001 §3.1)", () => {
     const result = await lintFixture("src/modules/alpha/queries/reaches-into-module.ts");
     expect(result.errorCount).toBeGreaterThan(0);
     expect(ruleIds(result)).toContain("boundaries/dependencies");
+  });
+});
+
+describe("table-level module isolation (MM-PLAN-001 §3.1, MM-QA-004 F-08)", () => {
+  // The real generator run against the fixture module names, appended the
+  // same way api.js appends dbIsolationOverrides(API_MODULES).
+  const config = [...apiConfig, ...dbIsolationOverrides(["alpha", "beta"])];
+
+  it("rejects a module importing another module's db entrypoint", async () => {
+    const result = await lintFixture("src/modules/beta/writes-alpha-table.ts", config);
+    expect(result.errorCount).toBeGreaterThan(0);
+    expect(ruleIds(result)).toContain("no-restricted-imports");
+  });
+
+  it("rejects a module importing the @mesomed/db root hub", async () => {
+    const result = await lintFixture("src/modules/beta/uses-db-root.ts", config);
+    expect(result.errorCount).toBeGreaterThan(0);
+    expect(ruleIds(result)).toContain("no-restricted-imports");
+  });
+
+  it("allows a module importing its own db entrypoint", async () => {
+    const result = await lintFixture("src/modules/beta/uses-own-db.ts", config);
+    expect(result.errorCount).toBe(0);
+  });
+
+  it("allows a module importing the table-free @mesomed/db/core", async () => {
+    const result = await lintFixture("src/modules/beta/uses-db-core.ts", config);
+    expect(result.errorCount).toBe(0);
+  });
+
+  it("keeps the adapter ban alive inside the per-module override", async () => {
+    // Flat-config rule entries replace rather than merge — the override must
+    // re-include the base platform-adapter restriction, or module files
+    // would silently lose it.
+    const result = await lintFixture("src/modules/beta/uses-adapter.ts", config);
+    expect(result.errorCount).toBeGreaterThan(0);
+    expect(ruleIds(result)).toContain("no-restricted-imports");
   });
 });
 

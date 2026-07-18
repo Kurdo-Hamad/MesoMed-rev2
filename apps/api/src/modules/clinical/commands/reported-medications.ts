@@ -7,7 +7,12 @@
  * profile and removable only by it.
  */
 import { ErrorCode } from "@mesomed/contracts/errors";
-import { and, eq, patientReportedMedications, type DbTransaction } from "@mesomed/db";
+import {
+  and,
+  eq,
+  patientReportedMedications,
+  type DbTransaction,
+} from "@mesomed/db/modules/clinical";
 import { AppError } from "../../../kernel/errors.js";
 import type { Session } from "../../../kernel/context.js";
 import { requirePatientProfileId } from "../shared.js";
