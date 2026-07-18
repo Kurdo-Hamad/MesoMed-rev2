@@ -56,6 +56,49 @@ export interface OtpSender {
   send(input: { phoneNumber: string; code: string }, context?: OtpSendContext): Promise<void>;
 }
 
+/**
+ * Shared send-rate gate for recovery sends (MM-DEC rev02 §5 — "reuse the
+ * OTP-abuse rate-limit machinery"). Applies `identity.otpSendPolicy` over
+ * `otp_send_attempts` for an arbitrary key and records the send. The phone
+ * OTP path applies the same policy inline in `send()`; the email reset leg
+ * uses this with an `email:`-prefixed key (the column name is historical —
+ * it is the rate-limit key).
+ */
+export async function assertRecoverySendAllowed(
+  deps: { db: Db; config: ConfigService },
+  key: string,
+  now: Date,
+): Promise<void> {
+  let policy = DEFAULT_OTP_SEND_POLICY;
+  try {
+    policy = await deps.config.get(otpSendPolicySchema, OTP_SEND_POLICY_CONFIG_KEY);
+  } catch (error) {
+    if (!(error instanceof AppError && error.code === ErrorCode.NOT_FOUND)) throw error;
+  }
+  const cutoff = new Date(now.getTime() - policy.windowSeconds * 1000);
+  const prior = await deps.db
+    .select({ sentAt: otpSendAttempts.sentAt })
+    .from(otpSendAttempts)
+    .where(and(eq(otpSendAttempts.normalizedPhone, key), gt(otpSendAttempts.sentAt, cutoff)));
+  const verdict = evaluateOtpSendLimit(
+    prior.map((row) => row.sentAt),
+    now,
+    policy,
+  );
+  if (!verdict.allowed) {
+    throw new APIError("TOO_MANY_REQUESTS", {
+      message: "Send limit reached",
+      code: ErrorCode.RATE_LIMITED,
+      retryAfter: verdict.retryAfterSeconds,
+    });
+  }
+}
+
+/** Records a recovery send against the shared rate-limit key. */
+export async function recordRecoverySend(deps: { db: Db }, key: string, now: Date): Promise<void> {
+  await deps.db.insert(otpSendAttempts).values({ normalizedPhone: key, sentAt: now });
+}
+
 /** Maps a guardrail's typed AppError onto the transport-level APIError this endpoint throws. */
 function toApiError(error: AppError): APIError {
   switch (error.code) {

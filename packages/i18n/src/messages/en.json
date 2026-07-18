@@ -11,7 +11,9 @@
     },
     "email": {
       "verifySubject": "Verify your MesoMed email",
-      "verifyBody": "Open this link to verify your email address: {url}"
+      "verifyBody": "Open this link to verify your email address: {url}",
+      "resetSubject": "Reset your MesoMed password",
+      "resetBody": "Reset your MesoMed password using this link (valid for 15 minutes): {url}\nIf you did not request this, ignore this email — your password is unchanged."
     }
   },
   "communication": {
@@ -233,7 +235,22 @@
       "signUpFailed": "Could not create the account — the phone or email may already be registered.",
       "otpFailed": "That code is not valid — try again or resend.",
       "signOut": "Sign out",
-      "invalidPhone": "That phone number does not look valid — include the country code."
+      "invalidPhone": "That phone number does not look valid — include the country code.",
+      "forgotPassword": "Forgot your password?",
+      "forgotPasswordTitle": "Reset your password",
+      "recoverySendCode": "Send code",
+      "recoveryCodeSent": "We sent a reset code to {phone} on WhatsApp (or SMS).",
+      "recoveryCode": "Reset code",
+      "newPassword": "New password",
+      "resetPassword": "Reset password",
+      "resetSuccess": "Your password has been reset — sign in with your new password.",
+      "resetFailed": "Could not reset the password — try again.",
+      "resetInvalidToken": "This reset link is invalid or has expired — request a new one.",
+      "recoverySendLink": "Send reset link",
+      "recoveryEmailSent": "If an account exists for {email}, we sent a password reset link — check your inbox.",
+      "recoveryByPhone": "Recover by phone instead",
+      "recoveryRateLimited": "Too many attempts — wait a moment and try again.",
+      "backToSignIn": "Back to sign in"
     },
     "dashboard": {
       "navLabel": "Dashboard sections",

@@ -193,3 +193,15 @@ Rationale: MM-QA-004 F-03 — without the heartbeat rule and external
 probes, a total API outage pages nobody; without `SENTRY_DSN`, the 5xx
 alert's triage instruction dead-ends. Runbooks for the six MM-ARC-002
 §10.9 scenarios land in `docs/runbooks/` in the same slice.
+
+## Amendment (2026-07-18) — MM-QA-004 Slice 5 (ADR-0039): password recovery added to the launch checklist
+
+Password recovery — omitted from this checklist entirely (the F-01
+aggravator) — is added as a launch item and implemented by ADR-0039 per
+MM-DEC rev02 §5 as written: patient recovery via phone OTP
+(WhatsApp→SMS) or email; provider recovery via verified email with a
+profile-phone OTP fallback; admin manual recovery retained as the
+exceptional path; all resets single-use, short-lived, rate-limited by
+the OTP-abuse machinery, and session-revoking. Client entry points ship
+on web and mobile sign-in. Remaining human review: ar/ckb recovery
+strings ride the standing native-speaker gate.

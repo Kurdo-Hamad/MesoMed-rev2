@@ -20,5 +20,6 @@ export const auth = createIdentityAuth({
   trustedOrigins: [],
   sendOtp: () => Promise.resolve(),
   sendVerificationEmail: () => Promise.resolve(),
+  sendResetPasswordEmail: () => Promise.resolve(),
   onPhoneVerified: () => Promise.resolve(),
 });

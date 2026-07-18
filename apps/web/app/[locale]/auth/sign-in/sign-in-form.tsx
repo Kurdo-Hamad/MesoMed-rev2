@@ -100,6 +100,13 @@ export function SignInForm() {
           />
         </label>
 
+        <Link
+          href="/auth/forgot-password"
+          className="self-end text-small font-medium text-brand hover:underline"
+        >
+          {t("forgotPassword")}
+        </Link>
+
         {failed && (
           <p className="rounded-md bg-danger-soft px-4 py-3 text-small font-medium text-danger">
             {failed === "phone" ? t("invalidPhone") : t("signInFailed")}

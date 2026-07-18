@@ -18,7 +18,13 @@ import {
   type IdentityOtpOptions,
 } from "./auth.js";
 import { createOnPhoneVerified } from "./commands/on-phone-verified.js";
-import { createOtpSender, type OtpChannels } from "./otp-sender.js";
+import {
+  assertRecoverySendAllowed,
+  createOtpSender,
+  recordRecoverySend,
+  type OtpChannels,
+  type OtpSender,
+} from "./otp-sender.js";
 import { createIdentitySessionResolver } from "./session-resolver.js";
 
 /** Expo app scheme — must be trusted for the Better Auth Expo plugin. */
@@ -27,6 +33,8 @@ export const MOBILE_APP_SCHEME = "mesomed";
 export interface IdentityModule {
   auth: IdentityAuth;
   sessionResolver: SessionResolver;
+  /** The module's OTP dispatch service — the router's provider phone-recovery leg reuses it. */
+  otpSender: OtpSender;
 }
 
 export function createIdentityModule(deps: {
@@ -62,6 +70,21 @@ export function createIdentityModule(deps: {
         text: messages.verifyBody.replace("{url}", url),
       });
     },
+    sendResetPasswordEmail: async ({ email, url }) => {
+      // §5 email leg: same send-rate machinery as the OTP path, keyed on
+      // the address (MM-QA-004 F-01; `email:` prefix disambiguates from
+      // phone keys in the shared otp_send_attempts table).
+      const now = new Date();
+      const rateKey = `email:${email.toLowerCase()}`;
+      await assertRecoverySendAllowed({ db: deps.db, config: deps.config }, rateKey, now);
+      const messages = locales[defaultLocale].identity.email;
+      await deps.emailChannel.send({
+        to: email,
+        subject: messages.resetSubject,
+        text: messages.resetBody.replace("{url}", url),
+      });
+      await recordRecoverySend({ db: deps.db }, rateKey, now);
+    },
     onPhoneVerified,
     otp: deps.otpOptions,
   });
@@ -69,5 +92,6 @@ export function createIdentityModule(deps: {
   return {
     auth,
     sessionResolver: createIdentitySessionResolver({ auth, db: deps.db }),
+    otpSender,
   };
 }

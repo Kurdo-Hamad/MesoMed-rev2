@@ -4,6 +4,9 @@ import type { Role } from "@mesomed/contracts/roles";
 import { listPendingProvidersOutputSchema } from "@mesomed/contracts/identity";
 import { createTestDatabase, type TestDatabase } from "@mesomed/db/testing";
 import { buildServer } from "../../src/app.js";
+import { createIdentityRouter } from "../../src/modules/identity/router.js";
+import type { IdentityAuth } from "../../src/modules/identity/auth.js";
+import type { OtpSender } from "../../src/modules/identity/otp-sender.js";
 import { testEnv } from "../helpers.js";
 
 /**
@@ -49,6 +52,8 @@ describe("identity router authz matrix", () => {
   const matrix: Array<{
     procedure: string;
     kind: "query" | "mutation";
+    /** "public" = anonymous allowed by design (recovery — caller lost credentials). */
+    access?: "public";
     deniedRoles: string[];
   }> = [
     { procedure: "me", kind: "query", deniedRoles: [] },
@@ -71,9 +76,44 @@ describe("identity router authz matrix", () => {
       deniedRoles: ["patient", "doctor", "secretary"],
     },
     { procedure: "revokeOtherSessions", kind: "mutation", deniedRoles: [] },
+    { procedure: "deleteAccount", kind: "mutation", deniedRoles: [] },
+    {
+      procedure: "requestProviderRecoveryOtp",
+      kind: "mutation",
+      access: "public",
+      deniedRoles: [],
+    },
+    {
+      procedure: "resetProviderPasswordByOtp",
+      kind: "mutation",
+      access: "public",
+      deniedRoles: [],
+    },
   ];
 
-  for (const { procedure, kind, deniedRoles } of matrix) {
+  // MM-QA-004 F-07 mechanism (introduced with the F-01 slice for this
+  // router; Slice 7 replicates it everywhere): the matrix is diffed
+  // against the live router, so a new procedure cannot ship without an
+  // entry here. Router construction only wires closures — enumeration
+  // stubs are safe.
+  it("every identity procedure appears in this matrix (enumeration pin)", () => {
+    const record = createIdentityRouter({} as IdentityAuth, { otpSender: {} as OtpSender })._def
+      .procedures as Record<string, unknown>;
+    const procedures = Object.keys(record).sort();
+    expect(procedures).toEqual(matrix.map((entry) => entry.procedure).sort());
+  });
+
+  for (const { procedure, kind, access, deniedRoles } of matrix) {
+    if (access === "public") {
+      it(`identity.${procedure}: public — anonymous is not auth-rejected`, async () => {
+        const res = await call(procedure, kind);
+        // Empty payload fails input validation (400) — the point is that
+        // the kernel authz layer never turns anonymous into 401/403.
+        expect([401, 403]).not.toContain(res.statusCode);
+      });
+      continue;
+    }
+
     it(`identity.${procedure}: anonymous → 401 UNAUTHORIZED`, async () => {
       const res = await call(procedure, kind);
       expect(res.statusCode).toBe(401);
