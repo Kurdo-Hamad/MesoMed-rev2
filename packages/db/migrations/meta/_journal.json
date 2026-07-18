@@ -78,6 +78,13 @@
       "when": 1784308545940,
       "tag": "0010_redact_identity_event_pii",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1784390400000,
+      "tag": "0011_role_statement_timeouts",
+      "breakpoints": true
     }
   ]
 }
