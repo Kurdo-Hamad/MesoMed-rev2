@@ -615,7 +615,7 @@ Sized for solo-founder + AI agents now, written to survive a small team later.
 ## 10.2 Pull requests
 
 - Every change lands via PR, even solo — the PR is the human-oversight instrument for agent output and the audit unit for Document 12.
-- Required checks: full CI gate (lint incl. boundaries meta-test, typecheck, unit, integration, contract, build, docker build, format:check, dependency+secret scan). Branch protection on `main` requires them.
+- Required checks: full CI gate (lint incl. boundaries meta-test, typecheck, unit, integration, contract, build, docker build, format:check, dependency+secret scan). Branch protection on `main` requiring them is prepared (exact command in ADR-0040) and owner-applied; until applied, enforcement is the versioned pre-push hook. _(Corrected 2026-07-18 per ADR-0040 — the previous sentence asserted a protection that was not yet active.)_
 - PR template fields: phase/slice, conventions touched (by number), deviations declared, EXPLAIN attached if a large-table query changed, i18n keys confirmed ×3 locales.
 
 ## 10.3 Environments
