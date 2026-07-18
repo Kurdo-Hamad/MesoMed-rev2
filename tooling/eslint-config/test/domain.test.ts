@@ -57,3 +57,36 @@ describe("domain purity (MM-PLAN-001 repo layout, MM-QA-004 F-09)", () => {
     expect(result.errorCount).toBe(0);
   });
 });
+
+// ── MM-QA-004 F-16: cycle detection (base config, all workspaces) ────────
+
+import { apiConfig } from "../api.js";
+
+const apiFixtureRoot = path.join(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "fixtures",
+  "api-app",
+);
+
+async function lintApiFixture(relativeFile: string) {
+  const eslint = new ESLint({
+    cwd: apiFixtureRoot,
+    overrideConfigFile: true,
+    overrideConfig: apiConfig,
+  });
+  const [result] = await eslint.lintFiles([relativeFile]);
+  return result!;
+}
+
+describe("import cycle detection (convention #13, F-16)", () => {
+  it("a two-file import cycle fails lint", async () => {
+    const result = await lintApiFixture("src/modules/cyclic/a.ts");
+    expect(result.errorCount).toBeGreaterThan(0);
+    expect(result.messages.map((m) => m.ruleId)).toContain("import-x/no-cycle");
+  });
+
+  it("acyclic module files stay clean of no-cycle", async () => {
+    const result = await lintApiFixture("src/modules/alpha/queries/published.ts");
+    expect(result.messages.map((m) => m.ruleId)).not.toContain("import-x/no-cycle");
+  });
+});
