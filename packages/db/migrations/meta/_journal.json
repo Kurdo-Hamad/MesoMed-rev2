@@ -92,6 +92,13 @@
       "when": 1784390600000,
       "tag": "0012_clinical_read_bounds",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1784390700000,
+      "tag": "0013_search_text_normalization",
+      "breakpoints": true
     }
   ]
 }
