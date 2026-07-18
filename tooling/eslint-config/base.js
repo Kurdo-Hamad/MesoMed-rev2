@@ -39,11 +39,28 @@ export const base = tseslint.config(
   },
   {
     plugins: { "import-x": importX },
+    // import-x v4 reads its own settings namespace (the legacy
+    // "import/resolver" key is honored by eslint-plugin-boundaries'
+    // resolve util, not by import-x) — without this, resolution-dependent
+    // rules like no-cycle silently skip unresolved imports (MM-QA-004
+    // F-16; verified empirically).
+    settings: {
+      "import-x/resolver": { typescript: { alwaysTryTypes: true } },
+      // no-cycle must parse the IMPORTED files too; without an explicit
+      // parser mapping import-x cannot build export maps for .ts targets
+      // under flat config, and cycle detection silently finds nothing.
+      "import-x/parsers": { "@typescript-eslint/parser": [".ts", ".tsx"] },
+    },
     rules: {
       // The workspace uses node-linker=hoisted (Expo/Metro constraint,
       // ADR-0001 §6), so undeclared imports resolve fine locally and then
       // explode in the prod-pruned Docker image. Fail them at lint time
       // instead (MM-QA-001 F-17).
+      // Convention #13 "no barrel-file cycles" detection (MM-QA-004 F-16,
+      // ADR-0049): a cycle anywhere in the import graph fails lint. The
+      // resolver only follows project-internal files, so cost stays
+      // proportional to each workspace.
+      "import-x/no-cycle": ["error", { maxDepth: 8 }],
       "import-x/no-extraneous-dependencies": [
         "error",
         {
