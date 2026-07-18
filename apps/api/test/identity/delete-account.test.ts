@@ -8,12 +8,15 @@ import {
   appointments,
   clinicalAccessLog,
   deviceTokens,
+  doctorProfiles,
   domainEvents,
   encounters,
   eq,
   notificationLog,
   patientProfiles,
   prescriptions,
+  providerProfiles,
+  providers,
   sendRateEvents,
   session,
   user,
@@ -291,16 +294,18 @@ describe("account deletion — runbook erasure matrix (MM-QA-004 F-02)", () => {
     });
 
     // domain_events → kept (pseudonymous); the emitted account_deleted row
-    // is id-only (userId + profile id, no contact PII).
+    // is id-only (userId + profile ids, no contact PII). v2 since the F-02
+    // close-out (ADR-0038); a patient deletion carries no provider id.
     const events = await db
       .select()
       .from(domainEvents)
       .where(eq(domainEvents.aggregateId, "delete-subject"));
-    const deleted = events.find((e) => e.name === "identity.account_deleted.v1");
+    const deleted = events.find((e) => e.name === "identity.account_deleted.v2");
     expect(deleted).toBeDefined();
     expect(deleted!.payload).toEqual({
       userId: "delete-subject",
       patientProfileId: subject.profileId,
+      providerProfileId: null,
     });
 
     // send_rate_events / abuse_alerts → phone-keyed kernel rows: the
@@ -328,6 +333,74 @@ describe("account deletion — runbook erasure matrix (MM-QA-004 F-02)", () => {
     expect(
       await db.select().from(notificationLog).where(eq(notificationLog.userId, "delete-control")),
     ).toHaveLength(1);
+  });
+
+  it("retires an approved provider's public listing on self-deletion (F-02 close-out, ADR-0038)", async () => {
+    const { db } = app.kernel;
+    const userId = "delete-doctor";
+    await db.insert(user).values({
+      id: userId,
+      name: "Dr Delete",
+      email: `${userId}@test.mesomed.example`,
+      emailVerified: true,
+    });
+    await db.insert(userRoles).values({ userId, role: "doctor" });
+    const [identityProfile] = await db
+      .insert(providerProfiles)
+      .values({ userId, providerType: "doctor", status: "approved", phone: "+9647701110003" })
+      .returning({ id: providerProfiles.id });
+    const [provider] = await db
+      .insert(providers)
+      .values({ providerType: "doctor", identityProfileId: identityProfile!.id, approved: true })
+      .returning({ id: providers.id });
+    const [doctor] = await db
+      .insert(doctorProfiles)
+      .values({
+        providerId: provider!.id,
+        slug: "delete-doctor",
+        nameEn: "Dr Delete",
+        nameAr: "Dr Delete",
+        nameCkb: "Dr Delete",
+        specialtyKey: "cardiology",
+        publiclyVisible: true,
+      })
+      .returning({ id: doctorProfiles.id });
+
+    const res = await app.inject({
+      method: "POST",
+      url: "/trpc/identity.deleteAccount",
+      headers: {
+        "content-type": "application/json",
+        "x-test-roles": "doctor",
+        "x-test-user": userId,
+      },
+      payload: {},
+    });
+    expect(res.statusCode).toBe(200);
+
+    // The event carries the provider profile id (id-only).
+    const events = await db.select().from(domainEvents).where(eq(domainEvents.aggregateId, userId));
+    const deleted = events.find((e) => e.name === "identity.account_deleted.v2");
+    expect(deleted).toBeDefined();
+    expect(deleted!.payload).toEqual({
+      userId,
+      patientProfileId: null,
+      providerProfileId: identityProfile!.id,
+    });
+
+    // provider_profiles → cascaded away with the Better Auth user.
+    expect(
+      await db.select().from(providerProfiles).where(eq(providerProfiles.id, identityProfile!.id)),
+    ).toHaveLength(0);
+
+    // Directory listing → retired by the subscriber (async via outbox):
+    // approved mirror off, public visibility off — no dangling bookable
+    // listing without an account behind it.
+    await waitFor(async () => {
+      const [p] = await db.select().from(providers).where(eq(providers.id, provider!.id));
+      const [d] = await db.select().from(doctorProfiles).where(eq(doctorProfiles.id, doctor!.id));
+      return p?.approved === false && d?.publiclyVisible === false ? true : undefined;
+    });
   });
 
   it("rejects an unauthenticated caller (self-only, no cross-user id parameter)", async () => {
