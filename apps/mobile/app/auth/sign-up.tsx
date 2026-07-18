@@ -157,7 +157,7 @@ export default function SignUpScreen() {
             value={phone}
             onChangeText={setPhone}
             keyboardType="phone-pad"
-            placeholder="+964…"
+            placeholder={t("phoneHint")}
             autoCapitalize="none"
             className={FIELD}
             style={{ writingDirection: "ltr" }}

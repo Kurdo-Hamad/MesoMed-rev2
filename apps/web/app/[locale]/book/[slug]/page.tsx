@@ -333,7 +333,7 @@ function PatientForm({
             dir="ltr"
             value={phone}
             onChange={(event) => setPhone(event.target.value)}
-            placeholder="+964…"
+            placeholder={t("phoneHint")}
             className={field}
           />
           <span className="font-normal text-caption text-neutral-500">{t("phoneHint")}</span>
