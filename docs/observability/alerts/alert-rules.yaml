@@ -176,3 +176,49 @@ groups:
                 # Unsatisfiable on real data (the gauge is never negative):
                 # this rule alerts exclusively through noDataState above.
                 - evaluator: { type: lt, params: [0] }
+
+      # ── Search corpus revisit trigger (MM-QA-004 F-25, ADR-0054) ────────
+      # ADR-0030 deferred the search_documents seq-scan decision behind a
+      # revisit trigger (50k rows or search p95 > 100 ms). This rule makes
+      # the row-count half fire instead of living as prose; the p95 half is
+      # the "search.listings p95" panel on the api-latency dashboard.
+      # NoData is non-firing on purpose: gauge absence = API down, owned by
+      # mesomed-api-heartbeat. Not an outage page — a revisit tripwire.
+      - uid: mesomed-search-corpus
+        title: search_documents corpus passed the ADR-0030 revisit point
+        condition: C
+        for: 1h
+        noDataState: NoData
+        execErrState: Error
+        annotations:
+          summary: >-
+            search_documents exceeds 50k rows — the ADR-0030 revisit
+            trigger for the search.listings seq-scan decision (pg_trgm GIN
+            vs Meilisearch). Not an outage: schedule the revisit.
+        labels:
+          service: mesomed-api
+          adr: "0054"
+        data:
+          - refId: A
+            relativeTimeRange: { from: 300, to: 0 }
+            datasourceUid: <DS_PROMETHEUS_UID>
+            model:
+              expr: max(mesomed_search_documents)
+              refId: A
+          - refId: B
+            relativeTimeRange: { from: 0, to: 0 }
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: last
+              refId: B
+          - refId: C
+            relativeTimeRange: { from: 0, to: 0 }
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              refId: C
+              conditions:
+                - evaluator: { type: gt, params: [50000] }

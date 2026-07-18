@@ -87,3 +87,43 @@ export function registerOutboxMetrics(db: Db): void {
     [outboxLag, outboxPending, outboxDead],
   );
 }
+
+// ── Search revisit triggers (MM-QA-004 F-25, ADR-0049) ──────────────────
+
+const searchMeter = metrics.getMeter("mesomed.search");
+
+/**
+ * Per-procedure latency for search.listings — the ADR-0030 revisit
+ * trigger is "search p95 > 100 ms", and the HTTP histogram cannot see
+ * individual tRPC procedures (they share one Fastify route), so the
+ * query handler records its own histogram.
+ */
+const searchListingsDuration = searchMeter.createHistogram("mesomed.search.listings.duration", {
+  description: "search.listings query duration",
+  unit: "ms",
+});
+
+export function recordSearchListing(durationMs: number): void {
+  searchListingsDuration.record(durationMs);
+}
+
+/**
+ * Corpus size backing the other ADR-0030 revisit trigger
+ * ("search_documents > ~50k rows"). DB-derived like the outbox gauges:
+ * reports as long as the process + DB connection live; count(*) on a
+ * launch-scale corpus is cheap, and by the time it isn't, the alert has
+ * long since fired.
+ */
+export function registerSearchMetrics(db: Db): void {
+  const documents = searchMeter.createObservableGauge("mesomed.search.documents", {
+    description: "Rows in the search_documents read model",
+  });
+  documents.addCallback(async (result) => {
+    const { rows } = await db.execute<{ count: string }>(
+      sql`select count(*) as count from search_documents`,
+    );
+    const row = rows[0];
+    if (!row) return;
+    result.observe(Number(row.count));
+  });
+}

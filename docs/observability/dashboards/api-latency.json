@@ -8,10 +8,13 @@
     }
   ],
   "uid": "mesomed-api-latency",
-  "title": "MesoMed — API latency & errors",
+  "title": "MesoMed \u2014 API latency & errors",
   "tags": ["mesomed", "adr-0026"],
   "schemaVersion": 39,
-  "time": { "from": "now-6h", "to": "now" },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
   "refresh": "1m",
   "panels": [
     {
@@ -19,9 +22,22 @@
       "type": "timeseries",
       "title": "HTTP server latency percentiles",
       "description": "From the OTel auto-instrumentation histogram http.server.duration (ms). Slice 4 pass criteria: p95 read < 500ms, p95 booking command < 1s.",
-      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "gridPos": { "h": 9, "w": 24, "x": 0, "y": 0 },
-      "fieldConfig": { "defaults": { "unit": "ms" }, "overrides": [] },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms"
+        },
+        "overrides": []
+      },
       "targets": [
         {
           "refId": "A",
@@ -40,19 +56,37 @@
       "type": "timeseries",
       "title": "5xx error rate (% of requests)",
       "description": "Alert threshold: > 2% for 5m (ADR-0026).",
-      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "gridPos": { "h": 9, "w": 24, "x": 0, "y": 9 },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 9
+      },
       "fieldConfig": {
         "defaults": {
           "unit": "percent",
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              { "color": "green", "value": null },
-              { "color": "red", "value": 2 }
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 2
+              }
             ]
           },
-          "custom": { "thresholdsStyle": { "mode": "line" } }
+          "custom": {
+            "thresholdsStyle": {
+              "mode": "line"
+            }
+          }
         },
         "overrides": []
       },
@@ -63,6 +97,62 @@
           "legendFormat": "5xx %"
         }
       ]
+    },
+    {
+      "id": 3,
+      "title": "search.listings p95 (ADR-0030 revisit trigger: 100 ms)",
+      "type": "timeseries",
+      "gridPos": {
+        "h": 9,
+        "w": 16,
+        "x": 0,
+        "y": 18
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(mesomed_search_listings_duration_milliseconds_bucket[5m])))",
+          "legendFormat": "p95"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms"
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 4,
+      "title": "search_documents rows (revisit trigger: 50k)",
+      "type": "stat",
+      "gridPos": {
+        "h": 9,
+        "w": 8,
+        "x": 16,
+        "y": 18
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "max(mesomed_search_documents)",
+          "legendFormat": "rows"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none"
+        },
+        "overrides": []
+      }
     }
   ]
 }

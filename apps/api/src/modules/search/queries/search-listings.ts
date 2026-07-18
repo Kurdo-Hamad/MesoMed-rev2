@@ -20,11 +20,13 @@ import {
 } from "@mesomed/db/modules/search";
 import { normalizeSearchText } from "@mesomed/domain/search";
 import { packText } from "@mesomed/contracts/directory";
+import { recordSearchListing } from "../../../kernel/metrics.js";
 
 export type SearchInput = z.output<typeof searchInputSchema>;
 export type SearchOutput = z.output<typeof searchOutputSchema>;
 
 export async function searchListings(db: Db, input: SearchInput): Promise<SearchOutput> {
+  const startedAt = performance.now();
   const query = normalizeSearchText(input.query);
   // The contract's min length 1 can still fold to empty (e.g. a
   // diacritics-only query) — an empty pattern would match every row.
@@ -58,6 +60,11 @@ export async function searchListings(db: Db, input: SearchInput): Promise<Search
     .where(and(...conditions))
     .orderBy(asc(searchDocuments.rank), asc(searchDocuments.nameEn), asc(searchDocuments.entityId))
     .limit(input.limit);
+
+  // ADR-0030's revisit trigger is "search p95 > 100 ms"; the HTTP histogram
+  // cannot see individual tRPC procedures, so this query times itself
+  // (MM-QA-004 F-25, ADR-0054).
+  recordSearchListing(performance.now() - startedAt);
 
   return {
     items: rows.map((row) => ({
