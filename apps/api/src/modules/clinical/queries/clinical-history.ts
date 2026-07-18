@@ -27,12 +27,14 @@ import type { Session } from "../../../kernel/context.js";
 import {
   readEncounters,
   readPrescriptionRows,
-  readVisitNotes,
+  readVisitNotesBulk,
   requirePatientProfileId,
   requireTreatingDoctor,
   type PrescriptionRow,
 } from "../shared.js";
 import {
+  encountersNextCursor,
+  toEncounterPage,
   toEncounterView,
   toVisitNoteView,
   type EncounterView,
@@ -149,27 +151,49 @@ async function readReportedMedications(
 export interface PatientClinicalHistoryView {
   patientProfileId: string;
   encounters: EncounterView[];
+  nextCursor: string | null;
   visitNotes: { encounterId: string; notes: VisitNoteView[] }[];
   prescriptionChains: PrescriptionChainView[];
   medicalProfile: MedicalProfileView | null;
   reportedMedications: ReportedMedicationView[];
 }
 
-/** Doctor's cross-encounter view of one patient (continuity of care). */
+/**
+ * Doctor's cross-encounter view of one patient (continuity of care).
+ * Encounters are one keyset page (MM-QA-004 F-12) and the page's notes
+ * arrive in ONE bulk call — one 'notes_read' audit row per encounter,
+ * identical to the former per-encounter loop, without the N+1.
+ */
 export async function getPatientClinicalHistory(
   db: DbExecutor,
   session: Session,
-  input: { patientProfileId: string },
+  input: { patientProfileId: string; limit: number; cursor?: string },
 ): Promise<PatientClinicalHistoryView> {
   await requireTreatingDoctor(db, session, input.patientProfileId);
 
-  const encounters = await readEncounters(db, session.userId, {
-    patientProfileId: input.patientProfileId,
-  });
-  const visitNotes = [];
-  for (const encounter of encounters) {
-    const notes = await readVisitNotes(db, session.userId, encounter.id);
-    visitNotes.push({ encounterId: encounter.id, notes: notes.map(toVisitNoteView) });
+  const page = toEncounterPage(input);
+  const encounters = await readEncounters(
+    db,
+    session.userId,
+    { patientProfileId: input.patientProfileId },
+    page,
+  );
+  const noteRows =
+    encounters.length > 0
+      ? await readVisitNotesBulk(
+          db,
+          session.userId,
+          encounters.map((encounter) => encounter.id),
+        )
+      : [];
+  const notesByEncounter = new Map<string, VisitNoteView[]>();
+  for (const note of noteRows) {
+    const group = notesByEncounter.get(note.encounterId);
+    if (group) {
+      group.push(toVisitNoteView(note));
+    } else {
+      notesByEncounter.set(note.encounterId, [toVisitNoteView(note)]);
+    }
   }
   const prescriptions = await readPrescriptionRows(db, session.userId, {
     patientProfileId: input.patientProfileId,
@@ -178,7 +202,11 @@ export async function getPatientClinicalHistory(
   return {
     patientProfileId: input.patientProfileId,
     encounters: encounters.map(toEncounterView),
-    visitNotes,
+    nextCursor: encountersNextCursor(encounters, page.limit),
+    visitNotes: encounters.map((encounter) => ({
+      encounterId: encounter.id,
+      notes: notesByEncounter.get(encounter.id) ?? [],
+    })),
     prescriptionChains: toChainViews(prescriptions),
     medicalProfile: await readMedicalProfile(db, input.patientProfileId),
     reportedMedications: await readReportedMedications(db, input.patientProfileId),

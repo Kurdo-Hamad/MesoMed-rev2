@@ -17,8 +17,21 @@ export const encounterSchema = z.object({
   createdAt: z.string(),
 });
 
+/**
+ * Keyset pagination over encounters (MM-QA-004 F-12): opaque cursor on
+ * (startsAt DESC, id), same precedent as directory browse. The whole input
+ * object is optional at the router so pre-pagination clients calling with
+ * no args keep working; handlers apply the same default limit then.
+ */
+export const listEncountersInputSchema = z.object({
+  limit: z.number().int().min(1).max(200).default(50),
+  cursor: z.string().max(2000).optional(),
+});
+
 export const listEncountersOutputSchema = z.object({
   encounters: z.array(encounterSchema),
+  /** Present when the page was full — more encounters MAY exist. */
+  nextCursor: z.string().nullable(),
 });
 
 export const encounterIdInputSchema = z.object({ encounterId: z.string().uuid() });
@@ -37,6 +50,15 @@ export const visitNoteSchema = z.object({
 export const visitNotesOutputSchema = z.object({
   encounterId: z.string(),
   notes: z.array(visitNoteSchema),
+});
+
+/**
+ * encounterNotes input (MM-QA-004 F-12): notes are per-encounter, so a
+ * hard cap (no cursor) bounds the read; the default IS the cap.
+ */
+export const encounterNotesInputSchema = z.object({
+  encounterId: z.string().uuid(),
+  limit: z.number().int().min(1).max(200).default(200),
 });
 
 export const addVisitNoteInputSchema = z.object({
@@ -214,12 +236,17 @@ export const removeReportedMedicationResultSchema = z.object({
 
 export const patientClinicalHistoryInputSchema = z.object({
   patientProfileId: z.string().uuid(),
+  /** Bounds the encounters page (MM-QA-004 F-12); notes follow the page. */
+  limit: z.number().int().min(1).max(200).default(50),
+  cursor: z.string().max(2000).optional(),
 });
 
 export const patientClinicalHistoryOutputSchema = z.object({
   patientProfileId: z.string(),
   encounters: z.array(encounterSchema),
-  /** Notes grouped per encounter, same shape as encounterNotes. */
+  /** Continuation of the encounters page; null on the last page. */
+  nextCursor: z.string().nullable(),
+  /** Notes grouped per encounter OF THIS PAGE, same shape as encounterNotes. */
   visitNotes: z.array(visitNotesOutputSchema),
   prescriptionChains: z.array(prescriptionChainSchema),
   medicalProfile: medicalProfileSchema.nullable(),
