@@ -1,3 +1,3 @@
-import { base } from "@mesomed/eslint-config";
+import { domainConfig } from "@mesomed/eslint-config/domain";
 
-export default base;
+export default domainConfig;

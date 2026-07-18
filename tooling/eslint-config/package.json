@@ -6,7 +6,8 @@
   "main": "base.js",
   "exports": {
     ".": "./base.js",
-    "./api": "./api.js"
+    "./api": "./api.js",
+    "./domain": "./domain.js"
   },
   "scripts": {
     "test": "vitest run"
