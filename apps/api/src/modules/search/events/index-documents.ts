@@ -7,8 +7,8 @@
  * redelivery converges on the same row (§ Phase 1 gate semantics).
  */
 import type { EventEnvelope, doctorProfileCreatedV1, facilityCreatedV1 } from "@mesomed/contracts";
-import { searchDocuments } from "@mesomed/db/modules/search";
-import { sql } from "@mesomed/db/modules/search";
+import { searchDocuments, sql } from "@mesomed/db/modules/search";
+import { normalizeSearchText } from "@mesomed/domain/search";
 import type { EventHandlerFn } from "../../../kernel/events.js";
 
 export const INDEX_FACILITY_HANDLER = "search.index-facility";
@@ -26,6 +26,9 @@ export const indexFacilityDocument: EventHandlerFn = async (envelope, tx) => {
       nameEn: payload.name.en,
       nameAr: payload.name.ar,
       nameCkb: payload.name.ckb,
+      searchText: normalizeSearchText(
+        [payload.name.en, payload.name.ar, payload.name.ckb].join(" "),
+      ),
       categoryKey: payload.categorySlug,
       citySlug: payload.citySlug,
       publiclyVisible: payload.publiclyVisible,
@@ -39,6 +42,7 @@ export const indexFacilityDocument: EventHandlerFn = async (envelope, tx) => {
         nameEn: sql`excluded.name_en`,
         nameAr: sql`excluded.name_ar`,
         nameCkb: sql`excluded.name_ckb`,
+        searchText: sql`excluded.search_text`,
         categoryKey: sql`excluded.category_key`,
         citySlug: sql`excluded.city_slug`,
         publiclyVisible: sql`excluded.publicly_visible`,
@@ -60,6 +64,9 @@ export const indexDoctorDocument: EventHandlerFn = async (envelope, tx) => {
       nameEn: payload.name.en,
       nameAr: payload.name.ar,
       nameCkb: payload.name.ckb,
+      searchText: normalizeSearchText(
+        [payload.name.en, payload.name.ar, payload.name.ckb].join(" "),
+      ),
       categoryKey: payload.specialtyKey,
       citySlug: payload.citySlug,
       publiclyVisible: payload.publiclyVisible,
@@ -72,6 +79,7 @@ export const indexDoctorDocument: EventHandlerFn = async (envelope, tx) => {
         nameEn: sql`excluded.name_en`,
         nameAr: sql`excluded.name_ar`,
         nameCkb: sql`excluded.name_ckb`,
+        searchText: sql`excluded.search_text`,
         categoryKey: sql`excluded.category_key`,
         citySlug: sql`excluded.city_slug`,
         publiclyVisible: sql`excluded.publicly_visible`,

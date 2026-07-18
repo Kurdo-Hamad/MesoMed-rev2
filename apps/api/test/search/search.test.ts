@@ -282,4 +282,47 @@ describe("search read models", () => {
     );
     expect(detailAfter.statusCode).toBe(200);
   });
+
+  it("matches ar/ckb letter-form variants and Arabic-Indic digits (MM-QA-004 F-13)", async () => {
+    // Stored forms: teh marbuta + hamza alef + Arabic-Indic digits (ar),
+    // Sorani keheh/yeh/ae + extended digits (ckb) — indexed through the
+    // real event flow, then queried with the OTHER letter forms.
+    const res = await trpc(
+      app,
+      "directory.upsertFacility",
+      "mutation",
+      {
+        slug: "ahmed-clinic",
+        categorySlug: "hospital",
+        citySlug: "erbil",
+        name: { en: "Ahmed Clinic 2026", ar: "عيادة أحمد ٢٠٢٦", ckb: "کلینیکی ئەحمەد ۲۰۲۶" },
+      },
+      ADMIN,
+    );
+    expect(res.statusCode).toBe(200);
+    await waitFor(async () => {
+      const searched = searchOutputSchema.parse(result(await search("ahmed")));
+      return searched.items.some((item) => item.slug === "ahmed-clinic");
+    });
+
+    const variantQueries = [
+      "عياده احمد", // heh + bare alef vs stored teh marbuta + hamza alef
+      "كلينيك", // Arabic kaf + yeh vs stored Sorani keheh + Sorani yeh
+      "٢٠٢٦", // Arabic-Indic digits fold to the same "2026" on both sides
+      "۲۰۲۶", // extended Arabic-Indic digits likewise
+      "AHMED", // case fold
+    ];
+    for (const query of variantQueries) {
+      const body = searchOutputSchema.parse(result(await search(query)));
+      expect(
+        body.items.map((item) => item.slug),
+        `query: ${query}`,
+      ).toContain("ahmed-clinic");
+    }
+  });
+
+  it("returns no items when the query folds to empty (diacritics-only input)", async () => {
+    const body = searchOutputSchema.parse(result(await search("ًّ")));
+    expect(body.items).toEqual([]);
+  });
 });

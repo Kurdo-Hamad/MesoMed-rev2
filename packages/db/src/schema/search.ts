@@ -16,9 +16,10 @@ import {
  * Search module read model (MM-PLAN-001 §5 Phase 3) — owned exclusively by
  * `apps/api/src/modules/search` (§3.1). Populated only from directory event
  * payloads by the module's outbox subscribers; search never joins directory
- * tables. Serves Postgres FTS (generated tsvector) + pg_trgm name matching
- * (GIN trigram indexes on all three locale name columns — the migration
- * enables the pg_trgm extension).
+ * tables. Matching runs against `search_text` — the trilingual names folded
+ * by normalizeSearchText (MM-QA-004 F-13), written by the subscribers and
+ * GIN-trigram-indexed (the 0002 migration enables pg_trgm) — plus FTS over
+ * the generated tsvector. name_en/ar/ckb stay raw: they are display columns.
  */
 
 const tsvector = customType<{ data: string }>({
@@ -46,22 +47,27 @@ export const searchDocuments = pgTable(
     /** Result ordering rank (facility tier rank; doctors default 3). */
     rank: integer("rank").notNull().default(3),
     /**
-     * FTS document over the trilingual names ('simple' config — no single
+     * Folded match text: normalizeSearchText over "nameEn nameAr nameCkb"
+     * (MM-QA-004 F-13). Written by the indexing subscribers with the same
+     * fold the query side applies; migration 0013 backfills it in SQL.
+     * NOT NULL DEFAULT '' keeps the column addition additive.
+     */
+    searchText: text("search_text").notNull().default(""),
+    /**
+     * FTS document over the folded search text ('simple' config — no single
      * language fits en/ar/ckb; trigram matching covers typo tolerance).
      */
     searchVector: tsvector("search_vector")
       .notNull()
-      .generatedAlwaysAs(
-        (): SQL =>
-          sql`to_tsvector('simple', ${searchDocuments.nameEn} || ' ' || ${searchDocuments.nameAr} || ' ' || ${searchDocuments.nameCkb})`,
-      ),
+      .generatedAlwaysAs((): SQL => sql`to_tsvector('simple', ${searchDocuments.searchText})`),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
     primaryKey({ columns: [table.entityType, table.entityId] }),
-    index("search_documents_name_en_trgm_idx").using("gin", table.nameEn.op("gin_trgm_ops")),
-    index("search_documents_name_ar_trgm_idx").using("gin", table.nameAr.op("gin_trgm_ops")),
-    index("search_documents_name_ckb_trgm_idx").using("gin", table.nameCkb.op("gin_trgm_ops")),
+    index("search_documents_search_text_trgm_idx").using(
+      "gin",
+      table.searchText.op("gin_trgm_ops"),
+    ),
     index("search_documents_search_vector_idx").using("gin", table.searchVector),
     check("search_documents_entity_type_check", sql`${table.entityType} in ('facility', 'doctor')`),
   ],

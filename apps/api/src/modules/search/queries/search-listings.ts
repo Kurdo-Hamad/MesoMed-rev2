@@ -1,7 +1,10 @@
 /**
  * Public listing search (MM-PLAN-001 §5 Phase 3): pg_trgm substring match
- * across all three locale name columns (each GIN trigram-indexed) OR'd with
- * a 'simple'-config FTS match — reads only the module's own read model.
+ * against the folded search_text column (GIN trigram-indexed) OR'd with a
+ * 'simple'-config FTS match — reads only the module's own read model. The
+ * query is folded with the SAME normalizeSearchText the indexing
+ * subscribers apply (MM-QA-004 F-13), so ar/ckb letter-form variants match
+ * regardless of which form was typed on either side.
  */
 import type { z } from "zod";
 import type { searchInputSchema, searchOutputSchema } from "@mesomed/contracts/search";
@@ -15,21 +18,23 @@ import {
   type Db,
   type SQL,
 } from "@mesomed/db/modules/search";
+import { normalizeSearchText } from "@mesomed/domain/search";
 import { packText } from "@mesomed/contracts/directory";
 
 export type SearchInput = z.output<typeof searchInputSchema>;
 export type SearchOutput = z.output<typeof searchOutputSchema>;
 
 export async function searchListings(db: Db, input: SearchInput): Promise<SearchOutput> {
-  const query = input.query.trim();
+  const query = normalizeSearchText(input.query);
+  // The contract's min length 1 can still fold to empty (e.g. a
+  // diacritics-only query) — an empty pattern would match every row.
+  if (query === "") return { items: [] };
   const like = `%${query}%`;
 
   const conditions: SQL[] = [
     eq(searchDocuments.publiclyVisible, true),
     or(
-      sql`${searchDocuments.nameEn} ilike ${like}`,
-      sql`${searchDocuments.nameAr} ilike ${like}`,
-      sql`${searchDocuments.nameCkb} ilike ${like}`,
+      sql`${searchDocuments.searchText} ilike ${like}`,
       sql`${searchDocuments.searchVector} @@ plainto_tsquery('simple', ${query})`,
     )!,
   ];

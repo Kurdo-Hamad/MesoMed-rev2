@@ -11,7 +11,8 @@
     "./billing": "./billing/index.ts",
     "./scheduling": "./scheduling/index.ts",
     "./booking": "./booking/index.ts",
-    "./clinical": "./clinical/index.ts"
+    "./clinical": "./clinical/index.ts",
+    "./search": "./search/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json",
