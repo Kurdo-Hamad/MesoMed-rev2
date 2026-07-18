@@ -144,3 +144,5 @@ Doctor/secretary mobile queue views — clinic-day lists, check-in flow,
 walk-in booking — were explicitly out of scope for 9a and remain
 unstarted. The web dashboards stay the provider surface until 9b is
 scheduled.
+
+_Amendment (2026-07-18, MM-QA-004 F-28): commit `ff59130`'s message claimed this ADR waived MM-QA-003 F-02 (notification center); no such waiver text was ever added here — the notification-center deferral is recorded in ADR-0024 and MM-DES-003 §10, and this sentence closes the dangling claim._

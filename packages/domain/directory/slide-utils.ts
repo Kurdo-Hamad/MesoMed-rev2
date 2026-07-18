@@ -7,7 +7,7 @@
  * - City targeting (target_city_key NULL or matching)
  * - Priority (DESC) and display_order (ASC) ordering
  *
- * Used by the marketplace service; designed to be reused by the DB-backed
+ * Used by the directory module; designed to be reused by the DB-backed
  * implementation without modification.
  */
 

@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { afterEach, beforeAll, describe, expect, inject, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, inject, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { httpBatchLink } from "@trpc/client";
@@ -28,6 +28,27 @@ describe("web clinic page renders server affordances", () => {
   let clinic: ClinicClient;
   let secretaryCookie = "";
   let doctorCookie = "";
+
+  // Clock pin (MM-QA-004 Slice 15, owner-directed; ADR-0035's
+  // calendar-dependence note): the suite books the first free slot of the
+  // week containing now+7d, so the day-shift click count varied with the
+  // weekday vitest ran on — Saturday needed 7 clicks and surfaced the
+  // maxParamLength 414 only on weekends. Pin the suite's Date to the NEXT
+  // Saturday 09:00 relative to the real clock: worst-case click count on
+  // every run, always in the future so the live API (real clock) still
+  // serves the pinned week's slots. Only Date is faked — real timers keep
+  // driving network waits.
+  beforeAll(() => {
+    const realNow = new Date();
+    const nextSaturday = new Date(realNow);
+    nextSaturday.setDate(realNow.getDate() + ((6 - realNow.getDay() + 7) % 7 || 7));
+    nextSaturday.setHours(9, 0, 0, 0);
+    vi.useFakeTimers({ now: nextSaturday, toFake: ["Date"] });
+  });
+
+  afterAll(() => {
+    vi.useRealTimers();
+  });
 
   beforeAll(async () => {
     clinic = createClinicClient(inject("clinicBaseURL"), inject("clinicDoctorLocationId"));

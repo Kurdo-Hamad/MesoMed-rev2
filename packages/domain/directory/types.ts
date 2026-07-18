@@ -13,7 +13,7 @@ export interface LocalizedAlt {
   ckb: string;
 }
 
-/** A marketplace hero slide as consumed by the pure eligibility logic. */
+/** A directory hero slide as consumed by the pure eligibility logic. */
 export interface HeroSlide {
   id: string;
   desktopImageUrl: string;
