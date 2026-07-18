@@ -8,7 +8,7 @@ import { DIRECTORY_EVENTS } from "@mesomed/contracts/events/directory";
 import { BOOKING_EVENTS } from "@mesomed/contracts/events/booking";
 import { CLINICAL_EVENTS } from "@mesomed/contracts/events/clinical";
 import { BILLING_EVENTS } from "@mesomed/contracts/events/billing";
-import { createDb, type Db } from "@mesomed/db";
+import { API_DB_TIMEOUTS, createDb, type Db } from "@mesomed/db";
 import { locales } from "@mesomed/i18n";
 import {
   createManualPaymentGateway,
@@ -268,7 +268,10 @@ export async function buildServer(
     credentials: true,
   });
 
-  const { db, pool, close } = createDb(env.DATABASE_URL);
+  // F-11 (ADR-0045): pool-level timeout fallback — primary enforcement is
+  // role-level on mesomed_api (migration 0011); this holds the same bounds
+  // whatever role DATABASE_URL logs in as.
+  const { db, pool, close } = createDb(env.DATABASE_URL, { timeouts: API_DB_TIMEOUTS });
   // Outbox lag / dead-letter gauges, observed at each metric export
   // (ADR-0026). No-op unless an OTel SDK is running (kernel/otel.ts).
   registerOutboxMetrics(db);

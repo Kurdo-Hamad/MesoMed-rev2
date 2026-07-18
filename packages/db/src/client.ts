@@ -14,13 +14,43 @@ export interface DbHandle {
   close(): Promise<void>;
 }
 
+/** Session timeout bounds, sent as connection startup parameters (server-enforced). */
+export interface DbTimeouts {
+  statementTimeoutMs: number;
+  lockTimeoutMs: number;
+  idleInTransactionSessionTimeoutMs: number;
+}
+
+/**
+ * The API's pool-level timeout fallback (MM-QA-004 F-11, ADR-0045).
+ * Primary enforcement is role-level on `mesomed_api` (migration 0011);
+ * these hold the same bounds when DATABASE_URL logs in as another role.
+ * Migrations and the test harness construct pools WITHOUT timeouts —
+ * long DDL/backfill migrations must never be killed mid-deploy.
+ */
+export const API_DB_TIMEOUTS: DbTimeouts = {
+  statementTimeoutMs: 10_000,
+  lockTimeoutMs: 5_000,
+  idleInTransactionSessionTimeoutMs: 30_000,
+};
+
 /**
  * Client factory: one pg pool + drizzle instance per process, constructed
  * by the composition root (or the test harness) and passed down — module
  * code never creates its own connection.
  */
-export function createDb(connectionString: string): DbHandle {
-  const pool = new pg.Pool({ connectionString });
+export function createDb(connectionString: string, options?: { timeouts?: DbTimeouts }): DbHandle {
+  const timeouts = options?.timeouts;
+  const pool = new pg.Pool({
+    connectionString,
+    ...(timeouts
+      ? {
+          statement_timeout: timeouts.statementTimeoutMs,
+          lock_timeout: timeouts.lockTimeoutMs,
+          idle_in_transaction_session_timeout: timeouts.idleInTransactionSessionTimeoutMs,
+        }
+      : {}),
+  });
   const db = drizzle(pool, { schema });
   let closed = false;
   // An idle pooled connection can die out-of-band (server restart; the test
