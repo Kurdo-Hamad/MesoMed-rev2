@@ -99,7 +99,7 @@ Per-module convention: `commands/` · `queries/` · `events/` (subscribers) · `
 12. **Testing DoD per slice:** unit tests for pure domain logic, integration test per command (happy + authz-denial + invariant-violation), contract test that router I/O matches Zod schemas. CI green before next slice starts.
 13. **No `any`, no `ts-ignore`, no barrel-file cycles.** ESLint boundaries rule enforces module import constraints (`eslint-plugin-boundaries`).
 14. **Every phase ends with an ADR** recording what was decided/deviated.
-15. **Branch → PR → merge. No direct pushes to `main`.** Every slice lands via branch → PR → CI green on the PR → merge. Enforcement is the versioned pre-push hook (`.githooks/pre-push`) plus discipline — branch protection is unavailable on the current GitHub plan, so no tooling claim beyond the hook is made. Every clone must run `git config core.hooksPath .githooks` at setup.
+15. **Branch → PR → merge. No direct pushes to `main`.** Every slice lands via branch → PR → CI green on the PR → merge. Enforcement is the versioned pre-push hook (`.githooks/pre-push`) plus GitHub branch protection on `main` (available — public repository; applied by the owner via the prepared ADR-0040 command; until applied, the hook is the only tooling enforcement and no further claim is made). Every clone must run `git config core.hooksPath .githooks` at setup. _(Amended 2026-07-18 per ADR-0040 — the prior "unavailable on the current GitHub plan" justification was stale.)_
 
 ---
 
