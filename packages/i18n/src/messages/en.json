@@ -189,6 +189,7 @@
       "fullName": "Full name",
       "phone": "Phone number",
       "dateOfBirth": "Date of birth",
+      "dobPlaceholder": "YYYY-MM-DD",
       "gender": "Gender",
       "genderUnspecified": "Prefer not to say",
       "male": "Male",

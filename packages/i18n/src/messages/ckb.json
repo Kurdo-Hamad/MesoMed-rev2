@@ -189,6 +189,7 @@
       "fullName": "ناوی تەواو",
       "phone": "ژمارەی تەلەفۆن",
       "dateOfBirth": "بەرواری لەدایکبوون",
+      "dobPlaceholder": "YYYY-MM-DD",
       "gender": "ڕەگەز",
       "genderUnspecified": "پێم باش نییە دیاری بکەم",
       "male": "نێر",

@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { I18nManager, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { CalendarCheck, ChevronLeft, ChevronRight } from "lucide-react-native";
 import { Link, Stack, useLocalSearchParams } from "expo-router";
 import { useTranslations } from "use-intl";
@@ -179,12 +179,8 @@ function WeekGrid({
       <View className="mb-3 flex-row items-center justify-between">
         <Text className="text-heading font-bold text-ink">{t("week")}</Text>
         <View className="flex-row gap-1">
-          <Pressable onPress={() => onWeekShift(-7)} className="rounded-md border border-line p-2">
-            <ChevronLeft size={16} color={colors.muted} />
-          </Pressable>
-          <Pressable onPress={() => onWeekShift(7)} className="rounded-md border border-line p-2">
-            <ChevronRight size={16} color={colors.muted} />
-          </Pressable>
+          <WeekShiftButton backward onPress={() => onWeekShift(-7)} />
+          <WeekShiftButton onPress={() => onWeekShift(7)} />
         </View>
       </View>
 
@@ -256,6 +252,28 @@ function WeekGrid({
         </>
       )}
     </View>
+  );
+}
+
+// MM-QA-004 F-22: chevron direction follows the native layout direction —
+// same pattern as DayShiftButton in app/clinic.tsx. "Backward" points left
+// only under LTR; RTL mirrors it.
+function WeekShiftButton({
+  onPress,
+  backward = false,
+}: {
+  onPress: () => void;
+  backward?: boolean;
+}) {
+  const showLeft = backward !== I18nManager.isRTL;
+  return (
+    <Pressable onPress={onPress} className="rounded-md border border-line p-2">
+      {showLeft ? (
+        <ChevronLeft size={16} color={colors.muted} />
+      ) : (
+        <ChevronRight size={16} color={colors.muted} />
+      )}
+    </Pressable>
   );
 }
 
@@ -344,7 +362,7 @@ function PatientForm({
             value={phone}
             onChangeText={setPhone}
             keyboardType="phone-pad"
-            placeholder="+964…"
+            placeholder={t("phoneHint")}
             className={field}
             style={{ writingDirection: "ltr" }}
           />
@@ -355,7 +373,7 @@ function PatientForm({
           <TextInput
             value={dateOfBirth}
             onChangeText={setDateOfBirth}
-            placeholder="YYYY-MM-DD"
+            placeholder={t("dobPlaceholder")}
             className={field}
             style={{ writingDirection: "ltr" }}
           />

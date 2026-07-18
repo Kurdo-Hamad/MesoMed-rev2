@@ -189,6 +189,7 @@
       "fullName": "الاسم الكامل",
       "phone": "رقم الهاتف",
       "dateOfBirth": "تاريخ الميلاد",
+      "dobPlaceholder": "YYYY-MM-DD",
       "gender": "الجنس",
       "genderUnspecified": "أفضّل عدم التحديد",
       "male": "ذكر",

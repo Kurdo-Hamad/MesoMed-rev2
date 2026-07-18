@@ -362,7 +362,7 @@ function WalkInForm({ doctorLocationId }: { doctorLocationId: string }) {
               dir="ltr"
               value={phone}
               onChange={(event) => setPhone(event.target.value)}
-              placeholder="+964…"
+              placeholder={tBook("phoneHint")}
               className={field}
             />
           </label>
