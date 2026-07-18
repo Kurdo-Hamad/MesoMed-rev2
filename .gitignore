@@ -26,3 +26,4 @@ apps/mobile/expo-env.d.ts
 apps/web/test-results/
 apps/web/playwright-report/
 *:Zone.Identifier
+.claude/worktrees/
