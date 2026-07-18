@@ -22,7 +22,7 @@ import {
   lt,
   type DbExecutor,
   type DbTransaction,
-} from "@mesomed/db";
+} from "@mesomed/db/modules/booking";
 import { AppError } from "../../kernel/errors.js";
 import type { Session } from "../../kernel/context.js";
 import type { DomainEventInput } from "../../kernel/outbox.js";

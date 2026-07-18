@@ -28,7 +28,7 @@ import {
   type ClaimProof,
 } from "@mesomed/contracts/identity";
 import { isPlaceholderEmail, normalizePhone } from "@mesomed/domain/identity";
-import { eq, patientProfiles, providerProfiles, user } from "@mesomed/db";
+import { eq, patientProfiles, providerProfiles, user } from "@mesomed/db/modules/identity";
 import { authenticatedProcedure, roleProcedure } from "../../kernel/authz.js";
 import { AppError } from "../../kernel/errors.js";
 import { publicProcedure, router } from "../../kernel/trpc.js";

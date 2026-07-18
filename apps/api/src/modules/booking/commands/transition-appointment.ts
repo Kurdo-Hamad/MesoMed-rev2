@@ -18,7 +18,7 @@ import {
   IllegalTransitionError,
 } from "@mesomed/domain/booking";
 import type { EventName } from "@mesomed/contracts/events";
-import { appointments, eq, type DbTransaction } from "@mesomed/db";
+import { appointments, eq, type DbTransaction } from "@mesomed/db/modules/booking";
 import { AppError } from "../../../kernel/errors.js";
 import { recordBookingTransition } from "../../../kernel/metrics.js";
 import type { Session } from "../../../kernel/context.js";

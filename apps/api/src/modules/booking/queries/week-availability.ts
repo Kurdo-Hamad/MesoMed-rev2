@@ -13,7 +13,15 @@ import {
   generateSlotsForRange,
   getWeekRangeInZone,
 } from "@mesomed/domain/scheduling";
-import { and, appointments, eq, gt, inArray, lt, type DbExecutor } from "@mesomed/db";
+import {
+  and,
+  appointments,
+  eq,
+  gt,
+  inArray,
+  lt,
+  type DbExecutor,
+} from "@mesomed/db/modules/booking";
 import { AppError } from "../../../kernel/errors.js";
 import { getDoctorLocation, getScheduleInputs } from "../../scheduling/queries/schedule-inputs.js";
 

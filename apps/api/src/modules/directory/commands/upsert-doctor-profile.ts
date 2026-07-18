@@ -6,7 +6,13 @@
 import type { z } from "zod";
 import type { upsertDoctorProfileInputSchema } from "@mesomed/contracts/directory";
 import { ErrorCode } from "@mesomed/contracts/errors";
-import { doctorProfiles, eq, providers, specialties, type DbTransaction } from "@mesomed/db";
+import {
+  doctorProfiles,
+  eq,
+  providers,
+  specialties,
+  type DbTransaction,
+} from "@mesomed/db/modules/directory";
 import { AppError } from "../../../kernel/errors.js";
 import type { OutboxEmitter } from "../../../kernel/outbox.js";
 import { isProviderProfileApproved } from "../../identity/queries/provider-visibility.js";

@@ -4,7 +4,7 @@
  * re-installed app re-registering the same Expo token reassigns it to the
  * current user rather than erroring.
  */
-import { deviceTokens, type DbExecutor } from "@mesomed/db";
+import { deviceTokens, type DbExecutor } from "@mesomed/db/modules/communication";
 import type { DevicePlatform } from "@mesomed/contracts/communication";
 
 export interface RegisterDeviceTokenInput {

@@ -16,7 +16,7 @@ import {
   secretaryAssignments,
   weeklySchedules,
   type DbExecutor,
-} from "@mesomed/db";
+} from "@mesomed/db/modules/scheduling";
 
 export interface DoctorLocationRef {
   doctorLocationId: string;

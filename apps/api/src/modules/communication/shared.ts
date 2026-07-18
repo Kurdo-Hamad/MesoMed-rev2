@@ -7,7 +7,7 @@
  * allowed. Reads current contact/preference/token state at call time —
  * never from the triggering event's payload (ADR-0010 PII posture).
  */
-import { desc, deviceTokens, eq, type DbExecutor } from "@mesomed/db";
+import { desc, deviceTokens, eq, type DbExecutor } from "@mesomed/db/modules/communication";
 import type { Locale } from "@mesomed/contracts/i18n";
 import {
   DEFAULT_CHANNEL_PREFERENCES,

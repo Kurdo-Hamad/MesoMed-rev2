@@ -5,7 +5,13 @@
 import { packOptionalText, packText } from "@mesomed/contracts/directory";
 import type { z } from "zod";
 import type { listDoctorLocationsOutputSchema } from "@mesomed/contracts/scheduling";
-import { and, doctorLocations, eq, practiceLocations, type DbExecutor } from "@mesomed/db";
+import {
+  and,
+  doctorLocations,
+  eq,
+  practiceLocations,
+  type DbExecutor,
+} from "@mesomed/db/modules/scheduling";
 
 export type ListDoctorLocationsOutput = z.output<typeof listDoctorLocationsOutputSchema>;
 

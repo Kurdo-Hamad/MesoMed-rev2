@@ -17,7 +17,7 @@ import {
   resolveKnownGatewayIds,
   PAYMENT_ROUTING_CONFIG_KEY,
 } from "@mesomed/config";
-import { eq, listingTiers, tierPrices, type DbTransaction } from "@mesomed/db";
+import { eq, listingTiers, tierPrices, type DbTransaction } from "@mesomed/db/modules/billing";
 import type { ConfigService } from "../../../kernel/config.js";
 import { AppError } from "../../../kernel/errors.js";
 import type { PaymentGatewayRegistry } from "../shared.js";

@@ -16,7 +16,7 @@ import type { z } from "zod";
 import type { guestBookInputSchema } from "@mesomed/contracts/booking";
 import type { BookingChannel } from "@mesomed/contracts/booking";
 import { ErrorCode } from "@mesomed/contracts/errors";
-import { appointments, type DbTransaction } from "@mesomed/db";
+import { appointments, type DbTransaction } from "@mesomed/db/modules/booking";
 import { AppError } from "../../../kernel/errors.js";
 import { recordBookingCreated } from "../../../kernel/metrics.js";
 import type { OutboxEmitter } from "../../../kernel/outbox.js";

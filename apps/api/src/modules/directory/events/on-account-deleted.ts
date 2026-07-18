@@ -9,7 +9,7 @@
  * transaction so redelivery is a provable no-op.
  */
 import type { accountDeletedV2, EventEnvelope } from "@mesomed/contracts";
-import { eq, providers } from "@mesomed/db";
+import { eq, providers } from "@mesomed/db/modules/directory";
 import type { EventHandlerFn } from "../../../kernel/events.js";
 import type { OutboxEmitter } from "../../../kernel/outbox.js";
 import { recomputeProviderVisibility } from "../shared.js";

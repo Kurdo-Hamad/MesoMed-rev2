@@ -2,8 +2,16 @@
  * Tier taxonomy + per-facility tier-state reads (§3.2: queries read
  * freely within the module's own tables).
  */
-import { asc, desc, eq, facilityTiers, listingTiers, tierPayments, tierPrices } from "@mesomed/db";
-import type { DbExecutor } from "@mesomed/db";
+import {
+  asc,
+  desc,
+  eq,
+  facilityTiers,
+  listingTiers,
+  tierPayments,
+  tierPrices,
+} from "@mesomed/db/modules/billing";
+import type { DbExecutor } from "@mesomed/db/modules/billing";
 
 export interface TierListItem {
   key: string;

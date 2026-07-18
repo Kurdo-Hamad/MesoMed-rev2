@@ -4,7 +4,7 @@
  * specific doctor-location it may manage.
  */
 import { ErrorCode } from "@mesomed/contracts/errors";
-import type { DbExecutor } from "@mesomed/db";
+import type { DbExecutor } from "@mesomed/db/modules/scheduling";
 import { AppError } from "../../kernel/errors.js";
 import type { Session } from "../../kernel/context.js";
 import { getDoctorProfileIdForUser } from "../directory/queries/doctor-profile-refs.js";

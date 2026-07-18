@@ -4,7 +4,7 @@
  * through these functions — never by joining identity tables directly
  * (convention #1).
  */
-import { and, eq, providerProfiles, type Db, type DbExecutor } from "@mesomed/db";
+import { and, eq, providerProfiles, type Db, type DbExecutor } from "@mesomed/db/modules/identity";
 
 export interface ApprovedProvider {
   providerProfileId: string;

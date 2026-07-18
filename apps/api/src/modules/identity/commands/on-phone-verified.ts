@@ -8,7 +8,7 @@
  * Recorded in ADR-0004.
  */
 
-import { eq, user, type Db } from "@mesomed/db";
+import { eq, user, type Db } from "@mesomed/db/modules/identity";
 import type { OutboxEmitter } from "../../../kernel/outbox.js";
 import { claimPatientProfile } from "./claim-patient-profile.js";
 import { ensurePatientRegistration } from "./ensure-patient-registration.js";

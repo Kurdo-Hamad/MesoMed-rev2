@@ -29,7 +29,7 @@ import {
   eq,
   providerCancellationPolicy,
   type DbTransaction,
-} from "@mesomed/db";
+} from "@mesomed/db/modules/billing";
 import type { ConfigService } from "../../../kernel/config.js";
 import type { EventHandlerFn } from "../../../kernel/events.js";
 import type { OutboxEmitter } from "../../../kernel/outbox.js";

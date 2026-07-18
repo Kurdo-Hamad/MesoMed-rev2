@@ -5,7 +5,7 @@
 import type { z } from "zod";
 import type { upsertLocationInputSchema } from "@mesomed/contracts/scheduling";
 import { ErrorCode } from "@mesomed/contracts/errors";
-import { eq, practiceLocations, type DbTransaction } from "@mesomed/db";
+import { eq, practiceLocations, type DbTransaction } from "@mesomed/db/modules/scheduling";
 import { AppError } from "../../../kernel/errors.js";
 
 export type UpsertLocationInput = z.output<typeof upsertLocationInputSchema>;

@@ -9,7 +9,7 @@
  */
 import { validateGrantWindow } from "@mesomed/domain/clinical";
 import { ErrorCode } from "@mesomed/contracts/errors";
-import { eq, supportAccessGrants, type DbTransaction } from "@mesomed/db";
+import { eq, supportAccessGrants, type DbTransaction } from "@mesomed/db/modules/clinical";
 import { AppError } from "../../../kernel/errors.js";
 import type { Session } from "../../../kernel/context.js";
 import type { OutboxEmitter } from "../../../kernel/outbox.js";

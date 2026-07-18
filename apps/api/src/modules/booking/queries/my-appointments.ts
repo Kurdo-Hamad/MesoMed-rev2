@@ -6,7 +6,7 @@
 import type { z } from "zod";
 import type { myAppointmentsOutputSchema } from "@mesomed/contracts/booking";
 import { allowedAppointmentActions } from "@mesomed/domain/booking";
-import { appointments, desc, eq, type DbExecutor } from "@mesomed/db";
+import { appointments, desc, eq, type DbExecutor } from "@mesomed/db/modules/booking";
 import { getPatientProfileIdForUser } from "../../identity/queries/user-profiles.js";
 
 export type MyAppointmentsOutput = z.output<typeof myAppointmentsOutputSchema>;

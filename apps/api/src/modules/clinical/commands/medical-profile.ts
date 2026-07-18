@@ -8,7 +8,7 @@
  * profile — a patient cannot address another patient's row at all. No
  * events (no consumer exists; additive later per §3.3).
  */
-import { sql, patientMedicalProfiles, type DbTransaction } from "@mesomed/db";
+import { sql, patientMedicalProfiles, type DbTransaction } from "@mesomed/db/modules/clinical";
 import type { Session } from "../../../kernel/context.js";
 import { requirePatientProfileId } from "../shared.js";
 

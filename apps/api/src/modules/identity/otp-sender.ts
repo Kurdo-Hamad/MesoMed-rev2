@@ -11,7 +11,7 @@ import type { FastifyBaseLogger } from "fastify";
 import { DEFAULT_LOCALE, type Locale } from "@mesomed/contracts/i18n";
 import { ErrorCode } from "@mesomed/contracts/errors";
 import { evaluateOtpSendLimit } from "@mesomed/domain/identity";
-import { and, eq, gt, otpSendAttempts, type Db } from "@mesomed/db";
+import { and, eq, gt, otpSendAttempts, type Db } from "@mesomed/db/modules/identity";
 import type { OtpChannel } from "@mesomed/platform";
 import type { ConfigService } from "../../kernel/config.js";
 import { AppError } from "../../kernel/errors.js";

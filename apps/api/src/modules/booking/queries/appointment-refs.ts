@@ -16,7 +16,7 @@ import {
   sql,
   type APPOINTMENT_STATUSES,
   type DbExecutor,
-} from "@mesomed/db";
+} from "@mesomed/db/modules/booking";
 
 export type AppointmentStatus = (typeof APPOINTMENT_STATUSES)[number];
 

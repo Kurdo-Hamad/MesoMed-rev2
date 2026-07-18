@@ -3,7 +3,12 @@
  * module (§3.1): notification templates render the practice location's
  * trilingual name from the appointment's `doctorLocationId`.
  */
-import { doctorLocations, eq, practiceLocations, type DbExecutor } from "@mesomed/db";
+import {
+  doctorLocations,
+  eq,
+  practiceLocations,
+  type DbExecutor,
+} from "@mesomed/db/modules/scheduling";
 
 export interface LocationDisplayName {
   /** Directory doctor-profile id practising at this location (cross-module reference, no FK). */

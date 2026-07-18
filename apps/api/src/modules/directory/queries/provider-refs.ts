@@ -4,7 +4,14 @@
  * `providers.id` and snapshots the provider type as its billing category —
  * always through these functions, never a cross-module join.
  */
-import { cities, countries, doctorProfiles, eq, providers, type DbExecutor } from "@mesomed/db";
+import {
+  cities,
+  countries,
+  doctorProfiles,
+  eq,
+  providers,
+  type DbExecutor,
+} from "@mesomed/db/modules/directory";
 import { getProviderProfileIdForUser } from "../../identity/queries/user-profiles.js";
 
 export interface ProviderRef {

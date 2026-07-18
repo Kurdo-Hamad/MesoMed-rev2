@@ -4,7 +4,7 @@
  * this function — the event payload itself carries only the patient
  * profile id.
  */
-import { eq, inArray, patientProfiles, type DbExecutor } from "@mesomed/db";
+import { eq, inArray, patientProfiles, type DbExecutor } from "@mesomed/db/modules/identity";
 
 export interface PatientContact {
   userId: string | null;

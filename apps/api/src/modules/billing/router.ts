@@ -73,7 +73,7 @@ import {
   KNOWN_GATEWAYS_CONFIG_KEY,
   PATIENT_COLLECTION_CONFIG_KEY,
 } from "@mesomed/config";
-import { billingCharges, eq } from "@mesomed/db";
+import { billingCharges, eq } from "@mesomed/db/modules/billing";
 import { roleProcedure } from "../../kernel/authz.js";
 import { AppError } from "../../kernel/errors.js";
 import { publicProcedure, router } from "../../kernel/trpc.js";

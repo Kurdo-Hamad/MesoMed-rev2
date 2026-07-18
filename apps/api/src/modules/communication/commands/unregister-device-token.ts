@@ -8,7 +8,7 @@
  * §3.6 layer b) — an unowned or already-gone token is a silent success:
  * logout must never error on a stale token.
  */
-import { and, deviceTokens, eq, type DbExecutor } from "@mesomed/db";
+import { and, deviceTokens, eq, type DbExecutor } from "@mesomed/db/modules/communication";
 
 export async function unregisterDeviceToken(
   db: DbExecutor,

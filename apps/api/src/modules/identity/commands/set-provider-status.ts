@@ -5,7 +5,7 @@
  * emits identity.provider_status_changed.v1 for it to consume.
  */
 import { ErrorCode } from "@mesomed/contracts/errors";
-import { eq, providerProfiles, type DbTransaction } from "@mesomed/db";
+import { eq, providerProfiles, type DbTransaction } from "@mesomed/db/modules/identity";
 import { AppError } from "../../../kernel/errors.js";
 import type { OutboxEmitter } from "../../../kernel/outbox.js";
 

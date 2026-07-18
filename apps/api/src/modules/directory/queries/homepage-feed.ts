@@ -30,7 +30,7 @@ import {
   sql,
   type Db,
   type SQL,
-} from "@mesomed/db";
+} from "@mesomed/db/modules/directory";
 import { facilityNameColumn, packText } from "../shared.js";
 import { getDoctorDetail } from "./doctor-detail.js";
 import type { FacilityCard } from "./browse-facilities.js";

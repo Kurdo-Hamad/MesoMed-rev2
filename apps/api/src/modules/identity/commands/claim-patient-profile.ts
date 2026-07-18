@@ -10,7 +10,7 @@
 import { ErrorCode } from "@mesomed/contracts/errors";
 import type { ClaimProof } from "@mesomed/contracts/identity";
 import { decideClaim } from "@mesomed/domain/identity";
-import { and, eq, isNull, patientProfiles, type DbTransaction } from "@mesomed/db";
+import { and, eq, isNull, patientProfiles, type DbTransaction } from "@mesomed/db/modules/identity";
 import { AppError } from "../../../kernel/errors.js";
 import type { OutboxEmitter } from "../../../kernel/outbox.js";
 

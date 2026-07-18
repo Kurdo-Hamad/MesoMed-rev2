@@ -4,7 +4,7 @@
  * Every read flows through the audited SECURITY DEFINER channel — there is
  * deliberately no unaudited read of clinical rows anywhere in the module.
  */
-import type { DbExecutor } from "@mesomed/db";
+import type { DbExecutor } from "@mesomed/db/modules/clinical";
 import type { Session } from "../../../kernel/context.js";
 import {
   readEncounters,

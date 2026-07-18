@@ -20,7 +20,7 @@ import {
   rescheduleTargetStatus,
   type AppointmentStatus,
 } from "@mesomed/domain/booking";
-import { appointments, eq, type DbTransaction } from "@mesomed/db";
+import { appointments, eq, type DbTransaction } from "@mesomed/db/modules/booking";
 import { AppError } from "../../../kernel/errors.js";
 import type { Session } from "../../../kernel/context.js";
 import type { OutboxEmitter } from "../../../kernel/outbox.js";

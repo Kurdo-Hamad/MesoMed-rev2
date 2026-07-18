@@ -22,7 +22,7 @@ import {
   patientMedicalProfiles,
   patientReportedMedications,
   type DbExecutor,
-} from "@mesomed/db";
+} from "@mesomed/db/modules/clinical";
 import type { Session } from "../../../kernel/context.js";
 import {
   readEncounters,

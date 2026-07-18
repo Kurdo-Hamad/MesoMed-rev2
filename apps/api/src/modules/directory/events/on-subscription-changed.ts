@@ -12,7 +12,7 @@ import type {
   subscriptionActivatedV1,
   subscriptionExpiredV1,
 } from "@mesomed/contracts";
-import { doctorProfiles, eq, providers } from "@mesomed/db";
+import { doctorProfiles, eq, providers } from "@mesomed/db/modules/directory";
 import type { EventHandlerFn } from "../../../kernel/events.js";
 import type { OutboxEmitter } from "../../../kernel/outbox.js";
 import { recomputeProviderVisibility } from "../shared.js";

@@ -4,7 +4,7 @@
  * comes only from the SECURITY DEFINER support function, which enforces
  * the expiry window in the database and audits the read.
  */
-import { desc, eq, supportAccessGrants, type DbExecutor } from "@mesomed/db";
+import { desc, eq, supportAccessGrants, type DbExecutor } from "@mesomed/db/modules/clinical";
 import type { Session } from "../../../kernel/context.js";
 import { supportReadVisitNotes } from "../shared.js";
 import type { VisitNoteView } from "./encounters.js";

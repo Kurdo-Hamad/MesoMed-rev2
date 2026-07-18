@@ -15,7 +15,7 @@ import {
   practiceLocations,
   secretaryAssignments,
   type DbExecutor,
-} from "@mesomed/db";
+} from "@mesomed/db/modules/scheduling";
 import type { Session } from "../../../kernel/context.js";
 import { getDoctorProfileIdForUser } from "../../directory/queries/doctor-profile-refs.js";
 

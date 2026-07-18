@@ -18,7 +18,7 @@ import {
   facilitySections,
   or,
   type Db,
-} from "@mesomed/db";
+} from "@mesomed/db/modules/directory";
 import { packOptionalText, packText } from "../shared.js";
 
 export type FacilityDetail = z.output<typeof facilityDetailOutputSchema>;

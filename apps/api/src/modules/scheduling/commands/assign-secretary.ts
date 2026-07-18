@@ -6,7 +6,13 @@
 import type { z } from "zod";
 import type { assignSecretaryInputSchema } from "@mesomed/contracts/scheduling";
 import { ErrorCode } from "@mesomed/contracts/errors";
-import { and, doctorLocations, eq, secretaryAssignments, type DbTransaction } from "@mesomed/db";
+import {
+  and,
+  doctorLocations,
+  eq,
+  secretaryAssignments,
+  type DbTransaction,
+} from "@mesomed/db/modules/scheduling";
 import { AppError } from "../../../kernel/errors.js";
 
 export type AssignSecretaryInput = z.output<typeof assignSecretaryInputSchema>;

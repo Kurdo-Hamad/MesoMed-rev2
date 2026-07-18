@@ -11,7 +11,7 @@ import type {
   bookingRescheduledV1,
   EventEnvelope,
 } from "@mesomed/contracts";
-import type { DbTransaction } from "@mesomed/db";
+import type { DbTransaction } from "@mesomed/db/modules/communication";
 import type { EventHandlerFn } from "../../../kernel/events.js";
 import { getDoctorDisplayName } from "../../directory/queries/doctor-display-names.js";
 import { getLocationNameForDoctorLocation } from "../../scheduling/queries/location-names.js";

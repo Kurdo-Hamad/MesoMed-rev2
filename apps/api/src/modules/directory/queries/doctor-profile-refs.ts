@@ -5,7 +5,7 @@
  * (§3.6 layer b). Composes the identity module's published lookup — never
  * a cross-module join.
  */
-import { doctorProfiles, eq, providers, type DbExecutor } from "@mesomed/db";
+import { doctorProfiles, eq, providers, type DbExecutor } from "@mesomed/db/modules/directory";
 import { getProviderProfileIdForUser } from "../../identity/queries/user-profiles.js";
 
 /** True when the directory owns a doctor profile with this id. */

@@ -11,7 +11,16 @@
  * itself has no value (ADR-0011 F-8).
  */
 import type { FastifyBaseLogger } from "fastify";
-import { and, deviceTokens, eq, inArray, lte, notificationLog, sql, type Db } from "@mesomed/db";
+import {
+  and,
+  deviceTokens,
+  eq,
+  inArray,
+  lte,
+  notificationLog,
+  sql,
+  type Db,
+} from "@mesomed/db/modules/communication";
 import {
   PushTokenInvalidError,
   type EmailChannel,

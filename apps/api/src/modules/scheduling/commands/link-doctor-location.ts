@@ -6,7 +6,13 @@
 import type { z } from "zod";
 import type { linkDoctorLocationInputSchema } from "@mesomed/contracts/scheduling";
 import { ErrorCode } from "@mesomed/contracts/errors";
-import { and, doctorLocations, eq, practiceLocations, type DbTransaction } from "@mesomed/db";
+import {
+  and,
+  doctorLocations,
+  eq,
+  practiceLocations,
+  type DbTransaction,
+} from "@mesomed/db/modules/scheduling";
 import { AppError } from "../../../kernel/errors.js";
 import { doctorProfileExists } from "../../directory/queries/doctor-profile-refs.js";
 

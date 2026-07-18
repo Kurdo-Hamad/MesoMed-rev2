@@ -12,7 +12,7 @@ import {
   facilities,
   providers,
   type DbExecutor,
-} from "@mesomed/db";
+} from "@mesomed/db/modules/directory";
 import { AppError } from "../../kernel/errors.js";
 import type { OutboxEmitter } from "../../kernel/outbox.js";
 

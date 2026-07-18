@@ -29,7 +29,7 @@
  * idempotent and re-emitting only re-runs an idempotent prune.
  */
 import { sql } from "drizzle-orm";
-import { eq, patientProfiles, providerProfiles, type Db } from "@mesomed/db";
+import { eq, patientProfiles, providerProfiles, type Db } from "@mesomed/db/modules/identity";
 import type { OutboxEmitter } from "../../../kernel/outbox.js";
 import type { IdentityAuth } from "../auth.js";
 

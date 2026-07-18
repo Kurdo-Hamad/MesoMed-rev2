@@ -3,7 +3,7 @@
  * module (§3.1): notification templates render the doctor's trilingual
  * name, never joined from another module's tables directly.
  */
-import { doctorProfiles, eq, providers, type DbExecutor } from "@mesomed/db";
+import { doctorProfiles, eq, providers, type DbExecutor } from "@mesomed/db/modules/directory";
 
 export interface DoctorDisplayName {
   nameEn: string;

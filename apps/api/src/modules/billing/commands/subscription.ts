@@ -9,7 +9,12 @@
  */
 import { paymentPeriod } from "@mesomed/domain/billing";
 import { ErrorCode } from "@mesomed/contracts/errors";
-import { eq, subscriptionPayments, subscriptions, type DbTransaction } from "@mesomed/db";
+import {
+  eq,
+  subscriptionPayments,
+  subscriptions,
+  type DbTransaction,
+} from "@mesomed/db/modules/billing";
 import { AppError } from "../../../kernel/errors.js";
 import type { OutboxEmitter } from "../../../kernel/outbox.js";
 import { doctorProfileExists } from "../../directory/queries/doctor-profile-refs.js";

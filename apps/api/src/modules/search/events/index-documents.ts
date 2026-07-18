@@ -7,8 +7,8 @@
  * redelivery converges on the same row (§ Phase 1 gate semantics).
  */
 import type { EventEnvelope, doctorProfileCreatedV1, facilityCreatedV1 } from "@mesomed/contracts";
-import { searchDocuments } from "@mesomed/db";
-import { sql } from "@mesomed/db";
+import { searchDocuments } from "@mesomed/db/modules/search";
+import { sql } from "@mesomed/db/modules/search";
 import type { EventHandlerFn } from "../../../kernel/events.js";
 
 export const INDEX_FACILITY_HANDLER = "search.index-facility";

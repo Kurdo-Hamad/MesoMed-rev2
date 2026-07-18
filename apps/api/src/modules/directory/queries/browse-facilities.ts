@@ -9,7 +9,16 @@ import type { browseFacilitiesInputSchema, facilityCardSchema } from "@mesomed/c
 import type { Locale } from "@mesomed/contracts/i18n";
 import { decodeFacilityCursor, encodeFacilityCursor } from "@mesomed/domain/directory";
 import { effectiveTierRank } from "@mesomed/domain/billing";
-import { and, asc, cities, eq, facilities, sql, type Db, type SQL } from "@mesomed/db";
+import {
+  and,
+  asc,
+  cities,
+  eq,
+  facilities,
+  sql,
+  type Db,
+  type SQL,
+} from "@mesomed/db/modules/directory";
 import { facilityNameColumn, packText } from "../shared.js";
 
 export type BrowseFacilitiesInput = z.output<typeof browseFacilitiesInputSchema>;

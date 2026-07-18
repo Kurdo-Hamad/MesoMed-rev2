@@ -11,7 +11,7 @@ import type { clinicDayOutputSchema } from "@mesomed/contracts/booking";
 import { ErrorCode } from "@mesomed/contracts/errors";
 import { allowedAppointmentActions, type AppointmentActorKind } from "@mesomed/domain/booking";
 import { getDayRangeInZone } from "@mesomed/domain/scheduling";
-import { and, appointments, asc, eq, gte, lt, type DbExecutor } from "@mesomed/db";
+import { and, appointments, asc, eq, gte, lt, type DbExecutor } from "@mesomed/db/modules/booking";
 import type { Session } from "../../../kernel/context.js";
 import { AppError } from "../../../kernel/errors.js";
 import { getDoctorProfileIdForUser } from "../../directory/queries/doctor-profile-refs.js";

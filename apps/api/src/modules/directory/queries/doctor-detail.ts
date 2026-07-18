@@ -4,7 +4,15 @@
  */
 import type { z } from "zod";
 import type { doctorDetailOutputSchema } from "@mesomed/contracts/directory";
-import { and, cities, doctorProfiles, eq, or, specialties, type Db } from "@mesomed/db";
+import {
+  and,
+  cities,
+  doctorProfiles,
+  eq,
+  or,
+  specialties,
+  type Db,
+} from "@mesomed/db/modules/directory";
 import { packOptionalText, packText } from "../shared.js";
 
 export type DoctorDetail = z.output<typeof doctorDetailOutputSchema>;

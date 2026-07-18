@@ -20,7 +20,7 @@
 import type { FastifyInstance, FastifyReply } from "fastify";
 import rateLimit from "@fastify/rate-limit";
 import { paymentWebhookBodySchema } from "@mesomed/contracts/billing";
-import type { Db } from "@mesomed/db";
+import type { Db } from "@mesomed/db/modules/billing";
 import {
   WebhookUnsupportedError,
   WebhookVerificationError,
