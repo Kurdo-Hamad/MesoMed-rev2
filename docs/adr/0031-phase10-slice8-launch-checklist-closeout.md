@@ -205,3 +205,97 @@ exceptional path; all resets single-use, short-lived, rate-limited by
 the OTP-abuse machinery, and session-revoking. Client entry points ship
 on web and mobile sign-in. Remaining human review: ar/ckb recovery
 strings ride the standing native-speaker gate.
+
+## Amendment (2026-07-18) — MM-QA-004 remediation close-out: finding → PR → merge-commit map
+
+Every MM-QA-004 finding is closed. Under the 2026-07-18 owner override
+(recorded above), all 27 actionable findings landed as branch → PR →
+squash-merge, each with its full local gate both sides and its merge
+commit CI-verified green on `main`. F-21 is recorded, no action (rule 5
+institutionalizes it). Slices 1–2 and 3a and PR 0 landed before the
+override; the remainder under it.
+
+| Finding(s)                                                              | Slice | ADR  | PR  | Merge commit   |
+| ----------------------------------------------------------------------- | ----- | ---- | --- | -------------- |
+| PR 0 disposition amendment                                              | —     | 0031 | #72 | (pre-override) |
+| F-05 booking error classification                                       | 1     | 0031 | #73 | (pre-override) |
+| F-04 domain_events PII (id-only v2)                                     | 2     | 0032 | #74 | (pre-override) |
+| F-02 self-service account deletion                                      | 3a    | 0033 | #75 | 36039eb        |
+| — red-main: Fastify maxParamLength                                      | —     | 0035 | #76 | cdf2d4a        |
+| — gate integrity: web-test exit-code masking + owner-override amendment | —     | 0036 | #77 | a5011d3        |
+| F-02 privacy policy + terms (DRAFT)                                     | 3b    | 0034 | #78 | b1459a5        |
+| F-02 close-out: provider-deletion retires listing                       | —     | 0038 | #79 | 119c5a7        |
+| F-03 outage detection + incident runbooks                               | 4     | 0037 | #80 | aa05746        |
+| F-01 password recovery                                                  | 5     | 0039 | #81 | 37ad13f        |
+| F-06 branch protection prepared + governance corrections                | 6     | 0040 | #82 | d5230df        |
+| F-07 + F-19 authz pins across all routers                               | 7     | 0041 | #83 | b1921f2        |
+| F-08 write-isolation guardrail                                          | 8     | 0042 | #84 | feb0423        |
+| F-09 domain purity guardrail                                            | 9     | 0043 | #85 | c10f932        |
+| F-10 adapter ban on the real path                                       | 10    | 0044 | #86 | d32381b        |
+| F-11 statement/lock/idle timeouts                                       | 11    | 0045 | #87 | fdfc16f        |
+| F-12 clinical list bounds                                               | 12    | 0050 | #88 | ad37c25        |
+| F-13 ar/ckb search normalization                                        | 13    | 0051 | #89 | d4e11a3        |
+| F-14 mobile lib tests                                                   | 14    | 0046 | #90 | 68d1fa8        |
+| F-15 + F-17 + F-26 + F-27 + F-28 doc bundle + clock pin                 | 15    | 0052 | #91 | 84508b2        |
+| F-16 import-cycle detection                                             | 16    | 0049 | #92 | b05d625        |
+| F-18 directory event-set pin                                            | 17    | 0047 | #93 | 2256fd5        |
+| F-20 support-grant 72h DB cap                                           | 18    | 0048 | #94 | c4c68a1        |
+| F-22 + F-23 + F-24 i18n trio                                            | 19    | 0053 | #95 | 18e0cbd        |
+| F-25 search seq-scan revisit trigger monitorable                        | 20    | 0054 | #96 | 2cf13d3        |
+
+F-21 (never edit a shipped migration): recorded, no action — rule 5 of
+the remediation plan is its institutionalization; every DB fix in this
+remediation shipped as a NEW migration (0010–0014).
+
+### Delegated rulings under the owner override — ratification pending
+
+Each is recorded in its slice ADR; listed here for one-place ratification:
+
+1. **Provider self-service deletion kept** (ADR-0034/0038) — the
+   dangling-listing gap is closed by the F-02 close-out; the deny-and-
+   admin-mediate alternative was flagged as not chosen.
+2. **`account_deleted.v2`** (ADR-0038) — additive versioning read to
+   cover the ADR-0032 "shipped versions never edited" ruling.
+3. **Password recovery shape** (ADR-0039) — "patient's choice" = phone-
+   OTP vs email flows; WhatsApp→SMS stays the existing adapter chain;
+   provider phone-leg OTPs are single-attempt (stricter than the
+   plugin's 3).
+4. **Branch-protection doc corrections** (ADR-0040) — the two locked-doc
+   edits execute the plan's own Slice 6 prescription.
+5. **Statement-timeout values** 10s/5s/30s (ADR-0045).
+6. **`OTEL_METRIC_EXPORT_INTERVAL`** documented as an SDK env var, not
+   added to `env.ts` (ADR-0052).
+7. **Search threshold reconciled to ADR-0030's 100 ms** in MM-ARC-002
+   §1.4 (ADR-0054).
+
+### What remains OPEN — owner-only, none self-certified
+
+- **Branch protection application** (F-06): the exact `gh api` command is
+  prepared in ADR-0040; the repo-admin action is owner-executed.
+- **Legal review** of the privacy/terms DRAFT (Slice 3b) before store
+  submission; the contact address needs owner confirmation.
+- **HG-1** store submission · **HG-2** Grafana/OTLP/dashboards +
+  (ADR-0037/0054) the heartbeat rule, synthetic probes, `SENTRY_DSN`,
+  and the new search panels/alert · **HG-3..HG-5** · **D10** production
+  deploy · **native-speaker ar/ckb translation review** (Slices 3b, 5, 19) · **RTL visual review**. All owner-executed.
+- **F-04 runbook final flip** to plain "verified" after migration 0010
+  runs against production (D10).
+
+### Observed during the run, for the owner's awareness (no bundled fix)
+
+`directory/seed.test.ts`'s outbox-drain `waitFor` (the ADR-0007 Phase 3
+drain-timeout class) tripped once during a heavily self-contended local
+gate (many parallel embedded-Postgres gates running at once; ~3.5 h
+wall). It cleared on a quiet re-run and never reproduced in CI (shared
+pg service; 20+ green merges) or in direct suite runs (747/747). Left
+as-is deliberately — bumping a test timeout to chase a self-inflicted
+load artifact would weaken a guardrail (override contract: never weaken
+a guardrail autonomously). Candidate for a future adaptive-drain-timeout
+follow-up if it ever recurs under normal load.
+
+### Final gate
+
+Run uncached from the repo root on `main` after the last merge
+(`2cf13d3`): format GREEN · lint/typecheck 20/20 · test 11/11 tasks,
+**1194 tests / 147 files, zero failed** · build 3/3. The remediation
+began at 964 tests / 130 files; +230 tests across the run.
