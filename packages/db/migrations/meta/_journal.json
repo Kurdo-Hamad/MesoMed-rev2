@@ -99,6 +99,13 @@
       "when": 1784390700000,
       "tag": "0013_search_text_normalization",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1784390800000,
+      "tag": "0014_support_grant_window_cap",
+      "breakpoints": true
     }
   ]
 }
