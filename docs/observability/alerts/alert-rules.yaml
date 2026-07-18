@@ -1,5 +1,6 @@
-# MesoMed launch alerts (Phase 10 Slice 3, ADR-0026). Grafana alert-rule
-# provisioning format. Import into Grafana Cloud via the provisioning API:
+# MesoMed launch alerts (Phase 10 Slice 3, ADR-0026; heartbeat-absence rule
+# added by MM-QA-004 Slice 4, ADR-0037). Grafana alert-rule provisioning
+# format. Import into Grafana Cloud via the provisioning API:
 #   POST /api/v1/provisioning/alert-rules  (one call per rule, JSON body)
 # or recreate in the UI with the same queries/thresholds during HG-2.
 # Replace <DS_PROMETHEUS_UID> with the stack's Prometheus datasource UID.
@@ -16,6 +17,14 @@ groups:
         title: Outbox lag high
         condition: C
         for: 5m
+        # noDataState rationale (ADR-0037 / MM-QA-004 F-03): NoData is a
+        # non-firing state here, and that is correct FOR THIS RULE — this
+        # rule's job is "lag is high", not "the API is alive". The case
+        # where the series goes absent (API process dead, its DB connection
+        # dead, or the OTLP pipeline broken) is covered by the dedicated
+        # `mesomed-api-heartbeat` rule below, which alerts on absence of
+        # this exact series. Mapping NoData to Alerting here as well would
+        # double-page the same outage.
         noDataState: NoData
         execErrState: Error
         annotations:
@@ -23,6 +32,7 @@ groups:
             Oldest pending outbox row is older than 60s for 5 minutes —
             the dispatcher is behind or down. Runbook: check API logs
             (pg-boss errors), then domain_events status counts.
+          runbook: docs/runbooks/incident-outbox-stalled.md
         labels:
           service: mesomed-api
           adr: "0026"
@@ -53,6 +63,15 @@ groups:
 
       - uid: mesomed-error-rate
         title: API 5xx error rate high
+        # noDataState rationale (ADR-0037 / MM-QA-004 F-03): OK is correct
+        # for this rule for two reasons. (1) No traffic ⇒ the rate() quotient
+        # has no samples ⇒ no error rate exists; a quiet night is legitimate
+        # and must not page (solo operator — alert fatigue is an availability
+        # risk, MM-ARC-002 §10.8). (2) The silent-API failure mode this OK
+        # used to mask (a dead API emits no metrics at all, so this rule
+        # never fires during a total outage — the F-03 finding) is now
+        # covered by `mesomed-api-heartbeat` below: total silence fires that
+        # rule instead. OK here + Alerting there is the intended division.
         condition: C
         for: 5m
         noDataState: OK # no traffic ⇒ no error rate; don't page on quiet
@@ -62,6 +81,7 @@ groups:
             More than 2% of API requests returned 5xx for 5 minutes.
             Check Sentry for the failing route, then the latency
             dashboard for saturation.
+          runbook: docs/runbooks/incident-api-down.md
         labels:
           service: mesomed-api
           adr: "0026"
@@ -93,3 +113,66 @@ groups:
               refId: C
               conditions:
                 - evaluator: { type: gt, params: [2] }
+
+      # ── API heartbeat absent (MM-QA-004 Slice 4, ADR-0037) ──────────────
+      # The absence alert that closes F-03: `mesomed_outbox_lag_seconds` is
+      # the API's DB-derived, always-on gauge — the observable callback in
+      # apps/api/src/kernel/metrics.ts queries domain_events at every metric
+      # export (default 60s, OTEL_METRIC_EXPORT_INTERVAL) for as long as the
+      # process, its DB connection, and the OTLP export pipeline are alive.
+      # Its ABSENCE therefore means one of exactly those three is down, and
+      # every one of them is page-worthy. This is the standard Grafana
+      # absence-alert idiom: query the gauge, reduce last, and map NoData to
+      # Alerting. The threshold condition is deliberately unsatisfiable
+      # (lag is >= 0 by construction, so `lt 0` never fires on present
+      # data) — the ONLY way this rule fires is via noDataState: Alerting.
+      #
+      # Window choice: the 300s lookback (not 600s like the rules above)
+      # means the query returns NoData once the gauge has been silent for
+      # ~5 minutes (a longer lookback would keep returning the pre-death
+      # samples and delay detection); the 5m `for` then confirms it. Net
+      # detection: roughly 5–10 minutes after the process dies.
+      - uid: mesomed-api-heartbeat
+        title: API heartbeat absent
+        condition: C
+        for: 5m
+        noDataState: Alerting
+        execErrState: Error
+        annotations:
+          summary: >-
+            mesomed_outbox_lag_seconds has been absent for 5+ minutes. This
+            gauge is exported by the API process itself on every metric
+            export while it lives — absence means the API process is down,
+            its Postgres connection is dead, or the OTLP metrics pipeline is
+            broken. A dead API emits nothing, so no other alert will fire:
+            treat as SEV1 until proven otherwise.
+          runbook: docs/runbooks/incident-api-down.md
+        labels:
+          service: mesomed-api
+          adr: "0037"
+        data:
+          - refId: A
+            relativeTimeRange: { from: 300, to: 0 }
+            datasourceUid: <DS_PROMETHEUS_UID>
+            model:
+              expr: max(mesomed_outbox_lag_seconds)
+              refId: A
+          - refId: B
+            relativeTimeRange: { from: 0, to: 0 }
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: last
+              refId: B
+          - refId: C
+            relativeTimeRange: { from: 0, to: 0 }
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              refId: C
+              conditions:
+                # Unsatisfiable on real data (the gauge is never negative):
+                # this rule alerts exclusively through noDataState above.
+                - evaluator: { type: lt, params: [0] }

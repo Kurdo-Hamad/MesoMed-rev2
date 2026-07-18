@@ -35,7 +35,10 @@ Grafana Cloud versions; adjusting a query is expected tuning, not a bug.
 - `dashboards/dead-letter.json` — dead-letter depth
 - `dashboards/booking-funnel.json` — created by channel, transitions by action
 - `dashboards/api-latency.json` — p95/p99 + 5xx error rate
-- `alerts/alert-rules.yaml` — the two launch alerts (thresholds: ADR-0026)
+- `alerts/alert-rules.yaml` — the three launch alerts (outbox lag + 5xx:
+  ADR-0026; API heartbeat absence: ADR-0037)
+- `synthetic-probes.md` — external uptime + guest-booking probe spec
+  (MM-ARC-002 §10.8, ADR-0037)
 - `alerts/contact-points.yaml` — email contact point (D3 ruling)
 
 ## HG-2 — owner provisioning steps (human gate, never self-certified)
@@ -49,8 +52,25 @@ Grafana Cloud versions; adjusting a query is expected tuning, not a bug.
 4. Import the alert rules + contact point (`alerts/README` header inside
    each file documents the provisioning-API call), or recreate them in
    the UI with the same queries/thresholds — outbox lag > 60s for 5m;
-   5xx > 2% of requests for 5m (both ADR-0026, tuned during Slice 4).
-5. Confirm the alert channel delivers: email to hakeem.pijdary@gmail.com
+   5xx > 2% of requests for 5m (both ADR-0026, tuned during Slice 4);
+   API heartbeat absent for 5m (`noDataState: Alerting` on
+   `mesomed_outbox_lag_seconds` — ADR-0037; this is the rule that pages
+   when the API dies silently).
+5. Provision the synthetic probes per `synthetic-probes.md` (ADR-0037,
+   MM-ARC-002 §10.8): the two HTTP checks on `/health` and `/ready`
+   (60s frequency, 5s timeout, assert 200 — `/health` body contains
+   `"status":"ok"`), and the scripted guest-booking k6 check (staging
+   hourly; production daily against the designated test doctor — pick
+   the doctor and the owner-controlled `+964` probe phone number when
+   creating the check). Route probe alerts to the same contact point.
+6. Provision Sentry: create the project, set `SENTRY_DSN` on the deployed
+   API (the kernel no-ops without it — `apps/api/src/kernel/sentry.ts`),
+   and confirm a test event arrives (trigger any 5xx, or Sentry's
+   "verify installation" snippet). Without this, the 5xx alert's
+   "check Sentry for the failing route" instruction dead-ends.
+7. Confirm the alert channel delivers: email to hakeem.pijdary@gmail.com
    (D3 ruling) — send a test notification from the contact point.
-6. Confirm **live data renders on all four dashboards**, then record the
-   gate as done (dated amendment in ADR-0026).
+8. Confirm **live data renders on all four dashboards**, the heartbeat
+   alert shows state Normal (data present), and one scripted probe run
+   has passed — then record the gate as done (dated amendment in
+   ADR-0026, noting the ADR-0037 additions).
