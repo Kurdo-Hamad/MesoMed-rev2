@@ -84,13 +84,13 @@ Independent review of the architecture as locked, assuming full-scale implementa
 
 **Recommendation.** No architecture change. Instead, a _monitored trigger list_ (Phase 10 dashboards must include these):
 
-| Signal                                    | Threshold → action                                                            |
-| ----------------------------------------- | ----------------------------------------------------------------------------- |
-| Connection count vs. max                  | > 60% sustained → pgbouncer in transaction mode                               |
-| Outbox dispatch lag p95                   | > 30s sustained → dedicated worker process (§1.5)                             |
-| Dead-tuple ratio on outbox/pg-boss tables | > 20% → per-table autovacuum tuning, then time-partitioning (§9)              |
-| Search query p95                          | > 150ms at current volume → Meilisearch adapter (already planned as the exit) |
-| Session-read share of DB load             | > 15% → in-process session cache with short TTL behind kernel interface       |
+| Signal                                    | Threshold → action                                                                                                                                                                     |
+| ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Connection count vs. max                  | > 60% sustained → pgbouncer in transaction mode                                                                                                                                        |
+| Outbox dispatch lag p95                   | > 30s sustained → dedicated worker process (§1.5)                                                                                                                                      |
+| Dead-tuple ratio on outbox/pg-boss tables | > 20% → per-table autovacuum tuning, then time-partitioning (§9)                                                                                                                       |
+| Search query p95                          | > 100ms at current volume → Meilisearch adapter (already planned as the exit) _(threshold reconciled to ADR-0030's 100 ms, 2026-07-18 per ADR-0054 — this row previously said 150 ms)_ |
+| Session-read share of DB load             | > 15% → in-process session cache with short TTL behind kernel interface                                                                                                                |
 
 **When.** Dashboards + thresholds are a Phase 10 gate item; add them to the Phase 10 kickoff prompt.
 
