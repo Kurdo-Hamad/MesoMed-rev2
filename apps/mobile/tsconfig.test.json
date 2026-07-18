@@ -2,7 +2,10 @@
   "extends": "@mesomed/typescript-config/base.json",
   "compilerOptions": {
     "noEmit": true,
-    "types": ["node"]
+    "types": ["node"],
+    "paths": {
+      "expo-constants": ["./test/stubs/expo-constants.ts"]
+    }
   },
   "include": ["test", "lib/create-auth-client.ts", "vitest.config.ts"]
 }
