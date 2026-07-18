@@ -28,11 +28,12 @@ import {
   addVisitNoteInputSchema,
   amendPrescriptionInputSchema,
   amendVisitNoteInputSchema,
-  encounterIdInputSchema,
+  encounterNotesInputSchema,
   grantIdInputSchema,
   grantSupportAccessInputSchema,
   grantSupportAccessResultSchema,
   issuePrescriptionInputSchema,
+  listEncountersInputSchema,
   listEncountersOutputSchema,
   listSupportGrantsInputSchema,
   listSupportGrantsOutputSchema,
@@ -71,9 +72,12 @@ import { getSupportNotes, listSupportGrants } from "./queries/support-grants.js"
 export function createClinicalRouter() {
   return router({
     // ── Doctor ─────────────────────────────────────────────────────────
+    // List inputs are optional wholesale (MM-QA-004 F-12): pre-pagination
+    // clients call with no args and get the default page.
     doctorEncounters: roleProcedure("doctor")
+      .input(listEncountersInputSchema.optional())
       .output(listEncountersOutputSchema)
-      .query(({ ctx }) => listDoctorEncounters(ctx.db, ctx.session)),
+      .query(({ ctx, input }) => listDoctorEncounters(ctx.db, ctx.session, input)),
 
     addVisitNote: roleProcedure("doctor")
       .input(addVisitNoteInputSchema)
@@ -145,14 +149,15 @@ export function createClinicalRouter() {
 
     // ── Shared reads (doctor owns · patient reads own) ─────────────────
     encounterNotes: roleProcedure("doctor", "patient")
-      .input(encounterIdInputSchema)
+      .input(encounterNotesInputSchema)
       .output(visitNotesOutputSchema)
-      .query(({ ctx, input }) => getEncounterNotes(ctx.db, ctx.session, input.encounterId)),
+      .query(({ ctx, input }) => getEncounterNotes(ctx.db, ctx.session, input)),
 
     // ── Patient ────────────────────────────────────────────────────────
     myEncounters: roleProcedure("patient")
+      .input(listEncountersInputSchema.optional())
       .output(listEncountersOutputSchema)
-      .query(({ ctx }) => listMyEncounters(ctx.db, ctx.session)),
+      .query(({ ctx, input }) => listMyEncounters(ctx.db, ctx.session, input)),
 
     // ── Admin support access (time-boxed, audited) ─────────────────────
     grantSupportAccess: roleProcedure("admin")

@@ -85,6 +85,13 @@
       "when": 1784390400000,
       "tag": "0011_role_statement_timeouts",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1784390600000,
+      "tag": "0012_clinical_read_bounds",
+      "breakpoints": true
     }
   ]
 }

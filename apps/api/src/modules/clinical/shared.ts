@@ -201,14 +201,27 @@ export async function createEncounter(
   return { encounterId: row.encounter_id, created: row.created };
 }
 
+/**
+ * Keyset page over the (starts_at DESC, id ASC) order (MM-QA-004 F-12).
+ * The DB function bounds the audit INSERT and the returned rows with the
+ * SAME limit, so audit rows are exactly the rows the caller receives —
+ * the exact-limit variant: no +1 probe row is ever read or audited; the
+ * caller derives "another page may exist" from a full page instead.
+ */
+export interface EncounterPage {
+  limit: number;
+  before?: { startsAt: Date; id: string };
+}
+
 export async function readEncounters(
   db: DbExecutor,
   actor: string,
   scope: { encounterId?: string; doctorProfileId?: string; patientProfileId?: string },
+  page?: EncounterPage,
 ): Promise<EncounterRow[]> {
   try {
     const result = await db.execute<EncounterSqlRow>(
-      sql`select * from clinical_read_encounters(${actor}, ${scope.encounterId ?? null}, ${scope.doctorProfileId ?? null}, ${scope.patientProfileId ?? null})`,
+      sql`select * from clinical_read_encounters(${actor}, ${scope.encounterId ?? null}, ${scope.doctorProfileId ?? null}, ${scope.patientProfileId ?? null}, ${page?.limit ?? null}, ${page?.before?.startsAt ?? null}, ${page?.before?.id ?? null})`,
     );
     return result.rows.map(toEncounterRow);
   } catch (error) {
@@ -240,6 +253,32 @@ export async function readVisitNotes(
   try {
     const result = await db.execute<VisitNoteSqlRow>(
       sql`select * from clinical_read_visit_notes(${actor}, ${encounterId})`,
+    );
+    return result.rows.map(toVisitNoteRow);
+  } catch (error) {
+    translateClinicalDbError(error);
+  }
+}
+
+/**
+ * Notes of one encounters page in a single call (MM-QA-004 F-12) —
+ * replaces the per-encounter loop. Audit granularity is identical to the
+ * single-encounter read: one 'notes_read' row per encounter id.
+ */
+export async function readVisitNotesBulk(
+  db: DbExecutor,
+  actor: string,
+  encounterIds: string[],
+): Promise<VisitNoteRow[]> {
+  // One bind parameter per id: raw execute() has no array type mapping,
+  // so a JS array is not reliably serialized as a Postgres array literal.
+  const ids = sql.join(
+    encounterIds.map((id) => sql`${id}`),
+    sql`, `,
+  );
+  try {
+    const result = await db.execute<VisitNoteSqlRow>(
+      sql`select * from clinical_read_visit_notes_bulk(${actor}, ARRAY[${ids}]::uuid[])`,
     );
     return result.rows.map(toVisitNoteRow);
   } catch (error) {

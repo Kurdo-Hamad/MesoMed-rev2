@@ -4,6 +4,7 @@
  * Every read flows through the audited SECURITY DEFINER channel — there is
  * deliberately no unaudited read of clinical rows anywhere in the module.
  */
+import { decodeEncounterCursor, encodeEncounterCursor } from "@mesomed/domain/clinical";
 import type { DbExecutor } from "@mesomed/db/modules/clinical";
 import type { Session } from "../../../kernel/context.js";
 import {
@@ -12,6 +13,7 @@ import {
   requireDoctorProfileId,
   requireEncounterActor,
   requirePatientProfileId,
+  type EncounterPage,
   type EncounterRow,
   type VisitNoteRow,
 } from "../shared.js";
@@ -58,36 +60,88 @@ export function toVisitNoteView(row: VisitNoteRow): VisitNoteView {
   };
 }
 
+// ── Keyset pagination (MM-QA-004 F-12) ─────────────────────────────────
+
+export interface ListEncountersPageInput {
+  limit?: number;
+  cursor?: string;
+}
+
+/**
+ * Mirrors the contract's schema default — applied here because the whole
+ * input object is optional at the router (pre-pagination clients call
+ * with no args, so the schema default never materializes for them).
+ */
+const DEFAULT_ENCOUNTERS_LIMIT = 50;
+
+export function toEncounterPage(input: ListEncountersPageInput | undefined): EncounterPage {
+  const cursor = decodeEncounterCursor(input?.cursor);
+  return {
+    limit: input?.limit ?? DEFAULT_ENCOUNTERS_LIMIT,
+    // Malformed/tampered cursor decodes to null → page one (directory precedent).
+    ...(cursor ? { before: { startsAt: new Date(cursor.s), id: cursor.i } } : {}),
+  };
+}
+
+/**
+ * Exact-limit variant: the DB audits exactly the returned rows, so "more
+ * may exist" is derived from a full page — the final full page yields one
+ * empty follow-up page instead of a probe row that would be read and
+ * audited without ever being served.
+ */
+export function encountersNextCursor(rows: EncounterRow[], limit: number): string | null {
+  const last = rows[rows.length - 1];
+  return rows.length === limit && last
+    ? encodeEncounterCursor({ s: last.startsAt.toISOString(), i: last.id })
+    : null;
+}
+
 /** Encounters of the session doctor's own directory profile. */
 export async function listDoctorEncounters(
   db: DbExecutor,
   session: Session,
-): Promise<{ encounters: EncounterView[] }> {
+  input?: ListEncountersPageInput,
+): Promise<{ encounters: EncounterView[]; nextCursor: string | null }> {
   const doctorProfileId = await requireDoctorProfileId(db, session);
-  const rows = await readEncounters(db, session.userId, { doctorProfileId });
-  return { encounters: rows.map(toEncounterView) };
+  const page = toEncounterPage(input);
+  const rows = await readEncounters(db, session.userId, { doctorProfileId }, page);
+  return {
+    encounters: rows.map(toEncounterView),
+    nextCursor: encountersNextCursor(rows, page.limit),
+  };
 }
 
 /** Encounters of the session patient's own claimed profile. */
 export async function listMyEncounters(
   db: DbExecutor,
   session: Session,
-): Promise<{ encounters: EncounterView[] }> {
+  input?: ListEncountersPageInput,
+): Promise<{ encounters: EncounterView[]; nextCursor: string | null }> {
   const patientProfileId = await requirePatientProfileId(db, session);
-  const rows = await readEncounters(db, session.userId, { patientProfileId });
-  return { encounters: rows.map(toEncounterView) };
+  const page = toEncounterPage(input);
+  const rows = await readEncounters(db, session.userId, { patientProfileId }, page);
+  return {
+    encounters: rows.map(toEncounterView),
+    nextCursor: encountersNextCursor(rows, page.limit),
+  };
 }
 
 /**
  * Visit notes of one encounter, in creation order (originals with their
  * amendments), for the owning doctor or the patient the encounter is about.
+ * The limit is a hard cap applied app-side (MM-QA-004 F-12): the
+ * single-encounter DB function has no limit parameter and its audit
+ * granularity is per-encounter (one 'notes_read' row per call), unchanged.
  */
 export async function getEncounterNotes(
   db: DbExecutor,
   session: Session,
-  encounterId: string,
+  input: { encounterId: string; limit: number },
 ): Promise<{ encounterId: string; notes: VisitNoteView[] }> {
-  await requireEncounterActor(db, session, encounterId, ["owning_doctor", "patient_owner"]);
-  const notes = await readVisitNotes(db, session.userId, encounterId);
-  return { encounterId, notes: notes.map(toVisitNoteView) };
+  await requireEncounterActor(db, session, input.encounterId, ["owning_doctor", "patient_owner"]);
+  const notes = await readVisitNotes(db, session.userId, input.encounterId);
+  return {
+    encounterId: input.encounterId,
+    notes: notes.slice(0, input.limit).map(toVisitNoteView),
+  };
 }

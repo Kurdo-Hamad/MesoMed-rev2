@@ -27,3 +27,8 @@ export {
   hasTreatingStatus,
   type TreatingAppointmentStatus,
 } from "./treating-relationship.js";
+export {
+  decodeEncounterCursor,
+  encodeEncounterCursor,
+  type EncounterCursor,
+} from "./encounter-cursor.js";
