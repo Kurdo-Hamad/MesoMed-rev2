@@ -11,17 +11,12 @@ import { BILLING_EVENTS } from "@mesomed/contracts/events/billing";
 import { createDb, type Db } from "@mesomed/db";
 import { locales } from "@mesomed/i18n";
 import {
-  createAnthropicAiGateway,
-  createExpoPushAdapter,
   createManualPaymentGateway,
-  createMetaWhatsAppAdapter,
   createMockAiGateway,
   createMockEmailChannel,
   createMockNotifyChannel,
   createMockOtpChannel,
   createMockPushChannel,
-  createResendEmailAdapter,
-  createTwilioSmsAdapter,
   isMockAdapter,
   MANUAL_GATEWAY_ID,
   type AiGateway,
@@ -29,6 +24,13 @@ import {
   type NotifyChannel,
   type PushChannel,
 } from "@mesomed/platform";
+import {
+  createAnthropicAiGateway,
+  createExpoPushAdapter,
+  createMetaWhatsAppAdapter,
+  createResendEmailAdapter,
+  createTwilioSmsAdapter,
+} from "@mesomed/platform/adapters";
 import type pg from "pg";
 import type { Env } from "./env.js";
 import { createContextFactory, type SessionResolver } from "./kernel/context.js";
