@@ -1,8 +1,10 @@
 /**
  * Support-access grant policy (MM-PLAN-001 §3.5, §5 Phase 5): admin access
- * to visit-note content is time-boxed. Pure rules — the DB-side SECURITY
- * DEFINER function re-enforces usability independently; these functions
- * give the application layer the same answer with typed reasons.
+ * to visit-note content is time-boxed. Pure rules with typed reasons for
+ * the application layer. DB-side enforcement (SECURITY DEFINER): expiry
+ * is re-checked at grant use, and since migration 0014 the 72h maximum
+ * window is also enforced at grant creation (MM-QA-004 F-20) — before
+ * that, only the future-expiry check existed DB-side.
  */
 
 /** The longest window a support grant may be issued for. */
