@@ -17,8 +17,9 @@ import {
 /**
  * Role-guard denial matrix for the Phase 4 routers (§3.6 layer a) plus
  * layer-b ownership denials, with meta-tests proving the guardrail itself:
- * every mutation procedure on both routers must appear in this matrix, so
- * a new command cannot ship without denial coverage (HANDOFF-001 #14).
+ * EVERY procedure (mutations AND queries — MM-QA-004 F-07) on both routers
+ * must appear in this matrix, so a new procedure cannot ship without
+ * denial coverage (HANDOFF-001 #14).
  */
 describe("scheduling + booking authz matrix", () => {
   let tdb: TestDatabase;
@@ -52,10 +53,12 @@ describe("scheduling + booking authz matrix", () => {
 
   interface MatrixEntry {
     procedure: string;
-    input: unknown;
+    /** Defaults to "mutation" (the matrix predates query coverage). */
+    kind?: "query" | "mutation";
+    input?: unknown;
     /** Roles denied by the kernel role guard (layer a) → 403. */
     deniedRoles: string[];
-    /** Public procedures skip the anonymous → 401 assertion. */
+    /** Public procedures assert the absence of an auth gate instead of 401. */
     isPublic?: boolean;
   }
 
@@ -93,6 +96,18 @@ describe("scheduling + booking authz matrix", () => {
       procedure: "scheduling.removeBlockedSlot",
       input: { doctorLocationId: UUID, blockedSlotId: UUID },
       deniedRoles: ["patient"],
+    },
+    {
+      procedure: "scheduling.doctorLocations",
+      kind: "query",
+      input: { doctorProfileId: UUID },
+      deniedRoles: [],
+      isPublic: true,
+    },
+    {
+      procedure: "scheduling.myWorkplaces",
+      kind: "query",
+      deniedRoles: ["patient", "admin"],
     },
   ];
 
@@ -141,37 +156,59 @@ describe("scheduling + booking authz matrix", () => {
       input: { appointmentId: UUID, newStartsAt: "2027-01-02T09:00:00.000Z" },
       deniedRoles: [],
     },
+    {
+      procedure: "booking.weekAvailability",
+      kind: "query",
+      input: { doctorLocationId: UUID },
+      deniedRoles: [],
+      isPublic: true,
+    },
+    {
+      procedure: "booking.clinicDay",
+      kind: "query",
+      input: { doctorLocationId: UUID },
+      deniedRoles: ["patient"],
+    },
+    {
+      procedure: "booking.myAppointments",
+      kind: "query",
+      deniedRoles: ["doctor", "secretary", "admin"],
+    },
   ];
 
-  // ── Meta-tests: the matrix covers every mutation on both routers ─────
+  // ── Meta-tests: the matrix covers EVERY procedure on both routers ────
 
-  it("meta-test: every booking mutation procedure appears in the denial matrix", () => {
+  it("meta-test: EVERY booking procedure appears in the denial matrix", () => {
     const record = createBookingRouter({ createGuestPatientProfile })._def.procedures as Record<
       string,
       unknown
     >;
-    const mutations = Object.entries(record)
-      .filter(([, p]) => (p as { _def: { type: string } })._def.type === "mutation")
-      .map(([name]) => `booking.${name}`)
+    const procedures = Object.keys(record)
+      .map((name) => `booking.${name}`)
       .sort();
-    expect(mutations).toEqual(BOOKING_MATRIX.map((e) => e.procedure).sort());
+    expect(procedures).toEqual(BOOKING_MATRIX.map((e) => e.procedure).sort());
   });
 
-  it("meta-test: every scheduling mutation procedure appears in the denial matrix", () => {
+  it("meta-test: EVERY scheduling procedure appears in the denial matrix", () => {
     const record = createSchedulingRouter()._def.procedures as Record<string, unknown>;
-    const mutations = Object.entries(record)
-      .filter(([, p]) => (p as { _def: { type: string } })._def.type === "mutation")
-      .map(([name]) => `scheduling.${name}`)
+    const procedures = Object.keys(record)
+      .map((name) => `scheduling.${name}`)
       .sort();
-    expect(mutations).toEqual(SCHEDULING_MATRIX.map((e) => e.procedure).sort());
+    expect(procedures).toEqual(SCHEDULING_MATRIX.map((e) => e.procedure).sort());
   });
 
   // ── Layer a: anonymous and wrong-role denials per procedure ──────────
 
   for (const entry of [...SCHEDULING_MATRIX, ...BOOKING_MATRIX]) {
-    if (entry.isPublic !== true) {
+    const kind = entry.kind ?? "mutation";
+    if (entry.isPublic === true) {
+      it(`${entry.procedure}: public — anonymous caller is not auth-gated`, async () => {
+        const res = await trpc(app, entry.procedure, kind, entry.input);
+        expect([401, 403]).not.toContain(res.statusCode);
+      });
+    } else {
       it(`${entry.procedure}: anonymous → 401 UNAUTHORIZED`, async () => {
-        const res = await trpc(app, entry.procedure, "mutation", entry.input);
+        const res = await trpc(app, entry.procedure, kind, entry.input);
         expect(res.statusCode).toBe(401);
         expect(res.json().error.data.appCode).toBe("UNAUTHORIZED");
       });
@@ -179,7 +216,7 @@ describe("scheduling + booking authz matrix", () => {
 
     for (const role of entry.deniedRoles) {
       it(`${entry.procedure}: ${role} → 403 FORBIDDEN (guard fires before any effect)`, async () => {
-        const res = await trpc(app, entry.procedure, "mutation", entry.input, { roles: role });
+        const res = await trpc(app, entry.procedure, kind, entry.input, { roles: role });
         expect(res.statusCode).toBe(403);
         expect(res.json().error.data.appCode).toBe("FORBIDDEN");
       });
