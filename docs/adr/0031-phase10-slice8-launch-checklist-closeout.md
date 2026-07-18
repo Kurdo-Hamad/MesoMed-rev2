@@ -179,3 +179,17 @@ pattern; this section is the authority the autonomous run executes under.
   review, and legal sign-off of the privacy/terms content — Slice 3b's
   legal text merges as **DRAFT pending owner + counsel review before
   store submission**; merging does not make it legally reviewed.
+
+## Amendment (2026-07-18) — MM-QA-004 Slice 4 (ADR-0037): HG-2 scope extended — heartbeat rule, synthetic probes, SENTRY_DSN
+
+Checklist item 5 (HG-2) is extended per the F-03 remediation. It now
+reads: Grafana Cloud provisioned, OTLP env set on prod API, 4 dashboards
+render live data, **3** alert rules imported (incl. the ADR-0037
+heartbeat-absence rule), alert email test-fired, **synthetic probes
+provisioned per `docs/observability/synthetic-probes.md`, and
+`SENTRY_DSN` set + test event confirmed** (`docs/observability/README.md`).
+
+Rationale: MM-QA-004 F-03 — without the heartbeat rule and external
+probes, a total API outage pages nobody; without `SENTRY_DSN`, the 5xx
+alert's triage instruction dead-ends. Runbooks for the six MM-ARC-002
+§10.9 scenarios land in `docs/runbooks/` in the same slice.
