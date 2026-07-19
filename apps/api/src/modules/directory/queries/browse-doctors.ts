@@ -29,12 +29,22 @@ const DOCTOR_CURSOR_RANK = 0;
 export async function browseDoctors(
   db: Db,
   locale: Locale,
+  country: string,
   input: BrowseDoctorsInput,
 ): Promise<{ items: DoctorCard[]; nextCursor: string | null }> {
   const nameCol = doctorNameColumn(locale);
   const cursor = decodeFacilityCursor(input.cursor);
 
-  const conditions: SQL[] = [eq(doctorProfiles.publiclyVisible, true)];
+  const conditions: SQL[] = [
+    eq(doctorProfiles.publiclyVisible, true),
+    // Country scoping (ADR-0055): a NULL city_id fails the IN — doctors
+    // without a city are excluded from country-scoped browse (detail stays
+    // unscoped).
+    sql`${doctorProfiles.cityId} in (
+      select c.id from cities c join countries co on co.id = c.country_id
+      where co.iso_code = ${country}
+    )`,
+  ];
   if (input.specialtyKey) {
     conditions.push(eq(doctorProfiles.specialtyKey, input.specialtyKey));
   }

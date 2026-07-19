@@ -16,7 +16,7 @@ import {
 import { AppError } from "../../../kernel/errors.js";
 import type { OutboxEmitter } from "../../../kernel/outbox.js";
 import { isProviderProfileApproved } from "../../identity/queries/provider-visibility.js";
-import { doctorPubliclyVisible, packText, requireCityId } from "../shared.js";
+import { countryIsoForCity, doctorPubliclyVisible, packText, requireCityId } from "../shared.js";
 
 export type UpsertDoctorProfileInput = z.output<typeof upsertDoctorProfileInputSchema> & {
   /** Deterministic id for seed/import creates — never exposed via tRPC. */
@@ -112,6 +112,7 @@ export async function upsertDoctorProfile(
       name: packText(input.name.en, input.name.ar, input.name.ckb),
       specialtyKey: input.specialtyKey,
       citySlug: input.citySlug ?? null,
+      countryIso: await countryIsoForCity(tx, cityId),
       publiclyVisible,
     },
   });

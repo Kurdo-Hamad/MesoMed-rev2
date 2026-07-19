@@ -47,6 +47,27 @@ describe("identity contracts", () => {
     ).toThrow();
   });
 
+  it("completeProviderSignup countryCode is optional ISO2 (ADR-0055; command defaults to IQ)", () => {
+    expect(
+      completeProviderSignupInputSchema.parse({ providerType: "doctor", phone: "07701234567" })
+        .countryCode,
+    ).toBeUndefined();
+    expect(
+      completeProviderSignupInputSchema.parse({
+        providerType: "doctor",
+        phone: "07701234567",
+        countryCode: "TR",
+      }).countryCode,
+    ).toBe("TR");
+    expect(() =>
+      completeProviderSignupInputSchema.parse({
+        providerType: "doctor",
+        phone: "07701234567",
+        countryCode: "tr",
+      }),
+    ).toThrow();
+  });
+
   it("setProviderStatus only accepts approve/reject decisions", () => {
     expect(
       setProviderStatusInputSchema.parse({

@@ -141,6 +141,46 @@ describe("provider accounts (email+password, verified email, pending gate)", () 
     expect(again.json().result.data.providerProfileId).toBe(providerProfileId);
     const eventsAfter = await app.kernel.db.select().from(domainEvents);
     expect(eventsAfter.filter((e) => e.name === "identity.user_registered.v2")).toHaveLength(1);
+
+    // Registration country defaults to the platform default (ADR-0055) and
+    // the idempotent re-call leaves it alone.
+    const [profile] = await app.kernel.db
+      .select({ countryCode: providerProfiles.countryCode })
+      .from(providerProfiles)
+      .where(eq(providerProfiles.id, providerProfileId));
+    expect(profile?.countryCode).toBe("IQ");
+  });
+
+  it("persists the registration country when the provider supplies one", async () => {
+    const cookie = await registerVerifiedUser("doctor-de@example.com", "Dr. Berlin");
+    const res = await app.inject({
+      method: "POST",
+      url: "/trpc/identity.completeProviderSignup",
+      headers: { cookie, "content-type": "application/json" },
+      payload: { providerType: "doctor", phone: "+9647705000004", countryCode: "DE" },
+    });
+    expect(res.statusCode).toBe(200);
+    const profileId = res.json().result.data.providerProfileId;
+
+    const [profile] = await app.kernel.db
+      .select({ countryCode: providerProfiles.countryCode })
+      .from(providerProfiles)
+      .where(eq(providerProfiles.id, profileId));
+    expect(profile?.countryCode).toBe("DE");
+
+    // Idempotent: a second call returns the same profile, country unchanged.
+    const again = await app.inject({
+      method: "POST",
+      url: "/trpc/identity.completeProviderSignup",
+      headers: { cookie, "content-type": "application/json" },
+      payload: { providerType: "doctor", phone: "+9647705000004" },
+    });
+    expect(again.json().result.data.providerProfileId).toBe(profileId);
+    const [unchanged] = await app.kernel.db
+      .select({ countryCode: providerProfiles.countryCode })
+      .from(providerProfiles)
+      .where(eq(providerProfiles.id, profileId));
+    expect(unchanged?.countryCode).toBe("DE");
   });
 
   it("a patient without a verified email cannot become a provider", async () => {

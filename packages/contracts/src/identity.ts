@@ -37,6 +37,11 @@ export const completeProviderSignupInputSchema = z.object({
   providerType: z.enum(PROVIDER_TYPES),
   /** Operational/recovery phone — never an auth factor (MM-DEC rev02 §3). */
   phone: z.string().min(4).max(32),
+  /** ISO2 of the provider's country (ADR-0055). Command defaults to "IQ". */
+  countryCode: z
+    .string()
+    .regex(/^[A-Z]{2}$/)
+    .optional(),
 });
 
 export const completeProviderSignupOutputSchema = z.object({

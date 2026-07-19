@@ -9,6 +9,8 @@
 import type { Db } from "@mesomed/db";
 import type { ConfigService } from "../../src/kernel/config.js";
 import type { OutboxEmitter } from "../../src/kernel/outbox.js";
+import { setCategoryDisplay } from "../../src/modules/directory/commands/set-category-display.js";
+import { setCategoryGating } from "../../src/modules/directory/commands/set-category-gating.js";
 import { setCountryGating } from "../../src/modules/directory/commands/set-country-gating.js";
 import { setSpecialtyFeatured } from "../../src/modules/directory/commands/set-taxonomy-status.js";
 import {
@@ -31,12 +33,16 @@ import {
   CATEGORY_SECTION_TYPES,
   CITIES,
   COUNTRIES,
+  DEFERRED_CATEGORIES,
   DENTAL_CLINICS,
   DENTAL_SERVICES,
   DOCTORS,
+  EXPANSION_FACILITIES,
   HOSPITAL_CENTERS,
   HOSPITAL_DEPARTMENTS,
   HOSPITALS,
+  NON_IQ_DISPLAY_COUNTRIES,
+  NON_IQ_TILES,
   PLACEHOLDER_IMAGES,
   PROCEDURES,
   PROMOTIONS,
@@ -62,7 +68,9 @@ export async function seedDirectory(deps: SeedDeps): Promise<void> {
   const log = deps.log ?? (() => undefined);
   await seedCountriesAndGating(deps, log);
   await seedGeographyAndTaxonomy(deps, log);
+  await seedCategoryConfig(deps, log);
   await seedFacilityListings(deps, log);
+  await seedExpansionFacilities(deps, log);
   await seedDoctorListings(deps, log);
   await seedPromotions(deps, log);
   log("Directory seed complete.");
@@ -90,6 +98,23 @@ async function seedCountriesAndGating(deps: SeedDeps, log: (m: string) => void):
   }
 }
 
+async function seedCategoryConfig(deps: SeedDeps, log: (m: string) => void): Promise<void> {
+  // Deferred-visible categories and per-country homepage tiles are config
+  // rows, not columns (ADR-0055, mirroring country gating). Both fail open:
+  // an unlisted category is active, an unlisted country (IQ) shows the full
+  // active category list.
+  log(
+    `Seeding category gating (${DEFERRED_CATEGORIES.length} deferred) + ` +
+      `display sets for ${NON_IQ_DISPLAY_COUNTRIES.length} countries...`,
+  );
+  for (const slug of DEFERRED_CATEGORIES) {
+    await setCategoryGating(deps.config, { slug, status: "coming_soon" });
+  }
+  for (const countryIso of NON_IQ_DISPLAY_COUNTRIES) {
+    await setCategoryDisplay(deps.config, { countryIso, tiles: [...NON_IQ_TILES] });
+  }
+}
+
 async function seedGeographyAndTaxonomy(deps: SeedDeps, log: (m: string) => void): Promise<void> {
   log(
     `Seeding ${CITIES.length} cities, ${CATEGORIES.length} categories, ` +
@@ -101,7 +126,7 @@ async function seedGeographyAndTaxonomy(deps: SeedDeps, log: (m: string) => void
       await upsertCity(tx, deps.outbox, {
         id: seedUuid("b", index + 1),
         slug: city.slug,
-        countrySlug: "iraq",
+        countrySlug: city.countrySlug,
         name: { en: city.en, ar: city.ar, ckb: city.ckb },
         displayOrder: city.order,
       });
@@ -113,7 +138,7 @@ async function seedGeographyAndTaxonomy(deps: SeedDeps, log: (m: string) => void
         slug: category.slug,
         name: { en: category.en, ar: category.ar, ckb: category.ckb },
         iconKey: category.icon,
-        displayOrder: category.n,
+        displayOrder: category.order,
       });
     }
 
@@ -203,6 +228,8 @@ async function seedFacilityListings(deps: SeedDeps, log: (m: string) => void): P
   const now = Date.now();
   let facilityN = 0;
   for (const category of CATEGORIES) {
+    // Expansion categories seed from EXPANSION_FACILITIES instead.
+    if (!(category.slug in CATEGORY_DATA)) continue;
     const rows = CATEGORY_DATA[category.slug as keyof typeof CATEGORY_DATA];
     for (const [index, listing] of rows.entries()) {
       facilityN++;
@@ -272,8 +299,69 @@ async function seedFacilityListings(deps: SeedDeps, log: (m: string) => void): P
   }
 }
 
+async function seedExpansionFacilities(deps: SeedDeps, log: (m: string) => void): Promise<void> {
+  // Multicountry expansion listings (d31+): new-category providers across
+  // Iraqi cities plus the first non-IQ sample facilities, all public. Every
+  // seeded category maps 1:1 onto a DIRECTORY_PROVIDER_TYPES value
+  // (providers_type_check, extended for the new categories in 0015).
+  const EXPANSION_PROVIDER_TYPES = {
+    hospital: "hospital",
+    dental_clinic: "dental_clinic",
+    beauty_center: "beauty_center",
+    laboratory: "laboratory",
+    pharmacy: "pharmacy",
+    home_nursing: "home_nursing",
+    hair_transplant: "hair_transplant",
+    weight_management: "weight_management",
+    physiotherapy: "physiotherapy",
+  } as const;
+
+  log(`Seeding ${EXPANSION_FACILITIES.length} expansion facilities (all public)...`);
+  const cityBySlug = new Map(CITIES.map((city) => [city.slug, city] as const));
+  const tierExpiresAt = new Date(Date.now() + 60 * DAY).toISOString();
+  for (const listing of EXPANSION_FACILITIES) {
+    const city = cityBySlug.get(listing.city)!;
+    await deps.db.transaction(async (tx) => {
+      await upsertFacility(tx, deps.outbox, {
+        id: seedUuid("d", listing.n),
+        providerType: EXPANSION_PROVIDER_TYPES[listing.category],
+        slug: listing.slug,
+        categorySlug: listing.category,
+        citySlug: listing.city,
+        name: { en: listing.en, ar: listing.ar, ckb: listing.ckb },
+        address: listing.address,
+        phone: listing.phone,
+        email: `info@${listing.slug.replace(/-/g, "")}.example`,
+        websiteOrSocial: `https://instagram.com/${listing.slug.replace(/-/g, "_")}`,
+        about: {
+          en: `${listing.en} serves patients in ${city.en} with modern equipment and an experienced multilingual team.`,
+          ar: `يخدم ${listing.ar} المرضى في ${city.ar} بأحدث الأجهزة وفريق متمرس متعدد اللغات.`,
+          ckb: `${listing.ckb} خزمەتی نەخۆشان دەکات لە ${city.ckb} بە ئامێری نوێ و تیمێکی شارەزای فرەزمان.`,
+        },
+        whyChooseUs: {
+          en: "Experienced specialists, modern facilities, and patient-first care.",
+          ar: "أخصائيون ذوو خبرة ومرافق حديثة ورعاية تضع المريض أولاً.",
+          ckb: "پسپۆڕی بەئەزموون، بینای نوێ، و چاودێری کە نەخۆش لە پێش هەموو شتێکە.",
+        },
+        active: true,
+        tierRank: listing.tier === "tier_1" ? 1 : 2,
+        tierExpiresAt,
+        media: Array.from({ length: 3 }, (_, m) => ({
+          storagePath: PLACEHOLDER_IMAGES[m % PLACEHOLDER_IMAGES.length]!,
+          sortOrder: m,
+          alt: { en: listing.en, ar: listing.ar, ckb: listing.ckb },
+        })),
+        sections: [],
+      });
+    });
+  }
+}
+
 async function seedDoctorListings(deps: SeedDeps, log: (m: string) => void): Promise<void> {
   log(`Seeding ${DOCTORS.length} doctors + specialist listings...`);
+  // Demo doctors rotate through Iraqi cities only — the non-IQ launch is
+  // facility-only, and country-scoped browse would hide them otherwise.
+  const iraqCities = CITIES.filter((city) => city.countrySlug === "iraq");
   for (const [index, doctor] of DOCTORS.entries()) {
     const pending = "pending" in doctor && doctor.pending === true;
     await deps.db.transaction(async (tx) => {
@@ -287,7 +375,7 @@ async function seedDoctorListings(deps: SeedDeps, log: (m: string) => void): Pro
           ckb: "پسپۆڕێکی بەئەزموون کە لە هەولێر کاردەکات.",
         },
         specialtyKey: doctor.specialty,
-        citySlug: CITIES[index % CITIES.length]!.slug,
+        citySlug: iraqCities[index % iraqCities.length]!.slug,
         // "Pending" demo doctors are hidden until Phase 2 approval arrives.
         active: !pending,
       });

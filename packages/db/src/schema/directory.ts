@@ -171,6 +171,9 @@ export const DIRECTORY_PROVIDER_TYPES = [
   "home_nursing",
   "dental_clinic",
   "beauty_center",
+  "hair_transplant",
+  "weight_management",
+  "physiotherapy",
 ] as const;
 
 /**
@@ -204,7 +207,7 @@ export const providers = pgTable(
     uniqueIndex("providers_identity_profile_id_unique").on(table.identityProfileId),
     check(
       "providers_type_check",
-      sql`${table.providerType} in ('doctor', 'hospital', 'laboratory', 'pharmacy', 'home_nursing', 'dental_clinic', 'beauty_center')`,
+      sql`${table.providerType} in ('doctor', 'hospital', 'laboratory', 'pharmacy', 'home_nursing', 'dental_clinic', 'beauty_center', 'hair_transplant', 'weight_management', 'physiotherapy')`,
     ),
   ],
 );

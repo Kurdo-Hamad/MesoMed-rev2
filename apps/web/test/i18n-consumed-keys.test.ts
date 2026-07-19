@@ -205,7 +205,7 @@ describe("web consumed i18n keys (MM-QA-004 F-24)", () => {
     expect(problems).toEqual([]);
   });
 
-  it("extraction is alive, not inert (311 keys at authoring)", () => {
+  it("extraction is alive, not inert (316 keys at ADR-0055)", () => {
     // Guards the R9 inert-guardrail class: if the regexes drift from how the
     // code actually consumes translations, the sweep collapses toward zero
     // and this floor fails loudly instead of the suite passing vacuously.

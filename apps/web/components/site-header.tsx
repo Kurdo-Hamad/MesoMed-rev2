@@ -1,8 +1,9 @@
 import { useTranslations } from "next-intl";
 import { Link } from "../i18n/navigation";
+import { CountrySwitcher } from "./country-switcher";
 import { LocaleSwitcher } from "./locale-switcher";
 
-export function SiteHeader() {
+export function SiteHeader({ country }: { country: string }) {
   const t = useTranslations("web");
 
   return (
@@ -20,6 +21,7 @@ export function SiteHeader() {
           </Link>
         </nav>
         <div className="flex items-center gap-3">
+          <CountrySwitcher active={country} />
           <LocaleSwitcher />
           <Link
             href="/auth/sign-in"

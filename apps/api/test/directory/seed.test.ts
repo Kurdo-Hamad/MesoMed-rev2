@@ -60,8 +60,10 @@ describe("directory seed pipeline", () => {
 
   it("creates the full listing set with deterministic UUIDs", async () => {
     const { db } = app.kernel;
+    // 30 ported listings (10 each for hospital/dental/beauty) + 32
+    // multicountry expansion listings (ADR-0055).
     const facilityRows = await db.select({ id: facilities.id }).from(facilities);
-    expect(facilityRows).toHaveLength(30);
+    expect(facilityRows).toHaveLength(62);
     const doctorRows = await db.select({ id: doctorProfiles.id }).from(doctorProfiles);
     expect(doctorRows).toHaveLength(43);
 
@@ -71,6 +73,12 @@ describe("directory seed pipeline", () => {
       .from(facilities)
       .where(eq(facilities.slug, "erbil-international-hospital"));
     expect(firstFacility?.id).toBe(seedUuid("d", 1));
+    // Expansion listings continue the same block from d31.
+    const [firstExpansion] = await db
+      .select({ id: facilities.id })
+      .from(facilities)
+      .where(eq(facilities.slug, "kirkuk-central-lab"));
+    expect(firstExpansion?.id).toBe(seedUuid("d", 31));
     const [firstDoctor] = await db
       .select({ id: doctorProfiles.id })
       .from(doctorProfiles)
@@ -83,10 +91,10 @@ describe("directory seed pipeline", () => {
     await seedDirectory({ db, config, outbox });
     await drainOutbox();
 
-    expect(await db.select({ id: facilities.id }).from(facilities)).toHaveLength(30);
+    expect(await db.select({ id: facilities.id }).from(facilities)).toHaveLength(62);
     expect(await db.select({ id: doctorProfiles.id }).from(doctorProfiles)).toHaveLength(43);
     // One search document per listing — upserts, not appends.
-    expect(await db.select().from(searchDocuments)).toHaveLength(73);
+    expect(await db.select().from(searchDocuments)).toHaveLength(105);
   });
 
   it("leaves the seeded directory browsable via tRPC with search populated", async () => {
@@ -101,8 +109,9 @@ describe("directory seed pipeline", () => {
     const { items } = result<{ items: Array<{ slug: string; name: Record<string, string> }> }>(
       browse,
     );
-    // 7 of 10 hospitals are publicly visible in the ported mix.
-    expect(items).toHaveLength(7);
+    // 7 of the 10 ported hospitals are publicly visible, plus the 2 Iraqi
+    // expansion hospitals; the 5 non-IQ ones are country-scoped away.
+    expect(items).toHaveLength(9);
     const zheen = items.find((item) => item.slug === "zheen-general-hospital");
     expect(zheen?.name.ckb).toBe("نەخۆشخانەی گشتی ژین");
 
@@ -128,5 +137,46 @@ describe("directory seed pipeline", () => {
     expect(searched.statusCode).toBe(200);
     const hits = result<{ items: Array<{ slug: string }> }>(searched);
     expect(hits.items.map((item) => item.slug)).toContain("zheen-general-hospital");
+  });
+
+  it("seeds the multicountry catalog: non-IQ listings and per-country tiles", async () => {
+    const browse = await trpc(
+      app,
+      "directory.browseFacilities",
+      "query",
+      { categorySlug: "hospital", limit: 12 },
+      { country: "IR" },
+    );
+    expect(browse.statusCode).toBe(200);
+    const { items } = result<{ items: Array<{ slug: string }> }>(browse);
+    expect(items.map((item) => item.slug)).toEqual(["tehran-international-hospital"]);
+
+    // IR is configured (seedCategoryConfig): the reserved doctors tile plus
+    // the four launch categories, deferred ones carrying coming_soon.
+    const iranian = await trpc(app, "directory.listHomepageTiles", "query", undefined, {
+      country: "IR",
+    });
+    expect(iranian.statusCode).toBe(200);
+    expect(
+      result<Array<{ kind: string; slug?: string; status?: string }>>(iranian).map((tile) =>
+        tile.kind === "doctors" ? "doctors" : `${tile.slug}:${tile.status}`,
+      ),
+    ).toEqual([
+      "doctors",
+      "hospital:active",
+      "dental_clinic:active",
+      "hair_transplant:active",
+      "online_consultation:coming_soon",
+    ]);
+
+    // IQ is deliberately unlisted: the full active category list, no
+    // doctors tile.
+    const iraqi = await trpc(app, "directory.listHomepageTiles", "query", undefined, {
+      country: "IQ",
+    });
+    expect(iraqi.statusCode).toBe(200);
+    const iraqiTiles = result<Array<{ kind: string; slug?: string }>>(iraqi);
+    expect(iraqiTiles.every((tile) => tile.kind === "category")).toBe(true);
+    expect(iraqiTiles).toHaveLength(11);
   });
 });

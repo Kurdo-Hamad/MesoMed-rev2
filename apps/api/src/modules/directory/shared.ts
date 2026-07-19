@@ -7,6 +7,7 @@ import type { Locale } from "@mesomed/contracts/i18n";
 import {
   cities,
   categories,
+  countries,
   doctorProfiles,
   eq,
   facilities,
@@ -51,6 +52,24 @@ export async function requireCityId(db: DbExecutor, slug: string): Promise<strin
   const [row] = await db.select({ id: cities.id }).from(cities).where(eq(cities.slug, slug));
   if (!row) throw new AppError(ErrorCode.NOT_FOUND, `Unknown city "${slug}"`);
   return row.id;
+}
+
+/**
+ * ISO2 of the country a city belongs to, or null for a null/unknown city.
+ * Every facility/doctor snapshot event carries it (ADR-0055) so the search
+ * read model can scope by country without joining directory tables.
+ */
+export async function countryIsoForCity(
+  db: DbExecutor,
+  cityId: string | null,
+): Promise<string | null> {
+  if (cityId === null) return null;
+  const [row] = await db
+    .select({ isoCode: countries.isoCode })
+    .from(cities)
+    .innerJoin(countries, eq(countries.id, cities.countryId))
+    .where(eq(cities.id, cityId));
+  return row?.isoCode ?? null;
 }
 
 export async function requireCategoryId(db: DbExecutor, slug: string): Promise<string> {
@@ -130,6 +149,7 @@ export async function recomputeProviderVisibility(
         name: packText(facility.nameEn, facility.nameAr, facility.nameCkb),
         categorySlug: category?.slug ?? "",
         citySlug: city?.slug ?? "",
+        countryIso: await countryIsoForCity(tx, facility.cityId),
         tierRank: facility.tierRank,
         publiclyVisible: visible,
       },
@@ -165,6 +185,7 @@ export async function recomputeProviderVisibility(
         name: packText(doctor.nameEn, doctor.nameAr, doctor.nameCkb),
         specialtyKey: doctor.specialtyKey,
         citySlug,
+        countryIso: await countryIsoForCity(tx, doctor.cityId),
         publiclyVisible: visible,
       },
     });

@@ -18,9 +18,12 @@ import {
   listCategoriesOutputSchema,
   listCitiesOutputSchema,
   listCountriesOutputSchema,
+  listHomepageTilesOutputSchema,
   listProceduresOutputSchema,
   listSpecialtiesOutputSchema,
   listSymptomsOutputSchema,
+  setCategoryDisplayInputSchema,
+  setCategoryGatingInputSchema,
   setCategorySectionTypesInputSchema,
   setCountryGatingInputSchema,
   setSpecialtyFeaturedInputSchema,
@@ -48,6 +51,7 @@ import {
   HOMEPAGE_FEED_TTL_MS,
   TAXONOMY_TTL_MS,
   homepageFeedCacheKey,
+  homepageTilesCacheKey,
   taxonomyCacheKey,
 } from "./cache.js";
 import {
@@ -62,6 +66,8 @@ import {
   upsertSymptom,
 } from "./commands/upsert-taxonomy.js";
 import { setSpecialtyFeatured, setTaxonomyStatus } from "./commands/set-taxonomy-status.js";
+import { setCategoryDisplay } from "./commands/set-category-display.js";
+import { setCategoryGating } from "./commands/set-category-gating.js";
 import { setCountryGating } from "./commands/set-country-gating.js";
 import { upsertDoctorProfile } from "./commands/upsert-doctor-profile.js";
 import { upsertFacility } from "./commands/upsert-facility.js";
@@ -74,6 +80,7 @@ import {
   listCategories,
   listCities,
   listCountries,
+  listHomepageTiles,
   listProcedures,
   listSpecialties,
   listSymptoms,
@@ -109,9 +116,18 @@ export function createDirectoryRouter() {
       .output(listCategoriesOutputSchema)
       .query(({ ctx }) =>
         cacheAside(ctx.cache, taxonomyCacheKey("categories"), TAXONOMY_TTL_MS, () =>
-          listCategories(ctx.db),
+          listCategories(ctx.db, ctx.config),
         ),
       ),
+
+    listHomepageTiles: publicProcedure
+      .output(listHomepageTilesOutputSchema)
+      .query(async ({ ctx }) => {
+        await assertCountryActive(ctx.config, ctx.country);
+        return cacheAside(ctx.cache, homepageTilesCacheKey(ctx.country), TAXONOMY_TTL_MS, () =>
+          listHomepageTiles(ctx.db, ctx.config, ctx.country),
+        );
+      }),
 
     listSpecialties: publicProcedure
       .output(listSpecialtiesOutputSchema)
@@ -142,7 +158,7 @@ export function createDirectoryRouter() {
       .output(browseFacilitiesOutputSchema)
       .query(async ({ ctx, input }) => {
         await assertCountryActive(ctx.config, ctx.country);
-        return browseFacilities(ctx.db, ctx.locale, input);
+        return browseFacilities(ctx.db, ctx.locale, ctx.country, input);
       }),
 
     browseDoctors: publicProcedure
@@ -150,7 +166,7 @@ export function createDirectoryRouter() {
       .output(browseDoctorsOutputSchema)
       .query(async ({ ctx, input }) => {
         await assertCountryActive(ctx.config, ctx.country);
-        return browseDoctors(ctx.db, ctx.locale, input);
+        return browseDoctors(ctx.db, ctx.locale, ctx.country, input);
       }),
 
     facilityDetail: publicProcedure
@@ -180,9 +196,9 @@ export function createDirectoryRouter() {
         await assertCountryActive(ctx.config, ctx.country);
         return cacheAside(
           ctx.cache,
-          homepageFeedCacheKey(ctx.locale, input),
+          homepageFeedCacheKey(ctx.locale, ctx.country, input),
           HOMEPAGE_FEED_TTL_MS,
-          () => getHomepageFeed(ctx.db, ctx.locale, input),
+          () => getHomepageFeed(ctx.db, ctx.locale, ctx.country, input),
         );
       }),
 
@@ -198,6 +214,16 @@ export function createDirectoryRouter() {
       .input(setCountryGatingInputSchema)
       .output(z.object({ isoCode: z.string() }))
       .mutation(({ ctx, input }) => setCountryGating(ctx.config, input)),
+
+    setCategoryGating: roleProcedure("admin")
+      .input(setCategoryGatingInputSchema)
+      .output(z.object({ slug: z.string() }))
+      .mutation(({ ctx, input }) => setCategoryGating(ctx.config, input)),
+
+    setCategoryDisplay: roleProcedure("admin")
+      .input(setCategoryDisplayInputSchema)
+      .output(z.object({ countryIso: z.string() }))
+      .mutation(({ ctx, input }) => setCategoryDisplay(ctx.config, input)),
 
     upsertCity: roleProcedure("admin")
       .input(upsertCityInputSchema)

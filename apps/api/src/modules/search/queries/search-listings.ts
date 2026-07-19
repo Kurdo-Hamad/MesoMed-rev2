@@ -25,7 +25,11 @@ import { recordSearchListing } from "../../../kernel/metrics.js";
 export type SearchInput = z.output<typeof searchInputSchema>;
 export type SearchOutput = z.output<typeof searchOutputSchema>;
 
-export async function searchListings(db: Db, input: SearchInput): Promise<SearchOutput> {
+export async function searchListings(
+  db: Db,
+  country: string,
+  input: SearchInput,
+): Promise<SearchOutput> {
   const startedAt = performance.now();
   const query = normalizeSearchText(input.query);
   // The contract's min length 1 can still fold to empty (e.g. a
@@ -35,6 +39,10 @@ export async function searchListings(db: Db, input: SearchInput): Promise<Search
 
   const conditions: SQL[] = [
     eq(searchDocuments.publiclyVisible, true),
+    // Country scoping (ADR-0055): documents indexed before the country
+    // field existed carry NULL and stay out of results until the seed
+    // re-run re-emits their directory events.
+    eq(searchDocuments.countryIso, country),
     or(
       sql`${searchDocuments.searchText} ilike ${like}`,
       sql`${searchDocuments.searchVector} @@ plainto_tsquery('simple', ${query})`,

@@ -128,6 +128,7 @@ export function createIdentityRouter(auth: IdentityAuth, deps: { otpSender: OtpS
             userId: ctx.session.userId,
             providerType: input.providerType,
             phone: input.phone,
+            countryCode: input.countryCode,
           }),
         ),
       ),

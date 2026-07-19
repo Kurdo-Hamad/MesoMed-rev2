@@ -19,6 +19,20 @@ export type { LocalizedText };
 export const COUNTRY_GATING_STATUSES = ["active", "coming_soon"] as const;
 export type CountryGatingStatus = (typeof COUNTRY_GATING_STATUSES)[number];
 
+/**
+ * Category gating states (ADR-0055). Same shape as country gating, but the
+ * config loader fails OPEN — an unlisted category is "active".
+ */
+export const CATEGORY_GATING_STATUSES = ["active", "coming_soon"] as const;
+export type CategoryGatingStatus = (typeof CATEGORY_GATING_STATUSES)[number];
+
+/**
+ * Reserved homepage tile id for the doctors browse surface (ADR-0055) —
+ * never a category slug. `packages/config` imports this for the per-country
+ * display schema.
+ */
+export const DOCTORS_TILE_ID = "doctors";
+
 /** Pack three locale column values into the wire shape. */
 export function packText(en: string, ar: string, ckb: string): LocalizedText {
   return { en, ar, ckb };
@@ -70,6 +84,8 @@ export const categoryListItemSchema = z.object({
   iconKey: z.string().nullable(),
   active: z.boolean(),
   displayOrder: z.number().int(),
+  /** Resolved from the category-gating config row, never a table column. */
+  status: z.enum(CATEGORY_GATING_STATUSES),
 });
 
 export const listCategoriesOutputSchema = z.object({
@@ -77,6 +93,21 @@ export const listCategoriesOutputSchema = z.object({
 });
 
 export type ListCategoriesOutput = z.output<typeof listCategoriesOutputSchema>;
+
+export const homepageTileSchema = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("doctors") }),
+  z.object({
+    kind: z.literal("category"),
+    slug: z.string(),
+    name: localizedTextSchema,
+    iconKey: z.string().nullable(),
+    status: z.enum(CATEGORY_GATING_STATUSES),
+  }),
+]);
+
+export const listHomepageTilesOutputSchema = z.array(homepageTileSchema);
+
+export type HomepageTile = z.output<typeof homepageTileSchema>;
 
 export const specialtyListItemSchema = z.object({
   id: z.string(),
@@ -275,6 +306,22 @@ export const upsertCategoryInputSchema = z.object({
   name: localizedTextSchema,
   iconKey: z.string().max(100).optional(),
   displayOrder: z.number().int().min(0).default(0),
+});
+
+const categorySlugSchema = z
+  .string()
+  .max(100)
+  .regex(/^[a-z][a-z0-9_]*$/);
+
+export const setCategoryGatingInputSchema = z.object({
+  slug: categorySlugSchema,
+  status: z.enum(CATEGORY_GATING_STATUSES),
+});
+
+export const setCategoryDisplayInputSchema = z.object({
+  countryIso: z.string().regex(/^[A-Z]{2}$/),
+  /** Full replacement of that country's tile list, in display order. */
+  tiles: z.array(categorySlugSchema).min(1),
 });
 
 export const upsertSpecialtyInputSchema = z.object({

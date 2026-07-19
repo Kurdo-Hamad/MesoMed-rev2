@@ -1,4 +1,5 @@
 import {
+  Activity,
   Ambulance,
   Baby,
   Brain,
@@ -10,10 +11,15 @@ import {
   Microscope,
   Pill,
   ScanLine,
+  Scale,
+  Scissors,
+  ShoppingBag,
+  Smile,
   Sparkles,
   Stethoscope,
   Syringe,
   TestTube,
+  Video,
   type LucideIcon,
 } from "lucide-react";
 
@@ -26,6 +32,7 @@ import {
  * empty slot); extending the set is one import + one map line.
  */
 const CATEGORY_ICONS: Record<string, LucideIcon> = {
+  activity: Activity,
   ambulance: Ambulance,
   baby: Baby,
   brain: Brain,
@@ -36,11 +43,19 @@ const CATEGORY_ICONS: Record<string, LucideIcon> = {
   house: House,
   microscope: Microscope,
   pill: Pill,
+  scale: Scale,
   "scan-line": ScanLine,
+  scissors: Scissors,
+  "shopping-bag": ShoppingBag,
   sparkles: Sparkles,
   stethoscope: Stethoscope,
   syringe: Syringe,
   "test-tube": TestTube,
+  // lucide ships no tooth glyph; the smile is the dental stand-in for the
+  // dental_clinic row's "tooth" key, which otherwise fell back to the
+  // stethoscope like every unknown key.
+  tooth: Smile,
+  video: Video,
 };
 
 export function CategoryIcon({

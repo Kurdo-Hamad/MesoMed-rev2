@@ -8,6 +8,7 @@ import { textDirection, type Locale } from "@mesomed/i18n";
 import { SiteFooter } from "../../components/site-footer";
 import { SiteHeader } from "../../components/site-header";
 import { routing } from "../../i18n/routing";
+import { activeCountry } from "../../lib/server-api";
 import { Providers } from "../providers";
 import "../globals.css";
 
@@ -56,6 +57,7 @@ export default async function LocaleLayout({
   const { locale } = await params;
   if (!hasLocale(routing.locales, locale)) notFound();
   setRequestLocale(locale);
+  const country = await activeCountry();
 
   return (
     <html
@@ -65,9 +67,9 @@ export default async function LocaleLayout({
     >
       <body className="bg-canvas font-sans text-ink antialiased">
         <NextIntlClientProvider>
-          <Providers locale={locale as Locale}>
+          <Providers key={country} locale={locale as Locale} country={country}>
             <div className="flex min-h-screen flex-col">
-              <SiteHeader />
+              <SiteHeader country={country} />
               <div className="flex-1">{children}</div>
               <SiteFooter />
             </div>
