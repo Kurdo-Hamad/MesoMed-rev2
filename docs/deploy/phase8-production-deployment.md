@@ -69,6 +69,14 @@ Rotation runbooks for every secret: `docs/runbooks/secrets-rotation-*.md`.
    `DATABASE_URL=<owner-url> pnpm --filter @mesomed/db db:migrate`
 4. Seed the directory + config (idempotent, run as app role):
    `DATABASE_URL=<app-url> pnpm --filter @mesomed/api seed`
+   **Hard precondition: step 3 must have completed against this same
+   database.** Seeding is not merely ordered after migrating — the seed
+   refuses to start when the database's applied-migration count is below
+   the count the code expects, and exits with the shortfall message
+   rather than failing partway through on a constraint violation
+   (ADR-0056). If you see that message, the database is behind the code:
+   re-run step 3 as the owner role, confirm `GET /ready` reports the
+   `migrations` check `ok`, then re-run this step.
 5. Bootstrap the first admin: create the account via the web sign-up
    (provider tab), verify the email, then insert the admin role row —
    `INSERT INTO user_roles (user_id, role) SELECT id, 'admin' FROM "user" WHERE email = '<you>';`

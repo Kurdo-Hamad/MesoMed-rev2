@@ -8,6 +8,7 @@
 import { domainEvents, inArray } from "@mesomed/db";
 import { buildServer } from "../../src/app.js";
 import { loadEnv } from "../../src/env.js";
+import { assertSchemaCurrent } from "./preflight.js";
 import { seedDirectory } from "./seed-directory.js";
 
 async function main(): Promise<void> {
@@ -19,6 +20,7 @@ async function main(): Promise<void> {
   const { db, config, outbox, dispatcher } = app.kernel;
 
   try {
+    await assertSchemaCurrent(db);
     await seedDirectory({ db, config, outbox, log: (message) => console.log(message) });
 
     console.log("Draining outbox into read models...");
