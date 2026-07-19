@@ -240,6 +240,20 @@ export const BILLING_CATEGORIES = [
 ] as const;
 export type BillingCategory = (typeof BILLING_CATEGORIES)[number];
 
+/**
+ * Directory provider types deliberately absent from BILLING_CATEGORIES:
+ * their pricing is unsigned business input (open decision recorded in
+ * ADR-0056). Assigning a billing config to one is a VALIDATION rejection
+ * until pricing is signed off — excluded on purpose, never silently
+ * missing. Adding a directory provider type means pricing it here or
+ * listing it below.
+ */
+export const BILLING_EXCLUDED_PROVIDER_TYPES = [
+  "hair_transplant",
+  "weight_management",
+  "physiotherapy",
+] as const;
+
 /** The subscription model every provider selects at registration. */
 export const BILLING_MODELS = ["flat_monthly", "commission"] as const;
 export type BillingModel = (typeof BILLING_MODELS)[number];

@@ -205,9 +205,13 @@ export const providers = pgTable(
   },
   (table) => [
     uniqueIndex("providers_identity_profile_id_unique").on(table.identityProfileId),
+    // Derived from DIRECTORY_PROVIDER_TYPES so the TS union and the DB
+    // constraint cannot drift: one array generates both. The emitted text
+    // must stay identical to the constraint shipped by migration 0015 —
+    // same name, same value order — so no migration is implied.
     check(
       "providers_type_check",
-      sql`${table.providerType} in ('doctor', 'hospital', 'laboratory', 'pharmacy', 'home_nursing', 'dental_clinic', 'beauty_center', 'hair_transplant', 'weight_management', 'physiotherapy')`,
+      sql`${table.providerType} in ${sql.raw(`(${DIRECTORY_PROVIDER_TYPES.map((type) => `'${type}'`).join(", ")})`)}`,
     ),
   ],
 );
