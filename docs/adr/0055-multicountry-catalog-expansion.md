@@ -247,6 +247,9 @@ post-slice gate on the tree that squash-merged verbatim to main
 Post-slice (local, WSL, 2026-07-19): format GREEN · lint/typecheck 20/20
 · test 11/11 tasks, 1246 tests / 156 files, zero failed · build 3/3.
 The slice adds 52 tests across 9 new files (api 771, web 37, contracts
-69, config 39; the remainder unchanged). CI green on the pushed commit
-is still pending — "gate verified green" means CI green on `main`, never
-local-only.
+69, config 39; the remainder unchanged).
+
+CI on the pushed branch head `23d03f1` (PR #98): ci, e2e, analyze,
+CodeQL, docker and secrets all pass. Per CLAUDE.md "gate verified green"
+means CI green on `main`, so the gate closes only when this merges and
+`main` is green — this ADR records the PR run, not that final state.
