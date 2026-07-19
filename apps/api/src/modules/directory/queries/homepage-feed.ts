@@ -43,12 +43,21 @@ type HomepageSlot = HomepageFeed["slots"][number];
 export async function getHomepageFeed(
   db: Db,
   locale: Locale,
+  country: string,
   input: HomepageFeedInput,
 ): Promise<HomepageFeed> {
   const now = new Date();
+  // Country scoping (ADR-0055): promotions and the featured fill are keyed
+  // on their city's country — the feed serves the request country only.
+  const countryCitiesSql = (cityId: typeof homepagePromotions.cityId | typeof facilities.cityId) =>
+    sql`${cityId} in (
+      select c.id from cities c join countries co on co.id = c.country_id
+      where co.iso_code = ${country}
+    )`;
   const promotionConditions: SQL[] = [
     eq(homepagePromotions.active, true),
     or(isNull(homepagePromotions.promotedUntil), gte(homepagePromotions.promotedUntil, now))!,
+    countryCitiesSql(homepagePromotions.cityId),
   ];
   if (input.citySlug) {
     promotionConditions.push(
@@ -112,6 +121,7 @@ export async function getHomepageFeed(
     const fillConditions: SQL[] = [
       eq(facilities.publiclyVisible, true),
       eq(facilities.tierRank, 1),
+      countryCitiesSql(facilities.cityId),
     ];
     if (input.citySlug) {
       fillConditions.push(

@@ -175,6 +175,8 @@ export const providerProfiles = pgTable(
     providerType: text("provider_type", { enum: PROVIDER_PROFILE_TYPES }).notNull(),
     status: text("status", { enum: PROVIDER_PROFILE_STATUSES }).notNull().default("pending"),
     phone: text("phone").notNull(),
+    /** ISO2 country the provider operates in (ADR-0055); signup defaults to IQ. */
+    countryCode: text("country_code").notNull().default("IQ"),
     statusChangedAt: timestamp("status_changed_at", { withTimezone: true }),
     statusChangedBy: text("status_changed_by").references(() => user.id),
     rejectionReason: text("rejection_reason"),

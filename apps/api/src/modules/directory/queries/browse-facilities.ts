@@ -27,6 +27,7 @@ export type FacilityCard = z.output<typeof facilityCardSchema>;
 export async function browseFacilities(
   db: Db,
   locale: Locale,
+  country: string,
   input: BrowseFacilitiesInput,
 ): Promise<{ items: FacilityCard[]; nextCursor: string | null }> {
   const nameCol = facilityNameColumn(locale);
@@ -35,6 +36,12 @@ export async function browseFacilities(
   const conditions: SQL[] = [
     eq(facilities.publiclyVisible, true),
     sql`${facilities.categoryId} = (select id from categories where slug = ${input.categorySlug})`,
+    // Country scoping (ADR-0055): browse serves the request country only;
+    // detail procedures stay unscoped so direct links keep working.
+    sql`${facilities.cityId} in (
+      select c.id from cities c join countries co on co.id = c.country_id
+      where co.iso_code = ${country}
+    )`,
   ];
   if (input.citySlug) {
     conditions.push(

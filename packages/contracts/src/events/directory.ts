@@ -24,6 +24,12 @@ const facilitySnapshotSchema = z.object({
   name: localizedTextSchema,
   categorySlug: z.string(),
   citySlug: z.string(),
+  /** ISO2 of the facility's country (ADR-0055). Additive — absent on pre-slice events. */
+  countryIso: z
+    .string()
+    .regex(/^[A-Z]{2}$/)
+    .nullable()
+    .optional(),
   tierRank: z.number().int(),
   /** The public-visibility predicate, already evaluated by the directory. */
   publiclyVisible: z.boolean(),
@@ -49,6 +55,12 @@ const doctorProfileSnapshotSchema = z.object({
   name: localizedTextSchema,
   specialtyKey: z.string(),
   citySlug: z.string().nullable(),
+  /** ISO2 of the doctor's country (ADR-0055); null when no city. Additive — absent on pre-slice events. */
+  countryIso: z
+    .string()
+    .regex(/^[A-Z]{2}$/)
+    .nullable()
+    .optional(),
   /** The public-visibility predicate, already evaluated by the directory. */
   publiclyVisible: z.boolean(),
 });

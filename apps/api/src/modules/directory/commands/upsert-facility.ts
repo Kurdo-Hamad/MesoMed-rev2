@@ -21,7 +21,7 @@ import {
 import { AppError } from "../../../kernel/errors.js";
 import type { OutboxEmitter } from "../../../kernel/outbox.js";
 import { isProviderProfileApproved } from "../../identity/queries/provider-visibility.js";
-import { packText, requireCategoryId, requireCityId } from "../shared.js";
+import { countryIsoForCity, packText, requireCategoryId, requireCityId } from "../shared.js";
 
 export type UpsertFacilityInput = z.output<typeof upsertFacilityInputSchema> & {
   /** Directory provider type of the listing; defaults to "hospital". */
@@ -161,6 +161,7 @@ export async function upsertFacility(
       name: packText(input.name.en, input.name.ar, input.name.ckb),
       categorySlug: input.categorySlug,
       citySlug: input.citySlug,
+      countryIso: await countryIsoForCity(tx, cityId),
       tierRank: input.tierRank,
       publiclyVisible,
     },

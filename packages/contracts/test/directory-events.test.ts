@@ -45,6 +45,43 @@ describe("directory event contracts", () => {
     expect(parsed.version).toBe(1);
   });
 
+  it("facility snapshot countryIso is additive: optional, nullable, ISO2 when present (ADR-0055)", () => {
+    const snapshot = {
+      facilityId: "f1",
+      slug: "jeen-hospital",
+      name: { en: "Jeen Hospital", ar: "مستشفى جين", ckb: "نەخۆشخانەی ژین" },
+      categorySlug: "hospitals",
+      citySlug: "tehran",
+      publiclyVisible: true,
+      tierRank: 1,
+    };
+    // Pre-slice events carry no countryIso — they must keep parsing.
+    expect(facilityCreatedV1.payload.parse(snapshot).countryIso).toBeUndefined();
+    expect(facilityCreatedV1.payload.parse({ ...snapshot, countryIso: "IR" }).countryIso).toBe(
+      "IR",
+    );
+    expect(() => facilityCreatedV1.payload.parse({ ...snapshot, countryIso: "irn" })).toThrow();
+  });
+
+  it("doctor snapshot countryIso round-trips present, null and absent (ADR-0055)", () => {
+    const snapshot = {
+      doctorProfileId: "d1",
+      slug: "dr-x",
+      name: { en: "Dr X", ar: "د. س", ckb: "د. س" },
+      specialtyKey: "cardiology",
+      citySlug: null,
+      publiclyVisible: true,
+    };
+    expect(doctorProfileCreatedV1.payload.parse(snapshot).countryIso).toBeUndefined();
+    expect(
+      doctorProfileCreatedV1.payload.parse({ ...snapshot, countryIso: null }).countryIso,
+    ).toBeNull();
+    expect(
+      doctorProfileCreatedV1.payload.parse({ ...snapshot, citySlug: "erbil", countryIso: "IQ" })
+        .countryIso,
+    ).toBe("IQ");
+  });
+
   it("doctor_profile_created rejects a payload missing its specialty", () => {
     expect(() =>
       doctorProfileCreatedV1.payload.parse({

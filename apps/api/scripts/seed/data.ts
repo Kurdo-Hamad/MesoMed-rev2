@@ -945,19 +945,54 @@ export const PROCEDURES: {
   },
 ];
 
+// Append-only (ids pin by index at first insert). `order` is display order
+// within the city's country, not id order.
 export const CITIES = [
-  { slug: "erbil", en: "Erbil", ar: "أربيل", ckb: "هەولێر", order: 0 },
-  { slug: "sulaymaniyah", en: "Sulaymaniyah", ar: "السليمانية", ckb: "سلێمانی", order: 1 },
-  { slug: "duhok", en: "Duhok", ar: "دهوك", ckb: "دهۆک", order: 2 },
-  { slug: "halabja", en: "Halabja", ar: "حلبجة", ckb: "هەڵەبجە", order: 3 },
-  { slug: "zakho", en: "Zakho", ar: "زاخو", ckb: "زاخۆ", order: 4 },
-  { slug: "akre", en: "Akre", ar: "عقرة", ckb: "ئاکرێ", order: 5 },
-  { slug: "soran", en: "Soran", ar: "سوران", ckb: "سۆران", order: 6 },
-  { slug: "ranya", en: "Ranya", ar: "رانية", ckb: "ڕانیە", order: 7 },
-  { slug: "koya", en: "Koya", ar: "كويسنجق", ckb: "کۆیە", order: 8 },
-  { slug: "chamchamal", en: "Chamchamal", ar: "جمجمال", ckb: "چەمچەماڵ", order: 9 },
+  { slug: "erbil", en: "Erbil", ar: "أربيل", ckb: "هەولێر", countrySlug: "iraq", order: 1 },
+  {
+    slug: "sulaymaniyah",
+    en: "Sulaymaniyah",
+    ar: "السليمانية",
+    ckb: "سلێمانی",
+    countrySlug: "iraq",
+    order: 2,
+  },
+  { slug: "duhok", en: "Duhok", ar: "دهوك", ckb: "دهۆک", countrySlug: "iraq", order: 3 },
+  { slug: "halabja", en: "Halabja", ar: "حلبجة", ckb: "هەڵەبجە", countrySlug: "iraq", order: 7 },
+  { slug: "zakho", en: "Zakho", ar: "زاخو", ckb: "زاخۆ", countrySlug: "iraq", order: 8 },
+  { slug: "akre", en: "Akre", ar: "عقرة", ckb: "ئاکرێ", countrySlug: "iraq", order: 12 },
+  { slug: "soran", en: "Soran", ar: "سوران", ckb: "سۆران", countrySlug: "iraq", order: 9 },
+  { slug: "ranya", en: "Ranya", ar: "رانية", ckb: "ڕانیە", countrySlug: "iraq", order: 10 },
+  { slug: "koya", en: "Koya", ar: "كويسنجق", ckb: "کۆیە", countrySlug: "iraq", order: 11 },
+  {
+    slug: "chamchamal",
+    en: "Chamchamal",
+    ar: "جمجمال",
+    ckb: "چەمچەماڵ",
+    countrySlug: "iraq",
+    order: 14,
+  },
+  // Multicountry catalog expansion (b11–b19).
+  { slug: "kirkuk", en: "Kirkuk", ar: "كركوك", ckb: "کەرکووک", countrySlug: "iraq", order: 4 },
+  { slug: "baghdad", en: "Baghdad", ar: "بغداد", ckb: "بەغدا", countrySlug: "iraq", order: 5 },
+  { slug: "mosul", en: "Mosul", ar: "الموصل", ckb: "مووسڵ", countrySlug: "iraq", order: 6 },
+  { slug: "kalar", en: "Kalar", ar: "كلار", ckb: "کەلار", countrySlug: "iraq", order: 13 },
+  { slug: "tehran", en: "Tehran", ar: "طهران", ckb: "تاران", countrySlug: "iran", order: 1 },
+  {
+    slug: "istanbul",
+    en: "Istanbul",
+    ar: "إسطنبول",
+    ckb: "ئیستەنبوڵ",
+    countrySlug: "turkey",
+    order: 1,
+  },
+  { slug: "delhi", en: "Delhi", ar: "دلهي", ckb: "دەھلی", countrySlug: "india", order: 1 },
+  { slug: "amman", en: "Amman", ar: "عمّان", ckb: "عەممان", countrySlug: "jordan", order: 1 },
+  { slug: "berlin", en: "Berlin", ar: "برلين", ckb: "بەرلین", countrySlug: "germany", order: 1 },
 ] as const;
 
+// `n` pins the c-block seed id and never changes; `order` is display order.
+// Expansion ids start at c21 to stay clear of the c11–c13 section-type ids.
 export const CATEGORIES = [
   {
     n: 1,
@@ -966,6 +1001,7 @@ export const CATEGORIES = [
     ar: "المستشفيات",
     ckb: "نەخۆشخانەکان",
     icon: "building-2",
+    order: 1,
   },
   {
     n: 2,
@@ -974,6 +1010,7 @@ export const CATEGORIES = [
     ar: "عيادات الأسنان",
     ckb: "کلینیکەکانی ددان",
     icon: "tooth",
+    order: 2,
   },
   {
     n: 3,
@@ -982,6 +1019,80 @@ export const CATEGORIES = [
     ar: "مراكز التجميل",
     ckb: "سەنتەرەکانی جوانکاری",
     icon: "sparkles",
+    order: 3,
+  },
+  // Multicountry catalog expansion (c21–c28).
+  {
+    n: 21,
+    slug: "laboratory",
+    en: "Laboratories",
+    ar: "المختبر",
+    ckb: "تاقیگە",
+    icon: "microscope",
+    order: 4,
+  },
+  {
+    n: 22,
+    slug: "pharmacy",
+    en: "Pharmacies",
+    ar: "الصيدلية",
+    ckb: "دەرمانخانە",
+    icon: "pill",
+    order: 5,
+  },
+  {
+    n: 23,
+    slug: "home_nursing",
+    en: "Home Nursing",
+    ar: "التمريض المنزلي",
+    ckb: "پەرستاری ماڵەوە",
+    icon: "house",
+    order: 6,
+  },
+  {
+    n: 24,
+    slug: "hair_transplant",
+    en: "Hair Transplant",
+    ar: "زراعة الشعر",
+    ckb: "چاندنی قژ",
+    icon: "scissors",
+    order: 7,
+  },
+  {
+    n: 25,
+    slug: "weight_management",
+    en: "Weight Management",
+    ar: "إدارة الوزن",
+    ckb: "بەڕێوەبردنی کێش",
+    icon: "scale",
+    order: 8,
+  },
+  {
+    n: 26,
+    slug: "physiotherapy",
+    en: "Physiotherapy",
+    ar: "العلاج الطبيعي",
+    ckb: "چارەسەری سروشتی",
+    icon: "activity",
+    order: 9,
+  },
+  {
+    n: 27,
+    slug: "medical_marketplace",
+    en: "Medical Marketplace",
+    ar: "السوق الطبي",
+    ckb: "بازاڕی پزیشکی",
+    icon: "shopping-bag",
+    order: 10,
+  },
+  {
+    n: 28,
+    slug: "online_consultation",
+    en: "Online Consultation",
+    ar: "استشارة عن بُعد",
+    ckb: "ڕاوێژکاری ئۆنلاین",
+    icon: "video",
+    order: 11,
   },
 ] as const;
 
@@ -991,11 +1102,19 @@ export const SECTION_TYPES = [
   { n: 13, key: "service", en: "Services", ar: "الخدمات", ckb: "خزمەتگوزارییەکان" },
 ] as const;
 
-// hospital -> department + center; dental_clinic & beauty_center -> service
+// hospital -> department + center; every other category -> service
 export const CATEGORY_SECTION_TYPES: Record<string, string[]> = {
   hospital: ["department", "center"],
   dental_clinic: ["service"],
   beauty_center: ["service"],
+  laboratory: ["service"],
+  pharmacy: ["service"],
+  home_nursing: ["service"],
+  hair_transplant: ["service"],
+  weight_management: ["service"],
+  physiotherapy: ["service"],
+  medical_marketplace: ["service"],
+  online_consultation: ["service"],
 };
 
 export const TIERS = [
@@ -1358,6 +1477,552 @@ export const SPECIALISTS: Record<(typeof SPECIALIST_KEYS)[number], FacilitySeed[
   ],
 };
 
+// Multicountry catalog expansion sample facilities (append-only; d-block
+// ids pin at d31 after the 30 listings seeded from the arrays above).
+// ar/ckb strings are machine-drafted pending native-speaker review.
+export const EXPANSION_FACILITIES: {
+  n: number;
+  slug: string;
+  en: string;
+  ar: string;
+  ckb: string;
+  category:
+    | "hospital"
+    | "dental_clinic"
+    | "beauty_center"
+    | "laboratory"
+    | "pharmacy"
+    | "home_nursing"
+    | "hair_transplant"
+    | "weight_management"
+    | "physiotherapy";
+  city: (typeof CITIES)[number]["slug"];
+  tier: "tier_1" | "tier_2";
+  address: { en: string; ar: string; ckb: string };
+  phone: string;
+}[] = [
+  // Laboratories
+  {
+    n: 31,
+    slug: "kirkuk-central-lab",
+    en: "Kirkuk Central Laboratory",
+    ar: "مختبر كركوك المركزي",
+    ckb: "تاقیگەی ناوەندی کەرکووک",
+    category: "laboratory",
+    city: "kirkuk",
+    tier: "tier_1",
+    address: {
+      en: "12 Baghdad Road, Kirkuk",
+      ar: "طريق بغداد 12، كركوك",
+      ckb: "ڕێگای بەغدا 12، کەرکووک",
+    },
+    phone: "+964-40-25031",
+  },
+  {
+    n: 32,
+    slug: "alrazi-medical-lab",
+    en: "Al-Razi Medical Laboratory",
+    ar: "مختبر الرازي الطبي",
+    ckb: "تاقیگەی پزیشکی ڕازی",
+    category: "laboratory",
+    city: "baghdad",
+    tier: "tier_1",
+    address: {
+      en: "45 Al-Karrada Street, Baghdad",
+      ar: "شارع الكرادة 45، بغداد",
+      ckb: "شەقامی کەڕادە 45، بەغدا",
+    },
+    phone: "+964-1-25032",
+  },
+  {
+    n: 33,
+    slug: "slemani-modern-lab",
+    en: "Slemani Modern Lab",
+    ar: "مختبر السليمانية الحديث",
+    ckb: "تاقیگەی مۆدێرنی سلێمانی",
+    category: "laboratory",
+    city: "sulaymaniyah",
+    tier: "tier_2",
+    address: {
+      en: "18 Salim Street, Sulaymaniyah",
+      ar: "شارع سالم 18، السليمانية",
+      ckb: "شەقامی سالم 18، سلێمانی",
+    },
+    phone: "+964-53-25033",
+  },
+  // Pharmacies
+  {
+    n: 34,
+    slug: "shifa-pharmacy",
+    en: "Shifa Pharmacy",
+    ar: "صيدلية الشفاء",
+    ckb: "دەرمانخانەی شیفا",
+    category: "pharmacy",
+    city: "baghdad",
+    tier: "tier_1",
+    address: {
+      en: "22 Al-Mansour Street, Baghdad",
+      ar: "شارع المنصور 22، بغداد",
+      ckb: "شەقامی مەنسوور 22، بەغدا",
+    },
+    phone: "+964-1-25034",
+  },
+  {
+    n: 35,
+    slug: "mosul-city-pharmacy",
+    en: "Mosul City Pharmacy",
+    ar: "صيدلية مدينة الموصل",
+    ckb: "دەرمانخانەی شاری مووسڵ",
+    category: "pharmacy",
+    city: "mosul",
+    tier: "tier_1",
+    address: {
+      en: "8 Dawasa Street, Mosul",
+      ar: "شارع الدواسة 8، الموصل",
+      ckb: "شەقامی دەواسە 8، مووسڵ",
+    },
+    phone: "+964-60-25035",
+  },
+  {
+    n: 36,
+    slug: "azadi-pharmacy",
+    en: "Azadi Pharmacy",
+    ar: "صيدلية آزادي",
+    ckb: "دەرمانخانەی ئازادی",
+    category: "pharmacy",
+    city: "erbil",
+    tier: "tier_2",
+    address: {
+      en: "60 Koya Road, Erbil",
+      ar: "طريق كويه 60، أربيل",
+      ckb: "ڕێگای کۆیە 60، هەولێر",
+    },
+    phone: "+964-66-25036",
+  },
+  // Home nursing
+  {
+    n: 37,
+    slug: "erbil-home-nursing",
+    en: "Erbil Home Nursing",
+    ar: "أربيل للتمريض المنزلي",
+    ckb: "پەرستاری ماڵەوەی هەولێر",
+    category: "home_nursing",
+    city: "erbil",
+    tier: "tier_1",
+    address: {
+      en: "34 100 Meter Road, Erbil",
+      ar: "شارع 100 متر 34، أربيل",
+      ckb: "شەقامی 100 مەتری 34، هەولێر",
+    },
+    phone: "+964-66-25037",
+  },
+  {
+    n: 38,
+    slug: "baghdad-home-care",
+    en: "Baghdad Home Care",
+    ar: "بغداد للرعاية المنزلية",
+    ckb: "چاودێری ماڵەوەی بەغدا",
+    category: "home_nursing",
+    city: "baghdad",
+    tier: "tier_1",
+    address: {
+      en: "17 Zayouna Street, Baghdad",
+      ar: "شارع زيونة 17، بغداد",
+      ckb: "شەقامی زەیوونە 17، بەغدا",
+    },
+    phone: "+964-1-25038",
+  },
+  {
+    n: 39,
+    slug: "kalar-home-nursing",
+    en: "Kalar Home Nursing",
+    ar: "كلار للتمريض المنزلي",
+    ckb: "پەرستاری ماڵەوەی کەلار",
+    category: "home_nursing",
+    city: "kalar",
+    tier: "tier_2",
+    address: {
+      en: "5 Garmian Street, Kalar",
+      ar: "شارع كرميان 5، كلار",
+      ckb: "شەقامی گەرمیان 5، کەلار",
+    },
+    phone: "+964-53-25039",
+  },
+  // Hair transplant
+  {
+    n: 40,
+    slug: "erbil-hair-center",
+    en: "Erbil Hair Transplant Center",
+    ar: "مركز أربيل لزراعة الشعر",
+    ckb: "سەنتەری چاندنی قژی هەولێر",
+    category: "hair_transplant",
+    city: "erbil",
+    tier: "tier_1",
+    address: {
+      en: "48 Gulan Street, Erbil",
+      ar: "شارع كولان 48، أربيل",
+      ckb: "شەقامی گوڵان 48، هەولێر",
+    },
+    phone: "+964-66-25040",
+  },
+  {
+    n: 41,
+    slug: "slemani-hair-clinic",
+    en: "Slemani Hair Clinic",
+    ar: "عيادة السليمانية لزراعة الشعر",
+    ckb: "کلینیکی چاندنی قژی سلێمانی",
+    category: "hair_transplant",
+    city: "sulaymaniyah",
+    tier: "tier_1",
+    address: {
+      en: "27 Malik Mahmud Ring Road, Sulaymaniyah",
+      ar: "طريق ملك محمود الدائري 27، السليمانية",
+      ckb: "ڕێگای بازنەیی مەلیک مەحموود 27، سلێمانی",
+    },
+    phone: "+964-53-25041",
+  },
+  {
+    n: 42,
+    slug: "mosul-hair-institute",
+    en: "Mosul Hair Institute",
+    ar: "معهد الموصل لزراعة الشعر",
+    ckb: "پەیمانگای چاندنی قژی مووسڵ",
+    category: "hair_transplant",
+    city: "mosul",
+    tier: "tier_2",
+    address: {
+      en: "31 Al-Zuhour Street, Mosul",
+      ar: "شارع الزهور 31، الموصل",
+      ckb: "شەقامی زوهوور 31، مووسڵ",
+    },
+    phone: "+964-60-25042",
+  },
+  // Weight management
+  {
+    n: 43,
+    slug: "vitality-weight-clinic",
+    en: "Vitality Weight Clinic",
+    ar: "عيادة فيتاليتي للوزن",
+    ckb: "کلینیکی کێشی ڤایتالیتی",
+    category: "weight_management",
+    city: "baghdad",
+    tier: "tier_1",
+    address: {
+      en: "9 Al-Jadriya Street, Baghdad",
+      ar: "شارع الجادرية 9، بغداد",
+      ckb: "شەقامی جادریە 9، بەغدا",
+    },
+    phone: "+964-1-25043",
+  },
+  {
+    n: 44,
+    slug: "duhok-nutrition-center",
+    en: "Duhok Nutrition Center",
+    ar: "مركز دهوك للتغذية",
+    ckb: "سەنتەری خۆراکی دهۆک",
+    category: "weight_management",
+    city: "duhok",
+    tier: "tier_1",
+    address: {
+      en: "14 Zakho Road, Duhok",
+      ar: "طريق زاخو 14، دهوك",
+      ckb: "ڕێگای زاخۆ 14، دهۆک",
+    },
+    phone: "+964-62-25044",
+  },
+  {
+    n: 45,
+    slug: "kirkuk-slim-center",
+    en: "Kirkuk Slim Center",
+    ar: "مركز كركوك للرشاقة",
+    ckb: "سەنتەری سلیمی کەرکووک",
+    category: "weight_management",
+    city: "kirkuk",
+    tier: "tier_2",
+    address: {
+      en: "26 Almas Street, Kirkuk",
+      ar: "شارع الماس 26، كركوك",
+      ckb: "شەقامی ئەڵماس 26، کەرکووک",
+    },
+    phone: "+964-40-25045",
+  },
+  // Physiotherapy
+  {
+    n: 46,
+    slug: "baghdad-physio-house",
+    en: "Baghdad Physio House",
+    ar: "بيت العلاج الطبيعي بغداد",
+    ckb: "ماڵی چارەسەری سروشتی بەغدا",
+    category: "physiotherapy",
+    city: "baghdad",
+    tier: "tier_1",
+    address: {
+      en: "40 Palestine Street, Baghdad",
+      ar: "شارع فلسطين 40، بغداد",
+      ckb: "شەقامی فەلەستین 40، بەغدا",
+    },
+    phone: "+964-1-25046",
+  },
+  {
+    n: 47,
+    slug: "zakho-rehab-clinic",
+    en: "Zakho Rehabilitation Clinic",
+    ar: "عيادة زاخو للتأهيل",
+    ckb: "کلینیکی چاکبوونەوەی زاخۆ",
+    category: "physiotherapy",
+    city: "zakho",
+    tier: "tier_1",
+    address: {
+      en: "7 Ibrahim Khalil Road, Zakho",
+      ar: "طريق إبراهيم الخليل 7، زاخو",
+      ckb: "ڕێگای ئیبراهیم خەلیل 7، زاخۆ",
+    },
+    phone: "+964-62-25047",
+  },
+  {
+    n: 48,
+    slug: "kalar-physio-center",
+    en: "Kalar Physiotherapy Center",
+    ar: "مركز كلار للعلاج الطبيعي",
+    ckb: "سەنتەری چارەسەری سروشتی کەلار",
+    category: "physiotherapy",
+    city: "kalar",
+    tier: "tier_2",
+    address: {
+      en: "11 Shorsh Street, Kalar",
+      ar: "شارع شورش 11، كلار",
+      ckb: "شەقامی شۆڕش 11، کەلار",
+    },
+    phone: "+964-53-25048",
+  },
+  // Existing categories, new Iraqi cities
+  {
+    n: 49,
+    slug: "tigris-general-hospital",
+    en: "Tigris General Hospital",
+    ar: "مستشفى دجلة العام",
+    ckb: "نەخۆشخانەی گشتی دیجلە",
+    category: "hospital",
+    city: "baghdad",
+    tier: "tier_1",
+    address: {
+      en: "3 Bab Al-Muadham, Baghdad",
+      ar: "باب المعظم 3، بغداد",
+      ckb: "باب موعەزەم 3، بەغدا",
+    },
+    phone: "+964-1-25049",
+  },
+  {
+    n: 50,
+    slug: "mosul-general-hospital",
+    en: "Mosul General Hospital",
+    ar: "مستشفى الموصل العام",
+    ckb: "نەخۆشخانەی گشتی مووسڵ",
+    category: "hospital",
+    city: "mosul",
+    tier: "tier_1",
+    address: {
+      en: "19 Al-Majmoaa Street, Mosul",
+      ar: "شارع المجموعة 19، الموصل",
+      ckb: "شەقامی مەجمووعە 19، مووسڵ",
+    },
+    phone: "+964-60-25050",
+  },
+  {
+    n: 51,
+    slug: "slemani-dental-center",
+    en: "Slemani Dental Center",
+    ar: "مركز السليمانية للأسنان",
+    ckb: "سەنتەری ددانی سلێمانی",
+    category: "dental_clinic",
+    city: "sulaymaniyah",
+    tier: "tier_1",
+    address: {
+      en: "52 Salim Street, Sulaymaniyah",
+      ar: "شارع سالم 52، السليمانية",
+      ckb: "شەقامی سالم 52، سلێمانی",
+    },
+    phone: "+964-53-25051",
+  },
+  {
+    n: 52,
+    slug: "duhok-beauty-lounge",
+    en: "Duhok Beauty Lounge",
+    ar: "صالون دهوك للتجميل",
+    ckb: "هۆڵی جوانکاری دهۆک",
+    category: "beauty_center",
+    city: "duhok",
+    tier: "tier_2",
+    address: {
+      en: "23 Nohadra Road, Duhok",
+      ar: "طريق نوهدرا 23، دهوك",
+      ckb: "ڕێگای نۆهەدرا 23، دهۆک",
+    },
+    phone: "+964-62-25052",
+  },
+  // Non-IQ launch cities: one hospital + one dental clinic each
+  {
+    n: 53,
+    slug: "tehran-international-hospital",
+    en: "Tehran International Hospital",
+    ar: "مستشفى طهران الدولي",
+    ckb: "نەخۆشخانەی نێودەوڵەتی تاران",
+    category: "hospital",
+    city: "tehran",
+    tier: "tier_1",
+    address: {
+      en: "88 Valiasr Street, Tehran",
+      ar: "شارع ولي العصر 88، طهران",
+      ckb: "شەقامی وەلیعەسر 88، تاران",
+    },
+    phone: "+98-21-25053",
+  },
+  {
+    n: 54,
+    slug: "tehran-dental-polyclinic",
+    en: "Tehran Dental Polyclinic",
+    ar: "عيادات طهران للأسنان",
+    ckb: "پۆلیکلینیکی ددانی تاران",
+    category: "dental_clinic",
+    city: "tehran",
+    tier: "tier_1",
+    address: {
+      en: "15 Enghelab Street, Tehran",
+      ar: "شارع انقلاب 15، طهران",
+      ckb: "شەقامی ئینقلاب 15، تاران",
+    },
+    phone: "+98-21-25054",
+  },
+  {
+    n: 55,
+    slug: "bosphorus-hospital-istanbul",
+    en: "Bosphorus Hospital Istanbul",
+    ar: "مستشفى البوسفور إسطنبول",
+    ckb: "نەخۆشخانەی بۆسفۆری ئیستەنبوڵ",
+    category: "hospital",
+    city: "istanbul",
+    tier: "tier_1",
+    address: {
+      en: "42 Istiklal Avenue, Istanbul",
+      ar: "جادة الاستقلال 42، إسطنبول",
+      ckb: "شەقامی ئیستیقلال 42، ئیستەنبوڵ",
+    },
+    phone: "+90-212-25055",
+  },
+  {
+    n: 56,
+    slug: "istanbul-smile-dental",
+    en: "Istanbul Smile Dental",
+    ar: "إسطنبول سمايل للأسنان",
+    ckb: "کلینیکی ددانی سمایڵی ئیستەنبوڵ",
+    category: "dental_clinic",
+    city: "istanbul",
+    tier: "tier_2",
+    address: {
+      en: "29 Bagdat Avenue, Istanbul",
+      ar: "جادة بغداد 29، إسطنبول",
+      ckb: "شەقامی باغدات 29، ئیستەنبوڵ",
+    },
+    phone: "+90-212-25056",
+  },
+  {
+    n: 57,
+    slug: "lotus-hospital-delhi",
+    en: "Lotus Hospital Delhi",
+    ar: "مستشفى لوتس دلهي",
+    ckb: "نەخۆشخانەی لۆتەسی دەھلی",
+    category: "hospital",
+    city: "delhi",
+    tier: "tier_1",
+    address: {
+      en: "66 Ring Road, Delhi",
+      ar: "الطريق الدائري 66، دلهي",
+      ckb: "ڕێگای بازنەیی 66، دەھلی",
+    },
+    phone: "+91-11-25057",
+  },
+  {
+    n: 58,
+    slug: "delhi-dental-studio",
+    en: "Delhi Dental Studio",
+    ar: "ستوديو دلهي للأسنان",
+    ckb: "ستودیۆی ددانی دەھلی",
+    category: "dental_clinic",
+    city: "delhi",
+    tier: "tier_1",
+    address: {
+      en: "21 Connaught Place, Delhi",
+      ar: "كونوت بليس 21، دلهي",
+      ckb: "کۆنۆت پلەیس 21، دەھلی",
+    },
+    phone: "+91-11-25058",
+  },
+  {
+    n: 59,
+    slug: "alshifa-hospital-amman",
+    en: "Al-Shifa Hospital Amman",
+    ar: "مستشفى الشفاء عمّان",
+    ckb: "نەخۆشخانەی شیفای عەممان",
+    category: "hospital",
+    city: "amman",
+    tier: "tier_1",
+    address: {
+      en: "35 Al-Madina Street, Amman",
+      ar: "شارع المدينة المنورة 35، عمّان",
+      ckb: "شەقامی مەدینە 35، عەممان",
+    },
+    phone: "+962-6-25059",
+  },
+  {
+    n: 60,
+    slug: "amman-royal-dental",
+    en: "Amman Royal Dental Clinic",
+    ar: "عيادة عمّان الملكية للأسنان",
+    ckb: "کلینیکی ددانی شاهانەی عەممان",
+    category: "dental_clinic",
+    city: "amman",
+    tier: "tier_2",
+    address: {
+      en: "12 Rainbow Street, Amman",
+      ar: "شارع الرينبو 12، عمّان",
+      ckb: "شەقامی ڕەینبۆ 12، عەممان",
+    },
+    phone: "+962-6-25060",
+  },
+  {
+    n: 61,
+    slug: "berlin-central-hospital",
+    en: "Berlin Central Hospital",
+    ar: "مستشفى برلين المركزي",
+    ckb: "نەخۆشخانەی ناوەندی بەرلین",
+    category: "hospital",
+    city: "berlin",
+    tier: "tier_1",
+    address: {
+      en: "77 Friedrichstrasse, Berlin",
+      ar: "شارع فريدريش 77، برلين",
+      ckb: "شەقامی فریدریش 77، بەرلین",
+    },
+    phone: "+49-30-25061",
+  },
+  {
+    n: 62,
+    slug: "berlin-mitte-dental",
+    en: "Berlin Mitte Dental",
+    ar: "برلين ميته للأسنان",
+    ckb: "کلینیکی ددانی میتەی بەرلین",
+    category: "dental_clinic",
+    city: "berlin",
+    tier: "tier_1",
+    address: {
+      en: "10 Alexanderplatz, Berlin",
+      ar: "ساحة ألكسندر 10، برلين",
+      ckb: "ئالێکساندەرپلاتز 10، بەرلین",
+    },
+    phone: "+49-30-25062",
+  },
+];
+
 export const DOCTORS = [
   {
     en: "Dr. Ahmed Doctor",
@@ -1577,8 +2242,8 @@ export const COUNTRIES = [
     ar: "إيران",
     ckb: "ئێران",
     iso: "IR",
-    active: false,
-    comingSoon: true,
+    active: true,
+    comingSoon: false,
     order: 1,
   },
   {
@@ -1587,8 +2252,8 @@ export const COUNTRIES = [
     ar: "الهند",
     ckb: "هیندستان",
     iso: "IN",
-    active: false,
-    comingSoon: true,
+    active: true,
+    comingSoon: false,
     order: 2,
   },
   {
@@ -1597,8 +2262,8 @@ export const COUNTRIES = [
     ar: "تركيا",
     ckb: "تورکیا",
     iso: "TR",
-    active: false,
-    comingSoon: true,
+    active: true,
+    comingSoon: false,
     order: 3,
   },
   {
@@ -1607,8 +2272,8 @@ export const COUNTRIES = [
     ar: "الأردن",
     ckb: "ئوردن",
     iso: "JO",
-    active: false,
-    comingSoon: true,
+    active: true,
+    comingSoon: false,
     order: 4,
   },
   {
@@ -1617,8 +2282,8 @@ export const COUNTRIES = [
     ar: "ألمانيا",
     ckb: "ئەڵمانیا",
     iso: "DE",
-    active: false,
-    comingSoon: true,
+    active: true,
+    comingSoon: false,
     order: 5,
   },
   {
@@ -1645,3 +2310,26 @@ export const PROMOTIONS = [
   { n: 6, category: "physiotherapy" as const, entityRef: "motion-physio-center" },
   { n: 7, category: "weight_management" as const, entityRef: "slim-clinic-erbil" },
 ];
+
+/**
+ * Deferred-visible categories (ADR-0055): tiles render and the landing page
+ * says "coming soon", but nothing is seeded against them — zero providers,
+ * nothing to index, nothing to book.
+ */
+export const DEFERRED_CATEGORIES = ["medical_marketplace", "online_consultation"] as const;
+
+/**
+ * Per-country homepage tile set for the non-IQ launch countries
+ * (owner ruling, ADR-0055). "doctors" is the reserved doctors-browse tile,
+ * not a category slug. IQ is deliberately unlisted: an unconfigured country
+ * falls back to the full active category list.
+ */
+export const NON_IQ_TILES = [
+  "doctors",
+  "hospital",
+  "dental_clinic",
+  "hair_transplant",
+  "online_consultation",
+] as const;
+
+export const NON_IQ_DISPLAY_COUNTRIES = ["IR", "TR", "IN", "JO", "DE"] as const;

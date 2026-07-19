@@ -72,6 +72,7 @@ describe("directory router authz matrix", () => {
       ...PUBLIC,
     },
     { procedure: "directory.homepageFeed", kind: "query", input: {}, ...PUBLIC },
+    { procedure: "directory.listHomepageTiles", kind: "query", ...PUBLIC },
 
     // ── Admin commands (§3.6 layer a: admin only) ──────────────────────
     {
@@ -84,6 +85,18 @@ describe("directory router authz matrix", () => {
       procedure: "directory.setCountryGating",
       kind: "mutation",
       input: { isoCode: "XX", status: "active" },
+      deniedRoles: ADMIN_ONLY,
+    },
+    {
+      procedure: "directory.setCategoryGating",
+      kind: "mutation",
+      input: { slug: "hospital", status: "coming_soon" },
+      deniedRoles: ADMIN_ONLY,
+    },
+    {
+      procedure: "directory.setCategoryDisplay",
+      kind: "mutation",
+      input: { countryIso: "XX", tiles: ["doctors", "hospital"] },
       deniedRoles: ADMIN_ONLY,
     },
     {
@@ -246,6 +259,29 @@ describe("directory router authz matrix", () => {
     );
     expect(res.statusCode).toBe(400);
     expect(res.json().error.data.appCode).toBe("VALIDATION");
+  });
+
+  it("rejects a malformed category slug on setCategoryGating (invariant violation)", async () => {
+    const res = await trpc(
+      app,
+      "directory.setCategoryGating",
+      "mutation",
+      { slug: "Hospital Beds", status: "coming_soon" },
+      ADMIN,
+    );
+    expect(res.statusCode).toBe(400);
+    expect(res.json().error.data.appCode).toBe("VALIDATION");
+  });
+
+  it("rejects a bad ISO code and an empty tile list on setCategoryDisplay (invariant violation)", async () => {
+    for (const input of [
+      { countryIso: "iraq", tiles: ["hospital"] },
+      { countryIso: "IQ", tiles: [] },
+    ]) {
+      const res = await trpc(app, "directory.setCategoryDisplay", "mutation", input, ADMIN);
+      expect(res.statusCode, JSON.stringify(input)).toBe(400);
+      expect(res.json().error.data.appCode).toBe("VALIDATION");
+    }
   });
 
   it("rejects out-of-contract input with 400 (setTaxonomyStatus unknown taxonomy)", async () => {

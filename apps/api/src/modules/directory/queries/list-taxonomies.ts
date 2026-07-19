@@ -8,6 +8,7 @@ import type {
   listCategoriesOutputSchema,
   listCitiesOutputSchema,
   listCountriesOutputSchema,
+  listHomepageTilesOutputSchema,
   listProceduresOutputSchema,
   listSpecialtiesOutputSchema,
   listSymptomsOutputSchema,
@@ -15,6 +16,9 @@ import type {
 import {
   COUNTRY_GATING_CONFIG_KEY,
   countryGatingSchema,
+  DOCTORS_TILE_ID,
+  readCategoryGating,
+  resolveCategoryDisplay,
   type CountryGating,
 } from "@mesomed/config";
 import {
@@ -86,7 +90,13 @@ export async function listCities(db: Db): Promise<z.output<typeof listCitiesOutp
   };
 }
 
-export async function listCategories(db: Db): Promise<z.output<typeof listCategoriesOutputSchema>> {
+export async function listCategories(
+  db: Db,
+  config: ConfigService,
+): Promise<z.output<typeof listCategoriesOutputSchema>> {
+  // Fail-open (ADR-0055): an unlisted category is "active" — the config row
+  // only marks the deferred-visible ones as coming_soon.
+  const gating = await readCategoryGating(config);
   const rows = await db
     .select()
     .from(categories)
@@ -100,8 +110,51 @@ export async function listCategories(db: Db): Promise<z.output<typeof listCatego
       iconKey: row.iconKey,
       active: row.active,
       displayOrder: row.displayOrder,
+      status: gating[row.slug] ?? "active",
     })),
   };
+}
+
+/**
+ * Homepage tiles for one country (ADR-0055): the configured per-country
+ * tile list when present (config order, the reserved `doctors` tile
+ * resolved to its own kind, unknown/inactive category slugs skipped
+ * silently), otherwise every active category in display order — with no
+ * doctors tile, matching the pre-slice IQ homepage.
+ */
+export async function listHomepageTiles(
+  db: Db,
+  config: ConfigService,
+  countryIso: string,
+): Promise<z.output<typeof listHomepageTilesOutputSchema>> {
+  const gating = await readCategoryGating(config);
+  const rows = await db
+    .select()
+    .from(categories)
+    .where(eq(categories.active, true))
+    .orderBy(asc(categories.displayOrder), asc(categories.slug));
+  const categoryTile = (row: (typeof rows)[number]) => ({
+    kind: "category" as const,
+    slug: row.slug,
+    name: packText(row.nameEn, row.nameAr, row.nameCkb),
+    iconKey: row.iconKey,
+    status: gating[row.slug] ?? ("active" as const),
+  });
+
+  const configured = await resolveCategoryDisplay(config, countryIso);
+  if (configured === null) return rows.map(categoryTile);
+
+  const bySlug = new Map(rows.map((row) => [row.slug, row]));
+  const tiles: z.output<typeof listHomepageTilesOutputSchema> = [];
+  for (const tileId of configured) {
+    if (tileId === DOCTORS_TILE_ID) {
+      tiles.push({ kind: "doctors" });
+      continue;
+    }
+    const row = bySlug.get(tileId);
+    if (row) tiles.push(categoryTile(row));
+  }
+  return tiles;
 }
 
 export async function listSpecialties(

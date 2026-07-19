@@ -1,6 +1,12 @@
 import { z } from "zod";
 import { PAYMENT_KINDS, type PaymentKind } from "@mesomed/contracts/billing";
-import { COUNTRY_GATING_STATUSES, type CountryGatingStatus } from "@mesomed/contracts/directory";
+import {
+  CATEGORY_GATING_STATUSES,
+  COUNTRY_GATING_STATUSES,
+  DOCTORS_TILE_ID,
+  type CategoryGatingStatus,
+  type CountryGatingStatus,
+} from "@mesomed/contracts/directory";
 import { NOTIFICATION_CHANNELS, type NotificationChannel } from "@mesomed/contracts/communication";
 
 /**
@@ -53,6 +59,87 @@ export async function resolveCountryGating(
     throw error;
   }
   return gating[countryCode.toUpperCase()] ?? "coming_soon";
+}
+
+// ── Category gating & per-country display (ADR-0055) ───────────────────
+
+/** `config_entries` key for the directory category gating value. */
+export const CATEGORY_GATING_CONFIG_KEY = "directory.category_gating";
+
+export { CATEGORY_GATING_STATUSES, type CategoryGatingStatus };
+
+/**
+ * Category gating (ADR-0055): category slug → status. Unlike country
+ * gating this fails OPEN — a category absent from the map is `active`.
+ * The row exists only to mark the explicitly deferred categories as
+ * `coming_soon` (deferred-visible tiles), never to require listing every
+ * built one; losing the row must not hide the catalog.
+ */
+export const categoryGatingSchema = z.record(
+  z.string().regex(/^[a-z][a-z0-9_]*$/, "lowercase snake_case category slug"),
+  z.enum(CATEGORY_GATING_STATUSES),
+);
+
+export type CategoryGating = z.infer<typeof categoryGatingSchema>;
+
+/**
+ * Read the whole gating map; a missing config entry resolves to an empty
+ * map (fail open — every category `active`). Any other failure
+ * (connectivity, schema violation) propagates, as with country gating.
+ */
+export async function readCategoryGating(config: ConfigReader): Promise<CategoryGating> {
+  try {
+    return await config.get(categoryGatingSchema, CATEGORY_GATING_CONFIG_KEY);
+  } catch (error) {
+    if ((error as { code?: string }).code === "NOT_FOUND") return {};
+    throw error;
+  }
+}
+
+/** Resolve one category's status; an unlisted category is `active`. */
+export async function resolveCategoryGating(
+  config: ConfigReader,
+  slug: string,
+): Promise<CategoryGatingStatus> {
+  return (await readCategoryGating(config))[slug] ?? "active";
+}
+
+/** `config_entries` key for the per-country homepage tile lists. */
+export const CATEGORY_DISPLAY_CONFIG_KEY = "directory.category_display";
+
+export { DOCTORS_TILE_ID };
+
+/**
+ * Per-country homepage tile lists (ADR-0055): ISO 3166-1 alpha-2 code →
+ * ordered tile ids (category slugs plus the reserved `doctors` tile,
+ * which the slug pattern already admits). A country absent from the map
+ * shows the full active category list — IQ is deliberately unlisted.
+ */
+export const categoryDisplaySchema = z.record(
+  z.string().regex(/^[A-Z]{2}$/, "ISO 3166-1 alpha-2, uppercase"),
+  z.array(z.string().regex(/^[a-z][a-z0-9_]*$/, "tile id")).min(1),
+);
+
+export type CategoryDisplay = z.infer<typeof categoryDisplaySchema>;
+
+/**
+ * Resolve a country's configured tile list, or null when the config row
+ * is missing or the country is unlisted — the caller falls back to the
+ * full active category list. Other failures propagate, as with country
+ * gating.
+ */
+export async function resolveCategoryDisplay(
+  config: ConfigReader,
+  countryIso: string,
+): Promise<string[] | null> {
+  let display: CategoryDisplay;
+  try {
+    display = await config.get(categoryDisplaySchema, CATEGORY_DISPLAY_CONFIG_KEY);
+  } catch (error) {
+    if ((error as { code?: string }).code === "NOT_FOUND") return null;
+    throw error;
+  }
+  return display[countryIso.toUpperCase()] ?? null;
 }
 
 // ── Payment gateway routing (MM-PLAN-001 §5 Phase 6) ────────────────────

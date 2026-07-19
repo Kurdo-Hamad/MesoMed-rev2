@@ -43,6 +43,12 @@ export const searchDocuments = pgTable(
     /** Facility category slug or doctor specialty key. */
     categoryKey: text("category_key").notNull(),
     citySlug: text("city_slug"),
+    /**
+     * ISO2 country of the listing's city, copied from the directory event
+     * payload (ADR-0055). Nullable: documents indexed before the field
+     * existed carry null until a seed re-run re-emits their events.
+     */
+    countryIso: text("country_iso"),
     publiclyVisible: boolean("publicly_visible").notNull().default(false),
     /** Result ordering rank (facility tier rank; doctors default 3). */
     rank: integer("rank").notNull().default(3),

@@ -1,5 +1,6 @@
 /**
- * Seed entrypoint: `pnpm seed` (requires DATABASE_URL + BETTER_AUTH_SECRET).
+ * Seed entrypoint: `pnpm seed` (requires DATABASE_URL + BETTER_AUTH_SECRET;
+ * SEED_DRAIN_TIMEOUT_S overrides the outbox-drain deadline, default 60s).
  * Boots the real composition root so seeded commands emit through the real
  * outbox and the dispatcher drains events into the search read model, then
  * shuts down. Idempotent — safe to re-run against the same database.
@@ -21,7 +22,11 @@ async function main(): Promise<void> {
     await seedDirectory({ db, config, outbox, log: (message) => console.log(message) });
 
     console.log("Draining outbox into read models...");
-    const deadline = Date.now() + 60_000;
+    // SEED_DRAIN_TIMEOUT_S: positive integer seconds; anything else → 60.
+    const rawDrainTimeout = Number(process.env.SEED_DRAIN_TIMEOUT_S ?? 60);
+    const drainTimeoutS =
+      Number.isInteger(rawDrainTimeout) && rawDrainTimeout > 0 ? rawDrainTimeout : 60;
+    const deadline = Date.now() + drainTimeoutS * 1_000;
     for (;;) {
       await dispatcher.pump();
       const open = await db
@@ -31,7 +36,7 @@ async function main(): Promise<void> {
         .limit(1);
       if (open.length === 0) break;
       if (Date.now() > deadline) {
-        throw new Error("Outbox did not drain within 60s — check dispatcher logs");
+        throw new Error(`Outbox did not drain within ${drainTimeoutS}s — check dispatcher logs`);
       }
       await new Promise((resolve) => setTimeout(resolve, 250));
     }

@@ -325,4 +325,65 @@ describe("search read models", () => {
     const body = searchOutputSchema.parse(result(await search("ًّ")));
     expect(body.items).toEqual([]);
   });
+
+  it("isolates results by country in both directions (ADR-0055)", async () => {
+    for (const [procedure, input] of [
+      [
+        "directory.upsertCountry",
+        { slug: "iran", isoCode: "IR", name: { en: "Iran", ar: "إيران", ckb: "ئێران" } },
+      ],
+      ["directory.setCountryGating", { isoCode: "IR", status: "active" }],
+      [
+        "directory.upsertCity",
+        { slug: "tehran", countrySlug: "iran", name: { en: "Tehran", ar: "طهران", ckb: "تاران" } },
+      ],
+      [
+        "directory.upsertFacility",
+        {
+          slug: "zheen-tehran-hospital",
+          categorySlug: "hospital",
+          citySlug: "tehran",
+          name: {
+            en: "Zheen Tehran Hospital",
+            ar: "مستشفى جين طهران",
+            ckb: "نەخۆشخانەی ژین تاران",
+          },
+        },
+      ],
+    ] as Array<[string, unknown]>) {
+      const res = await trpc(app, procedure, "mutation", input, ADMIN);
+      expect(res.statusCode, procedure).toBe(200);
+    }
+
+    const iranian = await waitFor(async () => {
+      const res = await trpc(
+        app,
+        "search.listings",
+        "query",
+        { query: "zheen" },
+        { country: "IR" },
+      );
+      const body = searchOutputSchema.parse(result(res));
+      return body.items.some((item) => item.slug === "zheen-tehran-hospital") ? body : undefined;
+    });
+    // The IQ listings indexed above never leak into the IR search.
+    expect(iranian.items.map((item) => item.slug)).not.toContain("zheen-hospital");
+
+    const iraqi = searchOutputSchema.parse(result(await search("zheen")));
+    expect(iraqi.items.map((item) => item.slug)).toContain("zheen-hospital");
+    expect(iraqi.items.map((item) => item.slug)).not.toContain("zheen-tehran-hospital");
+  });
+
+  it("never returns a document indexed before the country field existed", async () => {
+    const { db } = app.kernel;
+    // Pre-ADR-0055 rows carry NULL country_iso until the seed re-run
+    // re-emits their directory events.
+    await db
+      .update(searchDocuments)
+      .set({ countryIso: null })
+      .where(eq(searchDocuments.slug, "ahmed-clinic"));
+
+    const body = searchOutputSchema.parse(result(await search("ahmed")));
+    expect(body.items.map((item) => item.slug)).not.toContain("ahmed-clinic");
+  });
 });

@@ -99,6 +99,9 @@
       "ar": "العربية",
       "ckb": "کوردی"
     },
+    "countrySwitcher": {
+      "label": "Country"
+    },
     "footer": {
       "rights": "All rights reserved.",
       "tagline": "Healthcare, made reachable."
@@ -119,6 +122,9 @@
       "categories": {
         "heading": "Browse by category"
       },
+      "tiles": {
+        "doctors": "Doctors"
+      },
       "feed": {
         "heading": "Recommended for you",
         "featured": "Featured",
@@ -126,6 +132,11 @@
         "empty": "No listings to show yet — check back soon.",
         "viewDirectory": "View the full directory"
       }
+    },
+    "comingSoon": {
+      "title": "Coming soon",
+      "body": "This service isn't available yet — we're working on bringing it to you.",
+      "backHome": "Back to home"
     },
     "directory": {
       "title": "Healthcare directory",

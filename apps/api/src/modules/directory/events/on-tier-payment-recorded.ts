@@ -9,7 +9,7 @@ import type { EventEnvelope, tierPaymentRecordedV1 } from "@mesomed/contracts";
 import { categories, cities, eq, facilities } from "@mesomed/db/modules/directory";
 import type { EventHandlerFn } from "../../../kernel/events.js";
 import type { OutboxEmitter } from "../../../kernel/outbox.js";
-import { packText } from "../shared.js";
+import { countryIsoForCity, packText } from "../shared.js";
 
 export const ON_TIER_PAYMENT_RECORDED_HANDLER = "directory.sync-facility-tier";
 
@@ -48,6 +48,7 @@ export function createOnTierPaymentRecorded(deps: { outbox: OutboxEmitter }): Ev
         name: packText(facility.nameEn, facility.nameAr, facility.nameCkb),
         categorySlug: category?.slug ?? "",
         citySlug: city?.slug ?? "",
+        countryIso: await countryIsoForCity(tx, facility.cityId),
         tierRank: payload.tierRank,
         publiclyVisible: facility.publiclyVisible,
       },

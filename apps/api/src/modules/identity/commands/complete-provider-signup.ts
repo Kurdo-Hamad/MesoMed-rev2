@@ -18,10 +18,18 @@ import {
 import { AppError } from "../../../kernel/errors.js";
 import type { OutboxEmitter } from "../../../kernel/outbox.js";
 
+/**
+ * Registration-time country (ADR-0055). Providers who registered before the
+ * field existed carry the column default, which is this same value.
+ */
+const DEFAULT_PROVIDER_COUNTRY = "IQ";
+
 export interface CompleteProviderSignupInput {
   userId: string;
   providerType: ProviderType;
   phone: string;
+  /** ISO 3166-1 alpha-2; the platform default country when unset. */
+  countryCode?: string;
 }
 
 export async function completeProviderSignup(
@@ -53,7 +61,12 @@ export async function completeProviderSignup(
 
   const [created] = await tx
     .insert(providerProfiles)
-    .values({ userId: input.userId, providerType: input.providerType, phone: normalized })
+    .values({
+      userId: input.userId,
+      providerType: input.providerType,
+      phone: normalized,
+      countryCode: input.countryCode ?? DEFAULT_PROVIDER_COUNTRY,
+    })
     .returning({ id: providerProfiles.id, status: providerProfiles.status });
   if (!created) {
     throw new AppError(ErrorCode.INTERNAL, "Failed to create provider profile");

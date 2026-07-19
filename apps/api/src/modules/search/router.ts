@@ -14,7 +14,7 @@ export function createSearchRouter() {
       .output(searchOutputSchema)
       .query(async ({ ctx, input }) => {
         await assertCountryActive(ctx.config, ctx.country);
-        return searchListings(ctx.db, input);
+        return searchListings(ctx.db, ctx.country, input);
       }),
   });
 }

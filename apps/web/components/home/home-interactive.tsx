@@ -5,6 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { Search } from "lucide-react";
 import type { Locale } from "@mesomed/i18n";
 import { useRouter } from "../../i18n/navigation";
+import { citiesForCountry } from "../../lib/country";
 import { pickText } from "../../lib/localized";
 import { trpc } from "../../lib/trpc";
 import { RecommendedFeed } from "./recommended-feed";
@@ -16,12 +17,18 @@ import { RecommendedFeed } from "./recommended-feed";
  * depend on hydration (§3.8 performance budget). `staticSections` carries
  * the server-rendered content that sits between the form and the feed.
  */
-export function HomeInteractive({ staticSections }: { staticSections: ReactNode }) {
+export function HomeInteractive({
+  country,
+  staticSections,
+}: {
+  country: string;
+  staticSections: ReactNode;
+}) {
   const [citySlug, setCitySlug] = useState<string | undefined>(undefined);
 
   return (
     <>
-      <SearchForm citySlug={citySlug} onCityChange={setCitySlug} />
+      <SearchForm country={country} citySlug={citySlug} onCityChange={setCitySlug} />
       {staticSections}
       <RecommendedFeed citySlug={citySlug} />
     </>
@@ -29,9 +36,11 @@ export function HomeInteractive({ staticSections }: { staticSections: ReactNode 
 }
 
 function SearchForm({
+  country,
   citySlug,
   onCityChange,
 }: {
+  country: string;
   citySlug: string | undefined;
   onCityChange: (slug: string | undefined) => void;
 }) {
@@ -39,7 +48,13 @@ function SearchForm({
   const locale = useLocale() as Locale;
   const router = useRouter();
   const [query, setQuery] = useState("");
+  const countries = trpc.directory.listCountries.useQuery();
   const cities = trpc.directory.listCities.useQuery();
+  const cityOptions = citiesForCountry(
+    cities.data?.cities ?? [],
+    countries.data?.countries ?? [],
+    country,
+  );
 
   function submit(event: FormEvent) {
     event.preventDefault();
@@ -76,13 +91,11 @@ function SearchForm({
           className="h-12 rounded-md border border-line bg-canvas px-3 text-body text-ink shadow-card outline-none focus:border-brand"
         >
           <option value="">{t("allCities")}</option>
-          {(cities.data?.cities ?? [])
-            .filter((city) => city.active)
-            .map((city) => (
-              <option key={city.slug} value={city.slug}>
-                {pickText(city.name, locale)}
-              </option>
-            ))}
+          {cityOptions.map((city) => (
+            <option key={city.slug} value={city.slug}>
+              {pickText(city.name, locale)}
+            </option>
+          ))}
         </select>
         <button
           type="submit"

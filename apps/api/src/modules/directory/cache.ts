@@ -23,13 +23,25 @@ export const DIRECTORY_CACHE_PREFIX = "directory:";
 export const HOMEPAGE_FEED_TTL_MS = 30_000;
 export const TAXONOMY_TTL_MS = 60_000;
 
-/** Locale is part of the key: the featured fill orders by localized name. */
-export function homepageFeedCacheKey(locale: Locale, input: HomepageFeedInput): string {
-  return `${DIRECTORY_CACHE_PREFIX}homepage:${locale}:${input.citySlug ?? "*"}:${input.limit}`;
+/**
+ * Locale is part of the key: the featured fill orders by localized name.
+ * Country too — the feed is scoped to the request country (ADR-0055).
+ */
+export function homepageFeedCacheKey(
+  locale: Locale,
+  country: string,
+  input: HomepageFeedInput,
+): string {
+  return `${DIRECTORY_CACHE_PREFIX}homepage:${locale}:${country}:${input.citySlug ?? "*"}:${input.limit}`;
 }
 
 export function taxonomyCacheKey(list: string): string {
   return `${DIRECTORY_CACHE_PREFIX}taxonomy:${list}`;
+}
+
+/** Homepage tiles are per country: the tile list is config-driven (ADR-0055). */
+export function homepageTilesCacheKey(country: string): string {
+  return `${DIRECTORY_CACHE_PREFIX}taxonomy:homepage-tiles:${country}`;
 }
 
 /**
