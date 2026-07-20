@@ -29,7 +29,7 @@ The following is §3 of MM-PLAN-001, verbatim (convention #15 added by amendment
 12. **Testing DoD per slice:** unit tests for pure domain logic, integration test per command (happy + authz-denial + invariant-violation), contract test that router I/O matches Zod schemas. CI green before next slice starts.
 13. **No `any`, no `ts-ignore`, no barrel-file cycles.** ESLint boundaries rule enforces module import constraints (`eslint-plugin-boundaries`).
 14. **Every phase ends with an ADR** recording what was decided/deviated.
-15. **Branch → PR → merge. No direct pushes to `main`.** Every slice lands via branch → PR → CI green on the PR → merge. Enforcement is the versioned pre-push hook (`.githooks/pre-push`) plus discipline — branch protection is unavailable on the current GitHub plan, so no tooling claim beyond the hook is made. Every clone must run `git config core.hooksPath .githooks` at setup.
+15. **Branch → PR → merge. No direct pushes to `main`.** Every slice lands via branch → PR → CI green on the PR → merge. Enforcement is the versioned pre-push hook (`.githooks/pre-push`) plus GitHub branch protection on `main` (available — public repository). Protection is live (required status check contexts: `ci`, `e2e`, `docker`, `secrets`) — the ADR-0040 owner action closed. Every clone must run `git config core.hooksPath .githooks` at setup.
 
 ## Repository layout
 
