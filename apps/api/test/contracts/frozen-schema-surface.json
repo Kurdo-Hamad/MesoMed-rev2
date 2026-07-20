@@ -805,6 +805,12 @@
           "type": "string",
           "format": "uuid",
           "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+        },
+        "limit": {
+          "default": 200,
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 200
         }
       },
       "required": ["encounterId"]
@@ -1067,7 +1073,22 @@
   },
   {
     "path": "clinical.myEncounters",
-    "input": null,
+    "input": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "limit": {
+          "default": 50,
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 200
+        },
+        "cursor": {
+          "type": "string",
+          "maxLength": 2000
+        }
+      }
+    },
     "output": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "type": "object",
@@ -1110,9 +1131,19 @@
             ],
             "additionalProperties": false
           }
+        },
+        "nextCursor": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
-      "required": ["encounters"],
+      "required": ["encounters", "nextCursor"],
       "additionalProperties": false
     }
   },
@@ -2297,9 +2328,13 @@
                 "type": "integer",
                 "minimum": -9007199254740991,
                 "maximum": 9007199254740991
+              },
+              "status": {
+                "type": "string",
+                "enum": ["active", "coming_soon"]
               }
             },
-            "required": ["id", "slug", "name", "iconKey", "active", "displayOrder"],
+            "required": ["id", "slug", "name", "iconKey", "active", "displayOrder", "status"],
             "additionalProperties": false
           }
         }
@@ -2457,6 +2492,21 @@
         }
       },
       "required": ["specialties"],
+      "additionalProperties": false
+    }
+  },
+  {
+    "path": "identity.deleteAccount",
+    "input": null,
+    "output": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "deleted": {
+          "type": "boolean"
+        }
+      },
+      "required": ["deleted"],
       "additionalProperties": false
     }
   },
