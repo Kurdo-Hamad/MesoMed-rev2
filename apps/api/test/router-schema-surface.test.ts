@@ -6,6 +6,7 @@ import { z, type ZodType } from "zod";
 import type { AiGateway } from "@mesomed/platform";
 import type { IdentityModule } from "../src/modules/identity/index.js";
 import { createAppRouter } from "../src/trpc/router.js";
+import { MOBILE_CONSUMED } from "./contracts/mobile-consumed.js";
 
 /**
  * Field-level mobile compatibility pin (ADR-0013's Phase 9 deferred item,
@@ -32,48 +33,6 @@ const FROZEN_PATH = join(
   "contracts",
   "frozen-schema-surface.json",
 );
-
-/**
- * Procedures the mobile app calls today — extend when a new screen
- * consumes a new procedure (generated from `grep -rhoE 'trpc\.[a-zA-Z]+\.
- * [a-zA-Z]+' apps/mobile/app apps/mobile/lib`; pinned literally here the
- * same way the authz MATRIX pins its list).
- */
-const MOBILE_CONSUMED = [
-  "ai.triageSymptoms",
-  "booking.cancel",
-  "booking.checkIn",
-  "booking.clinicDay",
-  "booking.complete",
-  "booking.confirm",
-  "booking.delay",
-  "booking.guestBook",
-  "booking.myAppointments",
-  "booking.noShow",
-  "booking.recall",
-  "booking.start",
-  "booking.weekAvailability",
-  "clinical.addReportedMedication",
-  "clinical.encounterNotes",
-  "clinical.myClinicalRecord",
-  "clinical.myEncounters",
-  "clinical.removeReportedMedication",
-  "clinical.upsertMedicalProfile",
-  "communication.registerDeviceToken",
-  "communication.unregisterDeviceToken",
-  "directory.browseDoctors",
-  "directory.browseFacilities",
-  "directory.doctorDetail",
-  "directory.facilityDetail",
-  "directory.homepageFeed",
-  "directory.listCategories",
-  "directory.listCities",
-  "directory.listSpecialties",
-  "identity.me",
-  "scheduling.doctorLocations",
-  "scheduling.myWorkplaces",
-  "search.listings",
-] as const;
 
 type JsonSchema = {
   type?: string;
