@@ -115,3 +115,18 @@ not conflict with D5). Evidence links are in the PR thread.
   with `ci`).
 - ADR-0011's crypto-shred/retention carry-over is untouched here — it
   is Slice 6 (ADR-0029) scope.
+
+## Amendment (2026-07-20) — MM-QA-005 F-08: Dependabot major bumps #57–#60 deferred post-launch (recorded decision)
+
+Owner-ruled per ADR-0057. The four open Dependabot major PRs —
+#57 `lucide-react-native` 0.550→1.24, #58 `typescript` 6.0→7.0,
+#59 `@ai-sdk/anthropic` 2.0→4.0, #60 `tailwindcss` 3.4→4.3 — are
+**deferred until post-launch**. MM-QA-005 F-08's complaint was not the
+deferral (deferring majors through a launch window is defensible under
+§2's "a green Dependabot PR is a proposal, not a decision") but that no
+recorded decision existed anywhere; this amendment is that record.
+
+- **Revisit trigger:** the first post-launch maintenance window, and no
+  later than D10 + 2 weeks.
+- **Escalation exception:** a published CVE against any of the four
+  packages escalates that bump to immediate, ahead of the trigger.

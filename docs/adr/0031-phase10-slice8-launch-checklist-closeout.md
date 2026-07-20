@@ -299,3 +299,20 @@ Run uncached from the repo root on `main` after the last merge
 (`2cf13d3`): format GREEN · lint/typecheck 20/20 · test 11/11 tasks,
 **1194 tests / 147 files, zero failed** · build 3/3. The remediation
 began at 964 tests / 130 files; +230 tests across the run.
+
+## Amendment (2026-07-20) — MM-QA-005 F-06: step-2 prerequisite and ADR-0055 translation scope added to the launch checklist
+
+Owner-ruled per ADR-0057. Two items MM-QA-005 F-06 found missing from
+this checklist — recorded loudly in ADR-0055 and MM-PLAN-001 §6 but not
+in the instrument HG-5 reads — are added:
+
+1. **`provider-registration-step2-client`** (step-2 provider form +
+   country picker, ADR-0055 §4) is a launch prerequisite for any non-IQ
+   provider onboarding: it must land before launch if non-IQ providers
+   onboard at or before launch; until it lands, every signup takes the
+   `IQ` default and non-IQ catalog content is seed-sourced only.
+2. **The native-speaker ar/ckb review gate is extended to ADR-0055's
+   strings** (city and category names, `web.comingSoon.*`,
+   `web.countrySwitcher.label`, `web.home.tiles.doctors`, and the 32
+   seeded facility names), in addition to its existing Slices 3b/5/19
+   scope.
