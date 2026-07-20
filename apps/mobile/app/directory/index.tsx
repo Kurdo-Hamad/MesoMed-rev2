@@ -4,19 +4,21 @@ import { Link, Stack } from "expo-router";
 import { useTranslations } from "use-intl";
 import { colors } from "@mesomed/ui-tokens";
 import { CategoryIcon } from "../../components/category-icon";
+import { isBookableCategory } from "../../lib/category-filter";
 import { useLocale } from "../../lib/locale";
 import { pickText } from "../../lib/localized";
 import { trpc } from "../../lib/trpc";
 
-/** Directory landing: every active category (data-driven — MM-PLAN-001
- * §3.9) plus the doctors entry. Parity with
- * apps/web/app/[locale]/directory/page.tsx. */
+/** Directory landing: every active, bookable category (data-driven —
+ * MM-PLAN-001 §3.9) plus the doctors entry. `coming_soon` categories are
+ * excluded until mobile gains the tile surface (MM-QA-005 F-02). Parity
+ * with apps/web/app/[locale]/directory/page.tsx. */
 export default function DirectoryScreen() {
   const t = useTranslations("web.directory");
   const { locale } = useLocale();
   const categories = trpc.directory.listCategories.useQuery();
 
-  const items = (categories.data?.categories ?? []).filter((category) => category.active);
+  const items = (categories.data?.categories ?? []).filter(isBookableCategory);
 
   return (
     <ScrollView className="flex-1 bg-canvas" contentContainerClassName="p-4 pb-10">

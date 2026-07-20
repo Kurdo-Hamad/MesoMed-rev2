@@ -253,3 +253,33 @@ CI on the pushed branch head `23d03f1` (PR #98): ci, e2e, analyze,
 CodeQL, docker and secrets all pass. Per CLAUDE.md "gate verified green"
 means CI green on `main`, so the gate closes only when this merges and
 `main` is green — this ADR records the PR run, not that final state.
+
+## Correction (2026-07-20) — MM-QA-005 F-02 and F-07
+
+Two statements above do not survive contact with mobile, and one gate
+citation names the wrong commit. Recorded here per MM-QA-005's audit
+discipline (ADR-0057 slice map) rather than by editing the original
+text.
+
+**F-02.** §2's "the Coming Soon landing is the only reachable state by
+construction" is **web-only true**. §8's "mobile is unaffected by the
+additive `status` field" is type-true but was **behaviorally false**:
+mobile's `directory/index.tsx` filtered only on `active` and never read
+`status`, so the moment `medical_marketplace` and `online_consultation`
+seeded as `coming_soon`, the IQ-pinned app rendered them as ordinary
+tiles leading to a dead-end empty browse in all three locales — no
+coming-soon state, and no path back. Nothing was bookable or leaked
+(zero providers seeded, facilities have no booking path), so this was a
+launch-UX defect, not an integrity breach. Fixed in a standalone slice
+(Option A): `apps/mobile/lib/category-filter.ts` excludes `coming_soon`
+rows from the mobile directory grid (fail-open on a missing `status`,
+matching this ADR's own §2 gating posture) until mobile gains its own
+tile surface — the follow-up named in §8 is otherwise unchanged.
+
+**F-07.** The Gate section above cites CI on branch head `23d03f1`, but
+the merged PR #98 head was `928ef0e` (the doc-only commit that recorded
+that same CI run in this ADR — a self-reference added after the cited
+run). CI and CodeQL are `success` on `928ef0e` too, and the merge commit
+`9a30777` is CI+CodeQL green on `main`, so nothing unverified merged;
+the defect was purely a citation naming the wrong commit. Future slice
+ADRs cite the merge-commit run, not a branch-head run.
