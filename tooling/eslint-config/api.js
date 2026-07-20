@@ -7,7 +7,7 @@ import { base, platformAdapterRestriction } from "./base.js";
  * module without listing it here leaves that module's @mesomed/db imports
  * unguarded — keep in sync with the filesystem.
  */
-const API_MODULES = [
+export const API_MODULES = [
   "ai",
   "billing",
   "booking",
