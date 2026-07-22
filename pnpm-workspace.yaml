@@ -28,3 +28,15 @@ allowBuilds:
   ssh2: false
   unrs-resolver: true
 minimumReleaseAge: 60
+overrides:
+  # GHSA-v2hh-gcrm-f6hx (high): host confusion via literal backslash
+  # authority delimiter. Transitive via fastify>@fastify/ajv-compiler>ajv;
+  # ajv@8.20.0 already declares "fast-uri": "^3.0.1", which permits this
+  # patch — no fastify/ajv bump needed.
+  fast-uri: ^3.1.4
+  # GHSA-f88m-g3jw-g9cj (high): inherited libvips CVEs (CVE-2026-33327/28,
+  # CVE-2026-35590/91). Transitive optional dep via better-auth>next>sharp;
+  # next@16.2.10/16.2.11 (latest 16.x) both still declare "sharp": "^0.34.5",
+  # which excludes this patch, so an override is required until next bumps
+  # its own range.
+  sharp: ^0.35.3
