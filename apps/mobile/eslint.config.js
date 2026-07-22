@@ -4,7 +4,7 @@ export default [
   ...base,
   {
     // Metro/Babel/Tailwind all load these via require(), so they must stay CommonJS.
-    files: ["metro.config.js", "babel.config.cjs", "tailwind.config.js"],
+    files: ["metro.config.cjs", "babel.config.cjs", "tailwind.config.js"],
     languageOptions: {
       sourceType: "commonjs",
       globals: {
