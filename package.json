@@ -17,10 +17,10 @@
   },
   "prettier": "@mesomed/prettier-config",
   "devDependencies": {
-    "turbo": "^2.10.4",
+    "turbo": "^2.10.6",
     "typescript": "~6.0.3",
-    "prettier": "^3.9.4",
-    "eslint": "^10.6.0",
+    "prettier": "^3.9.6",
+    "eslint": "^10.7.0",
     "@mesomed/prettier-config": "workspace:*"
   }
 }
