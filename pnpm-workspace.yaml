@@ -40,3 +40,9 @@ overrides:
   # which excludes this patch, so an override is required until next bumps
   # its own range.
   sharp: ^0.35.3
+  # GHSA-6g55-p6wh-862q (high): arbitrary file read via attacker-controlled
+  # sourceMappingURL in CSS comments, patched in postcss 8.5.12. The only
+  # vulnerable resolution is next@16.2.11's exact "postcss": "8.4.31" pin
+  # (all other consumers already resolve >=8.5.16), so an override is
+  # required until next bumps its pin.
+  postcss: ^8.5.12
