@@ -1,4 +1,4 @@
-import { ScrollView, Text, View } from "react-native";
+import { Pressable, ScrollView, Text, View } from "react-native";
 import { UserRound } from "lucide-react-native";
 import { Link, Stack } from "expo-router";
 import { useTranslations } from "use-intl";
@@ -28,7 +28,7 @@ export default function DirectoryScreen() {
 
       <View className="mt-6 gap-3">
         <Link href="/directory/doctors" asChild>
-          <View className="flex-row items-center gap-4 rounded-lg border border-line bg-canvas p-5 shadow-card">
+          <Pressable className="flex-row items-center gap-4 rounded-lg border border-line bg-canvas p-5 shadow-card">
             <View className="h-12 w-12 items-center justify-center rounded-md bg-brand-soft">
               <UserRound size={24} color={colors.brand} />
             </View>
@@ -36,7 +36,7 @@ export default function DirectoryScreen() {
               <Text className="text-subtitle font-semibold text-ink">{t("doctors")}</Text>
               <Text className="text-small text-neutral-500">{t("doctorsSubtitle")}</Text>
             </View>
-          </View>
+          </Pressable>
         </Link>
 
         {categories.isLoading
@@ -48,14 +48,14 @@ export default function DirectoryScreen() {
             ))
           : items.map((category) => (
               <Link key={category.slug} href={`/directory/${category.slug}`} asChild>
-                <View className="flex-row items-center gap-4 rounded-lg border border-line bg-canvas p-5 shadow-card">
+                <Pressable className="flex-row items-center gap-4 rounded-lg border border-line bg-canvas p-5 shadow-card">
                   <View className="h-12 w-12 items-center justify-center rounded-md bg-brand-soft">
                     <CategoryIcon iconKey={category.iconKey} color={colors.brand} />
                   </View>
                   <Text className="text-subtitle font-semibold text-ink">
                     {pickText(category.name, locale)}
                   </Text>
-                </View>
+                </Pressable>
               </Link>
             ))}
       </View>
