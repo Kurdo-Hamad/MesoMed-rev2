@@ -1,4 +1,4 @@
-import { ScrollView, Text, View } from "react-native";
+import { Pressable, ScrollView, Text, View } from "react-native";
 import { Link } from "expo-router";
 import { useTranslations } from "use-intl";
 import { colors } from "@mesomed/ui-tokens";
@@ -39,12 +39,12 @@ export default function HomeScreen() {
         <View className="flex-row flex-wrap gap-3">
           {activeCategories.map((category) => (
             <Link key={category.slug} href={`/directory/${category.slug}`} asChild>
-              <View className="w-[47%] items-center justify-center gap-2 rounded-lg border border-line bg-canvas py-5 shadow-card">
+              <Pressable className="w-[47%] items-center justify-center gap-2 rounded-lg border border-line bg-canvas py-5 shadow-card">
                 <CategoryIcon iconKey={category.iconKey} color={colors.brand} />
                 <Text className="px-2 text-center text-small font-medium text-ink">
                   {pickText(category.name, locale)}
                 </Text>
-              </View>
+              </Pressable>
             </Link>
           ))}
         </View>
