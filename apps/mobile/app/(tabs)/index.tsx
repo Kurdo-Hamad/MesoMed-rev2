@@ -8,7 +8,11 @@ import type { Locale } from "@mesomed/i18n";
 import { CardSkeleton, DoctorCard, FacilityCard } from "../../components/listing-cards";
 import { HeroCarousel } from "../../components/hero-carousel";
 import { Scrim } from "../../components/scrim";
-import { CATEGORY_TILE_FALLBACK, CATEGORY_TILE_IMAGES } from "../../constants/placeholder-images";
+import {
+  CATEGORY_TILE_FALLBACK,
+  CATEGORY_TILE_IMAGES,
+  DOCTORS_TILE_IMAGE,
+} from "../../constants/placeholder-images";
 import { useLocale } from "../../lib/locale";
 import { pickText } from "../../lib/localized";
 import { trpc } from "../../lib/trpc";
@@ -36,6 +40,7 @@ export default function HomeScreen() {
   const tCountry = useTranslations("web.countrySwitcher");
   const tDirectory = useTranslations("web.directory");
   const tCategories = useTranslations("web.home.categories");
+  const tTiles = useTranslations("web.home.tiles");
   const tFeed = useTranslations("web.home.feed");
 
   const categories = trpc.directory.listCategories.useQuery();
@@ -46,78 +51,94 @@ export default function HomeScreen() {
 
   return (
     <ScrollView className="flex-1 bg-canvas" contentContainerClassName="pb-10">
-      <View
-        className="flex-row items-center gap-2 px-4 pb-2"
-        style={{ paddingTop: insets.top + 8 }}
-      >
-        <Text className="text-subtitle font-bold text-brand">{tBrand("name")}</Text>
-        <View className="flex-1" />
-        <Pressable
-          onPress={() => void Linking.openURL(`${WEB_URL}/${locale}/auth/sign-up`)}
-          className="rounded-full border border-brand px-3 py-1.5"
-        >
-          <Text className="text-caption font-semibold text-brand">{tHome("becomeProvider")}</Text>
-        </Pressable>
-        <Link href="/account" asChild>
-          <Pressable className="h-9 w-9 items-center justify-center rounded-full bg-brand-soft">
-            <UserRound size={20} color={colors.brand} />
-          </Pressable>
-        </Link>
-        <Link href="/directory" asChild>
-          <Pressable className="h-9 w-9 items-center justify-center">
-            <Menu size={22} color={colors.foreground} />
-          </Pressable>
-        </Link>
-      </View>
-
-      <View className="flex-row items-center gap-3 px-4 pb-3">
-        <LanguageChip
-          active={locale === "en"}
-          label={tHome("langEn")}
-          localeCode="en"
-          onSelect={setLocale}
-        />
-        <View className="h-3 w-px bg-line" />
-        <LanguageChip
-          active={locale === "ar"}
-          label={tHome("langAr")}
-          localeCode="ar"
-          onSelect={setLocale}
-        />
-        <View className="h-3 w-px bg-line" />
-        <LanguageChip
-          active={locale === "ckb"}
-          label={tHome("langCkb")}
-          localeCode="ckb"
-          onSelect={setLocale}
-        />
-      </View>
-
-      <HeroCarousel />
-
-      <Text className="px-4 pt-5 text-title font-bold text-ink">
-        {tHome.rich("headline", {
-          highlight: (chunks) => <Text className="text-brand">{chunks}</Text>,
-        })}
-      </Text>
-
-      <View className="gap-2 px-4 pt-4">
-        <Link href="/search" asChild>
-          <Pressable className="flex-row items-center gap-2 rounded-lg border border-line bg-surface px-3 py-3">
-            <Search size={18} color={colors.muted} />
-            <Text numberOfLines={1} className="flex-1 text-body text-neutral-500">
-              {tHero("searchPlaceholder")}
-            </Text>
-          </Pressable>
-        </Link>
-        <View className="flex-row gap-2">
-          <View className="flex-1 flex-row items-center justify-between rounded-lg border border-line bg-surface px-3 py-3">
-            <Text className="text-body text-neutral-500">{tCountry("label")}</Text>
-            <ChevronDown size={16} color={colors.muted} />
+      {/* The carousel is an absolute-fill background; this block's content
+          sets the hero height. box-none lets swipes on uncovered photo areas
+          reach the carousel. */}
+      <View className="overflow-hidden">
+        <HeroCarousel />
+        <View pointerEvents="box-none" className="pb-6" style={{ paddingTop: insets.top + 8 }}>
+          <View pointerEvents="box-none" className="flex-row items-center gap-2 px-4 pb-2">
+            <View pointerEvents="none">
+              <Text className="text-subtitle font-bold text-brand">{tBrand("name")}</Text>
+            </View>
+            <View pointerEvents="none" className="flex-1" />
+            <Pressable
+              onPress={() => void Linking.openURL(`${WEB_URL}/${locale}/auth/sign-up`)}
+              className="rounded-full border border-brand bg-canvas px-3 py-1.5"
+            >
+              <Text className="text-caption font-semibold text-brand">
+                {tHome("becomeProvider")}
+              </Text>
+            </Pressable>
+            <Link href="/account" asChild>
+              <Pressable className="h-9 w-9 items-center justify-center rounded-full bg-brand-soft">
+                <UserRound size={20} color={colors.brand} />
+              </Pressable>
+            </Link>
+            <Link href="/directory" asChild>
+              <Pressable className="h-9 w-9 items-center justify-center rounded-full bg-canvas/80">
+                <Menu size={22} color={colors.foreground} />
+              </Pressable>
+            </Link>
           </View>
-          <View className="flex-1 flex-row items-center justify-between rounded-lg border border-line bg-surface px-3 py-3">
-            <Text className="text-body text-neutral-500">{tDirectory("city")}</Text>
-            <ChevronDown size={16} color={colors.muted} />
+
+          <View pointerEvents="box-none" className="flex-row items-center gap-3 px-4 pb-1">
+            <LanguageChip
+              active={locale === "en"}
+              label={tHome("langEn")}
+              localeCode="en"
+              onSelect={setLocale}
+            />
+            <View className="h-3 w-px bg-line" />
+            <LanguageChip
+              active={locale === "ar"}
+              label={tHome("langAr")}
+              localeCode="ar"
+              onSelect={setLocale}
+            />
+            <View className="h-3 w-px bg-line" />
+            <LanguageChip
+              active={locale === "ckb"}
+              label={tHome("langCkb")}
+              localeCode="ckb"
+              onSelect={setLocale}
+            />
+            <View pointerEvents="none" className="flex-1" />
+            <View pointerEvents="none" className="rounded-full bg-canvas px-2.5 py-1">
+              <Text className="text-caption font-medium text-brand">{tFeed("promoted")}</Text>
+            </View>
+          </View>
+
+          {/* pointerEvents "none" on non-interactive overlay pieces: on iOS a
+              stretched Text/View hit-tests to itself and blocks carousel
+              swipes behind it (box-none only helps for genuinely empty area). */}
+          <View pointerEvents="none">
+            <Text className="px-4 pt-4 text-title font-bold text-ink">
+              {tHome.rich("headline", {
+                highlight: (chunks) => <Text className="text-brand">{chunks}</Text>,
+              })}
+            </Text>
+          </View>
+
+          <View pointerEvents="box-none" className="gap-2 px-4 pt-4">
+            <Link href="/search" asChild>
+              <Pressable className="flex-row items-center gap-2 rounded-lg border border-line bg-surface px-3 py-3">
+                <Search size={18} color={colors.muted} />
+                <Text numberOfLines={1} className="flex-1 text-body text-neutral-500">
+                  {tHero("searchPlaceholder")}
+                </Text>
+              </Pressable>
+            </Link>
+            <View className="flex-row gap-2">
+              <View className="flex-1 flex-row items-center justify-between rounded-lg border border-line bg-surface px-3 py-3">
+                <Text className="text-body text-neutral-500">{tCountry("label")}</Text>
+                <ChevronDown size={16} color={colors.muted} />
+              </View>
+              <View className="flex-1 flex-row items-center justify-between rounded-lg border border-line bg-surface px-3 py-3">
+                <Text className="text-body text-neutral-500">{tDirectory("city")}</Text>
+                <ChevronDown size={16} color={colors.muted} />
+              </View>
+            </View>
           </View>
         </View>
       </View>
@@ -126,6 +147,29 @@ export default function HomeScreen() {
         <Text className="mb-3 text-heading font-bold text-ink">{tCategories("heading")}</Text>
         {/* gap-1.5 keeps four columns down to 320pt screens (gap-2 wraps to 3+1) */}
         <View className="flex-row flex-wrap gap-1.5">
+          {/* Doctors is the reserved ADR-0055 tile id, not a category row —
+              listCategories can never return it, so it renders statically
+              first, mirroring the directory landing's hardcoded entry. */}
+          <Link href="/directory/doctors" asChild>
+            <Pressable className="aspect-square w-[23%] overflow-hidden rounded-lg bg-neutral-100">
+              <Image
+                source={{ uri: DOCTORS_TILE_IMAGE }}
+                className="h-full w-full"
+                resizeMode="cover"
+              />
+              <View className="absolute inset-x-0 bottom-0 h-3/5">
+                <Scrim direction="to-top" color="#000000" maxOpacity={0.75} />
+              </View>
+              <Text
+                numberOfLines={2}
+                adjustsFontSizeToFit
+                minimumFontScale={0.7}
+                className="absolute inset-x-0 bottom-0 p-1.5 text-center text-[10px] font-semibold text-white"
+              >
+                {tTiles("doctors")}
+              </Text>
+            </Pressable>
+          </Link>
           {activeCategories.map((category) => (
             <Link key={category.slug} href={`/directory/${category.slug}`} asChild>
               <Pressable className="aspect-square w-[23%] overflow-hidden rounded-lg bg-neutral-100">
@@ -137,9 +181,14 @@ export default function HomeScreen() {
                 <View className="absolute inset-x-0 bottom-0 h-3/5">
                   <Scrim direction="to-top" color="#000000" maxOpacity={0.75} />
                 </View>
+                {/* 10px: the longest single word in all 11 names must fit one
+                    tile line whole, or RN character-wraps it mid-word at any
+                    numberOfLines; typeScale has no token this small. */}
                 <Text
                   numberOfLines={2}
-                  className="absolute inset-x-0 bottom-0 p-1.5 text-center text-caption font-semibold text-white"
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.7}
+                  className="absolute inset-x-0 bottom-0 p-1.5 text-center text-[10px] font-semibold text-white"
                 >
                   {pickText(category.name, locale)}
                 </Text>

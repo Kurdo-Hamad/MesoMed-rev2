@@ -36,5 +36,10 @@ export const CATEGORY_TILE_IMAGES: Record<string, string> = {
     "https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&w=400&q=60",
 };
 
+// The Doctors entry is the reserved ADR-0055 homepage tile, not a category —
+// keyed separately from the slug map above.
+export const DOCTORS_TILE_IMAGE =
+  "https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&w=400&q=60";
+
 export const CATEGORY_TILE_FALLBACK =
   "https://images.unsplash.com/photo-1505751172876-fa1923c5c528?auto=format&fit=crop&w=400&q=60";

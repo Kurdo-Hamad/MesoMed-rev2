@@ -1,14 +1,5 @@
 import { useEffect, useRef } from "react";
-import {
-  I18nManager,
-  Image,
-  Platform,
-  ScrollView,
-  Text,
-  useWindowDimensions,
-  View,
-} from "react-native";
-import { useTranslations } from "use-intl";
+import { I18nManager, Image, Platform, ScrollView, useWindowDimensions, View } from "react-native";
 import { HERO_AD_IMAGES } from "../constants/placeholder-images";
 import { Scrim } from "./scrim";
 
@@ -25,13 +16,14 @@ function offsetPage(index: number): number {
 }
 
 /**
- * Full-width rotating ad carousel: swipeable paged photos, auto-advance
- * every 3s (paused while the user is interacting), "Sponsored" pill pinned
- * top-end, light reading-start fade. Plain ScrollView + setInterval — no
- * carousel dependency.
+ * Rotating ad photos as an absolute-fill background layer: the Home hero
+ * renders its topbar/headline/search content on top (pointerEvents
+ * "box-none"), so the hero's height is set by that content. Swipeable paged
+ * ScrollView, auto-advance every 3s (paused while the user is interacting),
+ * light reading-start fade for overlay legibility. Plain ScrollView +
+ * setInterval — no carousel dependency.
  */
 export function HeroCarousel() {
-  const tFeed = useTranslations("web.home.feed");
   const { width } = useWindowDimensions();
   const scrollRef = useRef<ScrollView>(null);
   const indexRef = useRef(0);
@@ -52,11 +44,13 @@ export function HeroCarousel() {
   }, [width]);
 
   return (
-    <View>
+    <View className="absolute inset-0">
       <ScrollView
         ref={scrollRef}
         horizontal
         pagingEnabled
+        className="h-full"
+        contentContainerClassName="h-full"
         showsHorizontalScrollIndicator={false}
         onScrollBeginDrag={() => {
           interactingRef.current = true;
@@ -68,20 +62,14 @@ export function HeroCarousel() {
         }}
       >
         {HERO_AD_IMAGES.map((uri) => (
-          <View key={uri} style={{ width }} className="aspect-[16/9]">
+          <View key={uri} style={{ width }} className="h-full">
             <Image source={{ uri }} className="h-full w-full" resizeMode="cover" />
-            <View className="absolute inset-y-0 w-2/5" style={{ insetInlineStart: 0 }}>
-              <Scrim direction="from-start" color="#FFFFFF" maxOpacity={0.55} />
+            <View className="absolute inset-y-0 w-2/3" style={{ insetInlineStart: 0 }}>
+              <Scrim direction="from-start" color="#FFFFFF" maxOpacity={0.8} />
             </View>
           </View>
         ))}
       </ScrollView>
-      <View
-        className="absolute top-3 rounded-full bg-black/50 px-2.5 py-1"
-        style={{ insetInlineEnd: 12 }}
-      >
-        <Text className="text-caption font-medium text-white">{tFeed("promoted")}</Text>
-      </View>
     </View>
   );
 }
