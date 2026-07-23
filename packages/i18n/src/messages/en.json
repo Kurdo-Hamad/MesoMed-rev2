@@ -456,6 +456,13 @@
     }
   },
   "mobile": {
+    "home": {
+      "headline": "Find trusted healthcare <highlight>near you</highlight>",
+      "becomeProvider": "Become a provider",
+      "langEn": "En",
+      "langAr": "العربية",
+      "langCkb": "کوردی"
+    },
     "upgradeRequired": {
       "title": "Update required",
       "body": "This version of the MesoMed app is no longer supported. Please update from your app store to continue."
